@@ -34,52 +34,68 @@ def get_envelope( X, N=10 ):
 
     return envelope
 
-def find_envelopes( X, to_plot=False ):
+def find_envelopes( X, to_plot=False, ret_all=False ):
 
     max_locs,max_pks = find_extrema( X[:,0] )
     min_locs,min_pks = find_extrema( X[:,0], ret_min=True)
 
-    if max_locs.size < 3 or min_locs.size < 3:
+    if max_locs.size <= 1 or min_locs.size <= 1:
         return None,None
 
-    N = 15 # should make this analytic somehow
+    N = 4 # should make this analytic somehow
     if max_locs.size < N or min_locs.size < N:
         N = max_locs.size
 
     ret_max_locs = np.pad( max_locs,N,'reflect',reflect_type='odd')
     ret_min_locs = np.pad( min_locs,N,'reflect',reflect_type='odd')
 
-    ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='even')
-    ret_min_pks = np.pad( min_pks,N,'reflect',reflect_type='even')
+    ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='odd')
+    ret_min_pks = np.pad( min_pks,N,'reflect',reflect_type='odd')
+
+    if max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
+        ret_max_locs = np.pad( ret_max_locs,N,'reflect',reflect_type='odd')
+        ret_max_pks = np.pad( ret_max_pks,N,'reflect',reflect_type='odd')
+
+    if max(ret_min_locs) < len(X) or min(ret_min_locs) >= 0:
+        ret_min_locs = np.pad( ret_min_locs,N,'reflect',reflect_type='odd')
+        ret_min_pks = np.pad( ret_min_pks,N,'reflect',reflect_type='odd')
 
     f = interp.splrep( ret_max_locs, ret_max_pks )
     upper = interp.splev(range(ret_max_locs[0],ret_max_locs[-1]), f)
 
-    t = np.arange(ret_max_locs[0],ret_max_locs[-1])
-    tinds = np.logical_and((t >= 0), (t < X.shape[0]))
-    upper = np.array(upper[tinds])
+    t_max = np.arange(ret_max_locs[0],ret_max_locs[-1])
+    tinds_max = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
 
     f = interp.splrep( ret_min_locs, ret_min_pks )
     lower = interp.splev(range(ret_min_locs[0],ret_min_locs[-1]), f)
 
-    t = np.arange(ret_min_locs[0],ret_min_locs[-1])
-    tinds = np.logical_and((t >= 0), (t < X.shape[0]))
-    if to_plot: print tinds.sum()
-    lower = np.array(lower[tinds])
+    t_min = np.arange(ret_min_locs[0],ret_min_locs[-1])
+    tinds_min = np.logical_and((t_min >= 0), (t_min < X.shape[0]))
 
     if to_plot:
-        plt.figure()
-        plt.plot(X[:,0])
-        plt.plot(ret_max_locs,ret_max_pks,'*')
-        plt.plot(max_locs,max_pks,'o')
-        plt.plot(ret_min_locs,ret_min_pks,'*')
-        plt.plot(min_locs,min_pks,'o')
-        plt.plot(upper)
-        plt.plot(lower)
-        plt.plot( (upper+lower) / 2 )
-        plt.show()
 
-    return upper, lower
+        plt.figure(figsize=(12,4))
+        plt.plot(X[:,0],'k')
+        plt.plot(ret_max_locs,ret_max_pks,'*')
+        #plt.plot(max_locs,max_pks,'o')
+        plt.plot(ret_min_locs,ret_min_pks,'*')
+        #plt.plot(min_locs,min_pks,'o')
+        plt.plot(t_max,upper)
+        plt.plot(t_min,lower)
+
+    upper = np.array(upper[tinds_max])
+    lower = np.array(lower[tinds_min])
+    t = np.array(t_min[tinds_min])
+
+    if to_plot:
+        plt.plot( (upper+lower) / 2 )
+        locs, labels = plt.xticks()
+        plt.xticks(locs, ('-.5','0','.5','1','1.5','2','2.5','3'))
+
+    if ret_all:
+        return upper, lower, t_max, t_min, ret_max_locs,ret_max_pks,ret_min_locs,ret_min_pks
+    else:
+        return upper, lower
 
 def find_extrema( X, ret_min=False ):
 
