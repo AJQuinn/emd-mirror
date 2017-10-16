@@ -17,9 +17,9 @@ def plot_imfs( imfs, time_vect=None, scale_y=False ):
 
     for ii in range(1,nplots):
         ax = plt.subplot(nplots,1,ii+1)
-        ax.plot( time_vect, imfs[:,ii-1] )
+        ax.plot( time_vect, imfs[:,ii-1],'k' )
         if scale_y:
-            ax.set_ylim( -mx, mx )
+            ax.set_ylim( -mx*1.2, mx*1.2 )
 
         if ii < nplots:
            ax.tick_params( axis='x', labelbottom='off')
