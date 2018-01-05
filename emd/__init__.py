@@ -1,5 +1,6 @@
+#!/usr/bin/python
 
-import frequency_transforms
-import sift
-import utils
-import plotting
+from . import frequency_transforms
+from . import sift
+from . import utils
+from . import plotting
