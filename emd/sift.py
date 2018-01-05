@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
-import utils
+from . import utils
 
 def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
     """
@@ -55,7 +55,7 @@ def ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift_thresh=1
             # update mean
             imf = imf + (1./(ii+1))*(ens_imf-imf)
 
-    print('%d ensembles skipped' % skips)
+    print(('%d ensembles skipped' % skips))
     return imf
 
 def complete_ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift_thresh=1e-8 ):
@@ -152,12 +152,12 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
     while continue_sift:
 
         mask_freq = (IA * IF**2).sum() / (IA*IF).sum()
-        print IF.mean()
+        print(IF.mean())
         upz,downz = utils.count_zero_crossings( imf[:,-1] )
         mask_freq = ( np.pi*(upz+downz) ) / X.shape[0]
         mask_freq = .5**(1+layer)
 
-        print mask_freq
+        print(mask_freq)
         mask = np.sin( 2*np.pi*mask_freq*np.arange(X.shape[0]) )[:,None]
         mask = mask * .5*np.mean(IA)
 
@@ -167,7 +167,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
         #next_imf,continue_sift = get_next_imf( proto_imf )
 
         imf = np.concatenate( (imf, next_imf), axis=1)
-        print imf.shape
+        print(imf.shape)
 
         IF,IA = instantaneous_stats( next_imf, 50., 'hilbert' )
 

@@ -26,30 +26,13 @@ def get_envelope( X, N=10 ):
     ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='even')
 
     f = interp.splrep( ret_max_locs, ret_max_pks )
-    envelope = interp.splev(range(ret_max_locs[0],ret_max_locs[-1]), f)
+    envelope = interp.splev(list(range(ret_max_locs[0],ret_max_locs[-1])), f)
 
     t = np.arange(ret_max_locs[0],ret_max_locs[-1])
     tinds = np.logical_and((t >= 0), (t < X.shape[0]))
     envelope = np.array(envelope[tinds])
 
     return envelope
-
-def is_trend( X ):
-
-    max_locs,max_pks = find_extrema( X[:,0] )
-    min_locs,min_pks = find_extrema( X[:,0], ret_min=True)
-
-    if max_locs.size <= 1 or min_locs.size <= 1:
-        return True
-    else:
-        return False
-
-def count_zero_crossings( x ):
-
-    up = np.sum(np.diff(np.sign(x))==2.)
-    down = np.sum(np.diff(np.sign(x))==-2.)
-
-    return up,down
 
 def find_envelopes( X, to_plot=False, ret_all=False ):
 
@@ -59,7 +42,7 @@ def find_envelopes( X, to_plot=False, ret_all=False ):
     if max_locs.size <= 1 or min_locs.size <= 1:
         return None,None
 
-    N = 14 # should make this analytic somehow
+    N = 4 # should make this analytic somehow
     if max_locs.size < N or min_locs.size < N:
         N = max_locs.size
 
@@ -78,13 +61,13 @@ def find_envelopes( X, to_plot=False, ret_all=False ):
         ret_min_pks = np.pad( ret_min_pks,N,'reflect',reflect_type='odd')
 
     f = interp.splrep( ret_max_locs, ret_max_pks )
-    upper = interp.splev(range(ret_max_locs[0],ret_max_locs[-1]), f)
+    upper = interp.splev(list(range(ret_max_locs[0],ret_max_locs[-1])), f)
 
     t_max = np.arange(ret_max_locs[0],ret_max_locs[-1])
     tinds_max = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
 
     f = interp.splrep( ret_min_locs, ret_min_pks )
-    lower = interp.splev(range(ret_min_locs[0],ret_min_locs[-1]), f)
+    lower = interp.splev(list(range(ret_min_locs[0],ret_min_locs[-1])), f)
 
     t_min = np.arange(ret_min_locs[0],ret_min_locs[-1])
     tinds_min = np.logical_and((t_min >= 0), (t_min < X.shape[0]))

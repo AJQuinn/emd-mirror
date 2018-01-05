@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
-import utils
+from . import utils
 
 
 if __name__ == '__main__':
 
-    from plotting import plot_imfs
-    from frequency_transforms import instantaneous_stats,hilberthuang
+    from .plotting import plot_imfs
+    from .frequency_transforms import instantaneous_stats,hilberthuang
 
     sample_rate = 1000
     seconds = 10
