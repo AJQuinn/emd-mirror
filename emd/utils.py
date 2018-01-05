@@ -34,6 +34,23 @@ def get_envelope( X, N=10 ):
 
     return envelope
 
+def is_trend( X ):
+
+    max_locs,max_pks = find_extrema( X[:,0] )
+    min_locs,min_pks = find_extrema( X[:,0], ret_min=True)
+
+    if max_locs.size <= 1 or min_locs.size <= 1:
+        return True
+    else:
+        return False
+
+def count_zero_crossings( x ):
+
+    up = np.sum(np.diff(np.sign(x))==2.)
+    down = np.sum(np.diff(np.sign(x))==-2.)
+
+    return up,down
+
 def find_envelopes( X, to_plot=False, ret_all=False ):
 
     max_locs,max_pks = find_extrema( X[:,0] )
@@ -42,7 +59,7 @@ def find_envelopes( X, to_plot=False, ret_all=False ):
     if max_locs.size <= 1 or min_locs.size <= 1:
         return None,None
 
-    N = 4 # should make this analytic somehow
+    N = 14 # should make this analytic somehow
     if max_locs.size < N or min_locs.size < N:
         N = max_locs.size
 
