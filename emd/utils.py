@@ -157,4 +157,46 @@ def est_orthogonality( imf ):
 
     return ortho
 
+def find_peaks( X, winsize, lock_to='max', percentile=None ):
+    """
+    Helper function for defining trials around peaks within the data
+    """
+
+    if lock_to=='max':
+        locs,pks = find_extrema( X, ret_min=False )
+    else:
+        locs,pks = find_extrema( X, ret_min=True )
+
+    print(locs.shape)
+    print(pks.shape)
+    if percentile is not None:
+        thresh = np.percentile(pks[:,0],percentile)
+        locs = locs[pks[:,0]>thresh]
+        pks = pks[pks>thresh]
+
+    winstep = int(winsize/2)
+
+    trls = np.r_[np.atleast_2d(locs-winstep), np.atleast_2d(locs+winstep)].T
+
+    # Reject trials which start before 0
+    inds = trls[:,0] < 0
+    trls = trls[inds==False,:]
+
+    # Reject trials which end after X.shape[0]
+    inds = trls[:,1] > X.shape[0]
+    trls = trls[inds==False,:]
+
+    return trls
+
+def apply_epochs( X, trls ):
+    """
+    Helper function which applies a set of epochs to a continuous dataset
+    """
+
+    Y = np.zeros( (trls[0,1]-trls[0,0],X.shape[1],trls.shape[0]) )
+    for ii in np.arange(trls.shape[0]):
+
+        Y[:,:,ii] = X[trls[ii,0]:trls[ii,1],:]
+
+    return Y
 
