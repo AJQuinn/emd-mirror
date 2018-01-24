@@ -4,24 +4,34 @@ import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
 
-def amplitude_normalise( X, thresh=1e-6 ):
+def amplitude_normalise( X, thresh=1e-10 ):
 
-    env = get_envelope( X )[...,None]
+    # We're ignoring the trend IMF for now...
+    for iimf in np.arange(X.shape[1]-1):
 
-    continue_norm = True
-    while continue_norm:
+        env = get_envelope( X[:,iimf,None], combined_upper_lower=True )[...,None]
 
-        X = X / env
-        env = get_envelope( X )[...,None]
-
-        if env.sum()-env.shape[0] < thresh:
+        if env is None:
             continue_norm = False
+        else:
+            continue_norm = True
+
+        while continue_norm:
+
+            X[:,iimf,None] = X[:,iimf,None] / env
+            env = get_envelope( X[:,iimf,None], combined_upper_lower=True )[...,None]
+
+            if np.abs(env.sum()-env.shape[0]) < thresh:
+                continue_norm = False
 
     return X
 
-def get_envelope( X, N=10 ):
+def get_envelope( X, N=10, combined_upper_lower=False ):
 
-    max_locs,max_pks = find_extrema( X[:,0] )
+    if combined_upper_lower:
+        max_locs,max_pks = find_extrema( np.abs(X[:,0]) )
+    else:
+        max_locs,max_pks = find_extrema( X[:,0] )
     ret_max_locs = np.pad( max_locs,N,'reflect',reflect_type='odd')
     ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='even')
 
@@ -36,38 +46,47 @@ def get_envelope( X, N=10 ):
 
 def find_envelopes( X, to_plot=False, ret_all=False ):
 
+    # Find maxima and minima
     max_locs,max_pks = find_extrema( X[:,0] )
     min_locs,min_pks = find_extrema( X[:,0], ret_min=True)
 
+    # Return nothing we don't have enough extrema
     if max_locs.size <= 1 or min_locs.size <= 1:
         return None,None
 
-    N = 4 # should make this analytic somehow
+    # Determine how much padding to use
+    N = 14 # should make this analytic somehow
     if max_locs.size < N or min_locs.size < N:
         N = max_locs.size
 
-    ret_max_locs = np.pad( max_locs,N,'reflect',reflect_type='odd')
-    ret_min_locs = np.pad( min_locs,N,'reflect',reflect_type='odd')
+    # Pad peak locations
+    ret_max_locs = np.pad( max_locs,N,'reflect',reflect_type='odd' )
+    ret_min_locs = np.pad( min_locs,N,'reflect',reflect_type='odd' )
 
-    ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='odd')
-    ret_min_pks = np.pad( min_pks,N,'reflect',reflect_type='odd')
+    # Pad peak magnitudes
+    ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='odd' )
+    ret_min_pks = np.pad( min_pks,N,'reflect',reflect_type='odd' )
 
     if max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
-        ret_max_locs = np.pad( ret_max_locs,N,'reflect',reflect_type='odd')
-        ret_max_pks = np.pad( ret_max_pks,N,'reflect',reflect_type='odd')
+        ret_max_locs = np.pad( ret_max_locs,N,'reflect',reflect_type='odd' )
+        ret_max_pks = np.pad( ret_max_pks,N,'reflect',reflect_type='odd' )
 
     if max(ret_min_locs) < len(X) or min(ret_min_locs) >= 0:
-        ret_min_locs = np.pad( ret_min_locs,N,'reflect',reflect_type='odd')
-        ret_min_pks = np.pad( ret_min_pks,N,'reflect',reflect_type='odd')
+        ret_min_locs = np.pad( ret_min_locs,N,'reflect',reflect_type='odd' )
+        ret_min_pks = np.pad( ret_min_pks,N,'reflect',reflect_type='odd' )
 
+    # Run interpolation on upper envelope
     f = interp.splrep( ret_max_locs, ret_max_pks )
-    upper = interp.splev(list(range(ret_max_locs[0],ret_max_locs[-1])), f)
+    t = np.arange(ret_max_locs[0],ret_max_locs[-1])
+    upper = interp.splev(t, f)
 
     t_max = np.arange(ret_max_locs[0],ret_max_locs[-1])
     tinds_max = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
 
+    # Run interpolation on lower envelope
     f = interp.splrep( ret_min_locs, ret_min_pks )
-    lower = interp.splev(list(range(ret_min_locs[0],ret_min_locs[-1])), f)
+    t = np.arange(ret_min_locs[0],ret_min_locs[-1])
+    lower = interp.splev(t, f)
 
     t_min = np.arange(ret_min_locs[0],ret_min_locs[-1])
     tinds_min = np.logical_and((t_min >= 0), (t_min < X.shape[0]))
