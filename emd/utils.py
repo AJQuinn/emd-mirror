@@ -200,3 +200,23 @@ def apply_epochs( X, trls ):
 
     return Y
 
+def bin_by_phase( ip, x, nbins=64 ):
+    """
+    Compute distribution of x by phase-bins in ip
+    """
+
+    phase_bins = np.linspace(-np.pi, np.pi, nbins)
+    bin_inds = np.digitize( ip, phase_bins )
+
+    ret = np.zeros( (nbins,) )
+    for ii in np.arange( nbins ):
+        ret[ii] = x[bin_inds==ii].mean()
+
+    return ret,phase_bins
+
+
+def wrap_phase( IP ):
+
+    phases = ( IP + np.pi) % (2 * np.pi ) - np.pi
+
+    return phases
