@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import signal
+from . import utils
 
 def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
     """ Not so sure where to start"""
@@ -22,24 +23,43 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 
     return holo
 
-def instantaneous_stats( imf, sample_rate, method ):
+def instantaneous_stats( imf, sample_rate, method,smooth_phase=None ):
 
     infreq = np.zeros_like( imf )
 
     if method == 'hilbert':
 
         analytic_signal = signal.hilbert( imf, axis=0 )
-        instantaneous_phase = np.unwrap(np.angle(analytic_signal),axis=0)
-        instantaneous_frequency = (np.diff(instantaneous_phase,axis=0) / (2.0*np.pi) * sample_rate)
-        instantaneous_frequency = np.r_[ instantaneous_frequency[None,0,:], instantaneous_frequency]
 
-        instantaneous_amp = np.abs(analytic_signal)
+    elif method == 'quad':
+
+        n_imf = utils.amplitude_normalise( imf )
+
+        imag_imf = np.lib.scimath.sqrt(1-np.power( n_imf,2 )).real
+
+        mask = ((np.diff(n_imf,axis=0)>0) * -2) + 1
+        mask[mask==0] = -1
+        mask = np.r_[mask,mask[-1,None,:]]
+
+        q = imag_imf * mask
+        analytic_signal = n_imf + 1j * q
 
     else:
 
         print('Method not recognised')
 
-    return instantaneous_frequency, instantaneous_amp
+    # Estimate instantaneous frequencies
+    iphase = np.unwrap(np.angle(analytic_signal),axis=0)
+    if smooth_phase is not None:
+        iphase = signal.savgol_filter(iphase,smooth_phase,3,axis=0)
+
+    ifrequency = (np.diff(iphase,axis=0) / (2.0*np.pi) * sample_rate)
+    ifrequency = np.r_[ ifrequency[None,0,:], ifrequency]
+
+    # Estimate instantaneous amplitudes
+    iamp = np.abs(analytic_signal)
+
+    return iphase,ifrequency, iamp
 
 def hilberthuang( infr, inam, fbins, time_vect, tbins ):
 
