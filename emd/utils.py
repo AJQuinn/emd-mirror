@@ -200,19 +200,41 @@ def apply_epochs( X, trls ):
 
     return Y
 
-def bin_by_phase( ip, x, nbins=64 ):
+def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance', phase_bins=None ):
     """
     Compute distribution of x by phase-bins in ip
+
     """
 
-    phase_bins = np.linspace(-np.pi, np.pi, nbins)
+    if phase_bins is None:
+        phase_bins = np.linspace(-np.pi, np.pi, nbins)
+    else:
+        nbins = len(phase_bins)
+
     bin_inds = np.digitize( ip, phase_bins )
 
-    ret = np.zeros( (nbins,) )
-    for ii in np.arange( nbins ):
-        ret[ii] = x[bin_inds==ii].mean()
+    avg = np.zeros( (nbins,) )*np.nan
+    var = np.zeros( (nbins,) )*np.nan
+    for ii in range( nbins ):
+        inds = bin_inds==ii
+        if weights is None:
+            avg[ii] = np.average( x[inds] )
+            v = np.average( (x[inds]-avg[ii])**2 )
+        else:
+            if inds.sum() > 0:
+                avg[ii] = np.average( x[inds], weights=weights[inds] )
+                v = np.average( (x[inds]-avg[ii])**2, weights=weights[inds] )
+            else:
+                v = np.nan
 
-    return ret,phase_bins
+        if variance_metric=='variance':
+            var[ii] = v
+        elif variance_metric=='std':
+            var[ii] = np.sqrt( v )
+        elif variance_metric=='sem':
+            var[ii] = np.sqrt( v ) / np.sqrt( inds.sum() )
+
+    return avg,var,phase_bins
 
 
 def wrap_phase( IP ):
