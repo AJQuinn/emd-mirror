@@ -27,13 +27,18 @@ def instantaneous_stats( imf, sample_rate, method,smooth_phase=None ):
 
     infreq = np.zeros_like( imf )
 
+    # Each case here should compute the analytic form of the imfs and the
+    # instantaneous amplitude.
     if method == 'hilbert':
 
         analytic_signal = signal.hilbert( imf, axis=0 )
 
+        # Estimate instantaneous amplitudes
+        iamp = np.abs(analytic_signal)
+
     elif method == 'quad':
 
-        n_imf = utils.amplitude_normalise( imf )
+        n_imf = utils.amplitude_normalise( imf.copy() )
 
         imag_imf = np.lib.scimath.sqrt(1-np.power( n_imf,2 )).real
 
@@ -44,20 +49,22 @@ def instantaneous_stats( imf, sample_rate, method,smooth_phase=None ):
         q = imag_imf * mask
         analytic_signal = n_imf + 1j * q
 
-    else:
+        iamp = np.zeros_like(imf)
+        # Not computing amplitude for the trend for now
+        for ii in range(imf.shape[1]-1):
+            iamp[:,ii] = utils.get_envelope( imf[:,ii,None], combined_upper_lower=True )
 
+    else:
         print('Method not recognised')
 
     # Estimate instantaneous frequencies
     iphase = np.unwrap(np.angle(analytic_signal),axis=0)
     if smooth_phase is not None:
+        print('smoothing phase')
         iphase = signal.savgol_filter(iphase,smooth_phase,3,axis=0)
 
     ifrequency = (np.diff(iphase,axis=0) / (2.0*np.pi) * sample_rate)
     ifrequency = np.r_[ ifrequency[None,0,:], ifrequency]
-
-    # Estimate instantaneous amplitudes
-    iamp = np.abs(analytic_signal)
 
     return iphase,ifrequency, iamp
 
