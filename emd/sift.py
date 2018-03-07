@@ -36,27 +36,38 @@ def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
 
     return imf
 
-def ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+def _sift_with_noise( X, noise_scaling, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+
+    ensX = X.copy() + np.random.randn( *X.shape )*noise_scaling
+
+    return sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
+
+def ensemble_sift( X, nensembles, ensemble_noise=.2,
+                        sd_thresh=.1, sift_thresh=1e-8,
+                        max_imfs=None, nprocesses=1 ):
     """
     Ensemble sifting, add noise n times and average the IMFs
     """
 
-    skips = 0
-    for ii in range(nensembles):
-        ensX = X.copy() + np.random.randn( *X.shape )*ensemble_noise
+    # Noise is defined with respect to variance in the data
+    noise_scaling = X.std()*ensemble_noise
 
-        if ii == 0:
-            imf = sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
-        else:
-            ens_imf = sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
-            if ens_imf.shape[1] != imf.shape[1]:
-                skips += 1
-                continue
-            # update mean
-            imf = imf + (1./(ii+1))*(ens_imf-imf)
+    import multiprocessing as mp
+    p = mp.Pool(processes=nprocesses)
 
-    print(('%d ensembles skipped' % skips))
-    return imf
+    args = [(X,noise_scaling,sd_thresh,sift_thresh,max_imfs) for ii in range(nensembles)]
+
+    res = p.starmap( _sift_with_noise, args )
+
+    if max_imfs is None:
+        max_imfs = res[0].shape[1]
+
+    imfs = np.zeros( (X.shape[0], max_imfs) )
+    for ii in range(max_imfs:
+        imfs[:,ii] = np.array([ r[:,ii] for r in res]).mean(axis=0)
+
+    return imfs
+
 
 def complete_ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift_thresh=1e-8 ):
     """
