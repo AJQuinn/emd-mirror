@@ -63,7 +63,7 @@ def ensemble_sift( X, nensembles, ensemble_noise=.2,
         max_imfs = res[0].shape[1]
 
     imfs = np.zeros( (X.shape[0], max_imfs) )
-    for ii in range(max_imfs:
+    for ii in range(max_imfs):
         imfs[:,ii] = np.array([ r[:,ii] for r in res]).mean(axis=0)
 
     return imfs
