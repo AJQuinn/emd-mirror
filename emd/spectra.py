@@ -23,7 +23,7 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 
     return holo
 
-def instantaneous_stats( imf, sample_rate, method,smooth_phase=None ):
+def frequency_stats( imf, sample_rate, method,smooth_phase=None ):
 
     infreq = np.zeros_like( imf )
 
@@ -38,6 +38,7 @@ def instantaneous_stats( imf, sample_rate, method,smooth_phase=None ):
 
     elif method == 'quad':
 
+        print(imf.shape)
         n_imf = utils.amplitude_normalise( imf.copy() )
 
         imag_imf = np.lib.scimath.sqrt(1-np.power( n_imf,2 )).real
@@ -51,22 +52,56 @@ def instantaneous_stats( imf, sample_rate, method,smooth_phase=None ):
 
         iamp = np.zeros_like(imf)
         # Not computing amplitude for the trend for now
+        print(imf.shape)
+        for ii in range(imf.shape[1]):
+            iamp[:,ii] = utils.get_envelope( imf[:,ii,None], combined_upper_lower=True )
+
+    elif method == 'direct_quad':
+
+        n_imf = utils.amplitude_normalise( imf.copy() )
+        iphase = np.unwrap(phase_angle( n_imf ))
+
+        # Not computing amplitude for the trend for now
+        iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]-1):
             iamp[:,ii] = utils.get_envelope( imf[:,ii,None], combined_upper_lower=True )
 
     else:
         print('Method not recognised')
 
-    # Estimate instantaneous frequencies
-    iphase = np.unwrap(np.angle(analytic_signal),axis=0)
-    if smooth_phase is not None:
-        print('smoothing phase')
-        iphase = signal.savgol_filter(iphase,smooth_phase,3,axis=0)
+    if method == 'hilbert' or method == 'quad':
+        # Estimate instantaneous frequencies
+        iphase = np.unwrap(np.angle(analytic_signal),axis=0)
+        if smooth_phase is not None:
+            print('smoothing phase')
+            iphase = signal.savgol_filter(iphase,smooth_phase,3,axis=0)
 
     ifrequency = (np.diff(iphase,axis=0) / (2.0*np.pi) * sample_rate)
     ifrequency = np.r_[ ifrequency[None,0,:], ifrequency]
 
     return iphase,ifrequency, iamp
+
+def direct_quadrature( fm ):
+    """
+    Section 3.2 of 'on instantaneous frequency'
+    """
+    ph = phase_angle( fm )
+
+    # We'll have occasional nans where fm==1 or -1
+    inds = np.argwhere(np.isnan(ph))
+
+    vals = (ph[inds[:,0]-1,:] + ph[inds[:,0]+1,:] ) / 2
+    ph[inds[:,0]] = vals
+
+    return ph
+
+def phase_angle( fm ):
+    """
+    Eqn 35 in 'On Instantaneous Frequency'
+    ... with additional factor of 2 to make the range [-pi, pi]
+    """
+
+    return np.arctan( fm / np.lib.scimath.sqrt( 1 - np.power(fm,2) ) )
 
 def hilberthuang( infr, inam, fbins, time_vect, tbins ):
 
