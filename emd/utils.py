@@ -67,11 +67,11 @@ def find_envelopes( X, to_plot=False, ret_all=False ):
     ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='odd' )
     ret_min_pks = np.pad( min_pks,N,'reflect',reflect_type='odd' )
 
-    if max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
+    while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
         ret_max_locs = np.pad( ret_max_locs,N,'reflect',reflect_type='odd' )
         ret_max_pks = np.pad( ret_max_pks,N,'reflect',reflect_type='odd' )
 
-    if max(ret_min_locs) < len(X) or min(ret_min_locs) >= 0:
+    while max(ret_min_locs) < len(X) or min(ret_min_locs) >= 0:
         ret_min_locs = np.pad( ret_min_locs,N,'reflect',reflect_type='odd' )
         ret_min_pks = np.pad( ret_min_pks,N,'reflect',reflect_type='odd' )
 
