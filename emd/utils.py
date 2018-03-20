@@ -4,117 +4,103 @@ import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
 
-def amplitude_normalise( X, thresh=1e-10 ):
+def amplitude_normalise( X, thresh=1e-10, clip=False ):
 
-    # We're ignoring the trend IMF for now...
-    for iimf in np.arange(X.shape[1]-1):
+    # Don't normalise in place
+    X = X.copy()
 
-        env = get_envelope( X[:,iimf,None], combined_upper_lower=True )[...,None]
+    for iimf in range(X.shape[1]):
+
+        env = interp_envelope( X[:,iimf,None], mode='combined' )
 
         if env is None:
             continue_norm = False
         else:
             continue_norm = True
+            env = env[...,None]
 
         while continue_norm:
 
             X[:,iimf,None] = X[:,iimf,None] / env
-            env = get_envelope( X[:,iimf,None], combined_upper_lower=True )[...,None]
+            env = interp_envelope( X[:,iimf,None], mode='combined' )
 
-            if np.abs(env.sum()-env.shape[0]) < thresh:
+            if env is None:
                 continue_norm = False
+            else:
+                continue_norm = True
+                env = env[...,None]
+
+                if np.abs(env.sum()-env.shape[0]) < thresh:
+                    continue_norm = False
+
+    if clip:
+        # Make absolutely sure nothing daft is happening
+        X = np.clip( X, -1, 1)
 
     return X
 
-def get_envelope( X, N=10, combined_upper_lower=False ):
+def get_padded_extrema( X, combined_upper_lower=False ):
 
     if combined_upper_lower:
         max_locs,max_pks = find_extrema( np.abs(X[:,0]) )
     else:
         max_locs,max_pks = find_extrema( X[:,0] )
-    ret_max_locs = np.pad( max_locs,N,'reflect',reflect_type='odd')
-    ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='even')
-
-    f = interp.splrep( ret_max_locs, ret_max_pks )
-    envelope = interp.splev(list(range(ret_max_locs[0],ret_max_locs[-1])), f)
-
-    t = np.arange(ret_max_locs[0],ret_max_locs[-1])
-    tinds = np.logical_and((t >= 0), (t < X.shape[0]))
-    envelope = np.array(envelope[tinds])
-
-    return envelope
-
-def find_envelopes( X, to_plot=False, ret_all=False ):
 
     # Find maxima and minima
     max_locs,max_pks = find_extrema( X[:,0] )
-    min_locs,min_pks = find_extrema( X[:,0], ret_min=True)
 
     # Return nothing we don't have enough extrema
-    if max_locs.size <= 1 or min_locs.size <= 1:
+    if max_locs.size <= 2:
         return None,None
 
     # Determine how much padding to use
-    N = 14 # should make this analytic somehow
-    if max_locs.size < N or min_locs.size < N:
+    N = 2 # should make this analytic somehow
+    if max_locs.size < N:
         N = max_locs.size
 
     # Pad peak locations
     ret_max_locs = np.pad( max_locs,N,'reflect',reflect_type='odd' )
-    ret_min_locs = np.pad( min_locs,N,'reflect',reflect_type='odd' )
 
     # Pad peak magnitudes
     ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='odd' )
-    ret_min_pks = np.pad( min_pks,N,'reflect',reflect_type='odd' )
 
     while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
         ret_max_locs = np.pad( ret_max_locs,N,'reflect',reflect_type='odd' )
         ret_max_pks = np.pad( ret_max_pks,N,'reflect',reflect_type='odd' )
 
-    while max(ret_min_locs) < len(X) or min(ret_min_locs) >= 0:
-        ret_min_locs = np.pad( ret_min_locs,N,'reflect',reflect_type='odd' )
-        ret_min_pks = np.pad( ret_min_pks,N,'reflect',reflect_type='odd' )
+    return ret_max_locs,ret_max_pks
+
+def interp_envelope( X, to_plot=False, ret_all=False, mode='upper' ):
+
+    if mode == 'upper':
+        locs,pks = get_padded_extrema( X, combined_upper_lower=False)
+    elif mode == 'lower':
+        locs,pks = get_padded_extrema( -X, combined_upper_lower=False)
+    elif mode == 'combined':
+        locs,pks = get_padded_extrema( X, combined_upper_lower=True)
+    else:
+        raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')
+
+    if locs is None:
+        return None
 
     # Run interpolation on upper envelope
-    f = interp.splrep( ret_max_locs, ret_max_pks )
-    t = np.arange(ret_max_locs[0],ret_max_locs[-1])
-    upper = interp.splev(t, f)
+    f = interp.splrep( locs, pks )
+    t = np.arange(locs[0],locs[-1])
+    env = interp.splev(t, f)
 
-    t_max = np.arange(ret_max_locs[0],ret_max_locs[-1])
-    tinds_max = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
+    t_max = np.arange(locs[0],locs[-1])
+    tinds = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
 
-    # Run interpolation on lower envelope
-    f = interp.splrep( ret_min_locs, ret_min_pks )
-    t = np.arange(ret_min_locs[0],ret_min_locs[-1])
-    lower = interp.splev(t, f)
+    env = np.array(env[tinds])
 
-    t_min = np.arange(ret_min_locs[0],ret_min_locs[-1])
-    tinds_min = np.logical_and((t_min >= 0), (t_min < X.shape[0]))
+    if env.shape[0] != X.shape[0]:
+        raise ValueError('Envelope length does not match input data {0} {1}'.format(upper.shape[0],X.shape[0]))
 
-    if to_plot:
-
-        plt.figure(figsize=(12,4))
-        plt.plot(X[:,0],'k')
-        plt.plot(ret_max_locs,ret_max_pks,'*')
-        #plt.plot(max_locs,max_pks,'o')
-        plt.plot(ret_min_locs,ret_min_pks,'*')
-        #plt.plot(min_locs,min_pks,'o')
-        plt.plot(t_max,upper)
-        plt.plot(t_min,lower)
-
-    upper = np.array(upper[tinds_max])
-    lower = np.array(lower[tinds_min])
-    t = np.array(t_min[tinds_min])
-
-    if to_plot:
-        plt.plot( (upper+lower) / 2 )
-        locs, labels = plt.xticks()
-        plt.xticks(locs, ('-.5','0','.5','1','1.5','2','2.5','3'))
-
-    if ret_all:
-        return upper, lower, t_max, t_min, ret_max_locs,ret_max_pks,ret_min_locs,ret_min_pks
+    if mode == 'lower':
+        return -env
     else:
-        return upper, lower
+        return env
 
 def find_extrema( X, ret_min=False ):
 
@@ -167,8 +153,6 @@ def find_peaks( X, winsize, lock_to='max', percentile=None ):
     else:
         locs,pks = find_extrema( X, ret_min=True )
 
-    print(locs.shape)
-    print(pks.shape)
     if percentile is not None:
         thresh = np.percentile(pks[:,0],percentile)
         locs = locs[pks[:,0]>thresh]
@@ -237,8 +221,8 @@ def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance', pha
     return avg,var,phase_bins
 
 
-def wrap_phase( IP ):
+def wrap_phase( IP, ncycles=1 ):
 
-    phases = ( IP + np.pi) % (2 * np.pi ) - np.pi
+    phases = ( IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi ) - (np.pi*ncycles)
 
     return phases

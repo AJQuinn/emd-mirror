@@ -38,7 +38,6 @@ def frequency_stats( imf, sample_rate, method,smooth_phase=None ):
 
     elif method == 'quad':
 
-        print(imf.shape)
         n_imf = utils.amplitude_normalise( imf.copy() )
 
         imag_imf = np.lib.scimath.sqrt(1-np.power( n_imf,2 )).real
@@ -51,20 +50,17 @@ def frequency_stats( imf, sample_rate, method,smooth_phase=None ):
         analytic_signal = n_imf + 1j * q
 
         iamp = np.zeros_like(imf)
-        # Not computing amplitude for the trend for now
-        print(imf.shape)
         for ii in range(imf.shape[1]):
-            iamp[:,ii] = utils.get_envelope( imf[:,ii,None], combined_upper_lower=True )
+            iamp[:,ii] = utils.interp_envelope( imf[:,ii,None], mode='combined' )
 
     elif method == 'direct_quad':
 
         n_imf = utils.amplitude_normalise( imf.copy() )
         iphase = np.unwrap(phase_angle( n_imf ))
 
-        # Not computing amplitude for the trend for now
         iamp = np.zeros_like(imf)
-        for ii in range(imf.shape[1]-1):
-            iamp[:,ii] = utils.get_envelope( imf[:,ii,None], combined_upper_lower=True )
+        for ii in range(imf.shape[1]):
+            iamp[:,ii] = utils.interp_envelope( imf[:,ii,None], mode='combined' )
 
     else:
         print('Method not recognised')
@@ -74,7 +70,7 @@ def frequency_stats( imf, sample_rate, method,smooth_phase=None ):
         iphase = np.unwrap(np.angle(analytic_signal),axis=0)
         if smooth_phase is not None:
             print('smoothing phase')
-            iphase = signal.savgol_filter(iphase,smooth_phase,3,axis=0)
+            iphase = signal.savgol_filter(iphase,smooth_phase,1,axis=0)
 
     ifrequency = (np.diff(iphase,axis=0) / (2.0*np.pi) * sample_rate)
     ifrequency = np.r_[ ifrequency[None,0,:], ifrequency]
@@ -105,13 +101,15 @@ def phase_angle( fm ):
 
 def hilberthuang( infr, inam, fbins, time_vect, tbins ):
 
-    # add this later...
     tinds = np.digitize( time_vect, tbins )
 
     hht = np.zeros( (len(tbins),len(fbins)+1) )
 
     # for each time bin....
     for ii in range(len(tbins)-1):
+
+        if np.sum(tinds==ii) == 0:
+            continue
 
         # Add frequency info for this time bin
         finds = np.digitize( infr[tinds==ii,:].mean(axis=0), fbins )
