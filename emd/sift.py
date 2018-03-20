@@ -127,7 +127,8 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift
 
         imf = np.concatenate( (imf, next_imf), axis=1)
 
-        if utils.is_trend( imf[:,-1,None] ):
+        pks,locs = utils.find_extrema( imf[:,-1,None] )
+        if len(pks) < 2:
             continue_sift=False
 
     return imf
@@ -138,7 +139,7 @@ def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8 ):
 
     for ii in range(imf.shape[1]-1):
 
-        envelope = utils.get_envelope( imf[:,ii,None], N=4 )
+        envelope = utils.interp_envelope( imf[:,ii,None], mode='upper' )
         tmp = sift(envelope)
         imf2layer[:,ii,:tmp.shape[1]] = tmp
 
@@ -213,7 +214,8 @@ def get_next_imf( X, sd_thresh=.1 ):
     continue_sift = True
     while continue_imf:
 
-        upper,lower = utils.find_envelopes( proto_imf )
+        upper = utils.interp_envelope( proto_imf, mode='upper' )
+        lower = utils.interp_envelope( proto_imf, mode='lower' )
 
         # If upper or lower are None we should stop sifting alltogether
         if upper is None or lower is None:
