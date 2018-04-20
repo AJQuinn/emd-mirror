@@ -46,9 +46,6 @@ def get_padded_extrema( X, combined_upper_lower=False ):
     else:
         max_locs,max_pks = find_extrema( X[:,0] )
 
-    # Find maxima and minima
-    max_locs,max_pks = find_extrema( X[:,0] )
-
     # Return nothing we don't have enough extrema
     if max_locs.size <= 2:
         return None,None
@@ -118,6 +115,14 @@ def find_extrema( X, ret_min=False ):
     #    ind = ind[:-2]
 
     return ind, X[ind]
+
+def zero_crossing_count( X ):
+
+    if X.ndim == 2:
+        X = X[:,None]
+
+    return (np.diff(np.sign(X),axis=0) != 0).sum(axis=0)
+
 
 def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
 

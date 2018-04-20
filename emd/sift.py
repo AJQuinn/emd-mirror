@@ -34,20 +34,55 @@ def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
         if max_imfs is not None and layer == max_imfs:
             continue_sift=False
 
+        if np.abs( next_imf ).sum() < sift_thresh:
+            continue_sift=False
+
     return imf
 
-def _sift_with_noise( X, noise_scaling, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+# Some ensemble helper functions
+def _sift_with_noise( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
 
-    ensX = X.copy() + np.random.randn( *X.shape )*noise_scaling
+    if noise is None:
+        noise = np.random.randn( *X.shape )
+
+    if noise_scaling is not None:
+        noise = noise * noise_scaling
+
+    ensX = X.copy() + noise
 
     return sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
 
+def _sift_with_noise_flip( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+
+    if noise is None:
+        noise = np.random.randn( *X.shape )
+
+    if noise_scaling is not None:
+        noise = noise * noise_scaling
+
+    ensX = X.copy() + noise
+    imf = sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
+
+    ensX = X.copy() - noise
+    imf += sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
+
+    return imf / 2
+
 def ensemble_sift( X, nensembles, ensemble_noise=.2,
                         sd_thresh=.1, sift_thresh=1e-8,
-                        max_imfs=None, nprocesses=1 ):
+                        max_imfs=None, nprocesses=1,
+                        noise_mode='single' ):
     """
     Ensemble sifting, add noise n times and average the IMFs
     """
+
+    if noise_mode not in ['single','flip']:
+        raise ValueError('noise_mode: {0} not recognised, please use \'single\' or \'flip\''.format(noise_mode))
+
+    if noise_mode is 'single':
+        sift_func = _sift_with_noise
+    else:
+        sift_func = _sift_with_noise_flip
 
     # Noise is defined with respect to variance in the data
     noise_scaling = X.std()*ensemble_noise
@@ -55,9 +90,12 @@ def ensemble_sift( X, nensembles, ensemble_noise=.2,
     import multiprocessing as mp
     p = mp.Pool(processes=nprocesses)
 
-    args = [(X,noise_scaling,sd_thresh,sift_thresh,max_imfs) for ii in range(nensembles)]
+    noise = None
+    args = [(X,noise_scaling,noise,sd_thresh,sift_thresh,max_imfs) for ii in range(nensembles)]
 
-    res = p.starmap( _sift_with_noise, args )
+    res = p.starmap( sift_func, args )
+
+    p.close()
 
     if max_imfs is None:
         max_imfs = res[0].shape[1]
@@ -69,7 +107,9 @@ def ensemble_sift( X, nensembles, ensemble_noise=.2,
     return imfs
 
 
-def complete_ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift_thresh=1e-8 ):
+def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
+                            sd_thresh=.1, sift_thresh=1e-8,
+                            max_imfs=None, nprocesses=1 ):
     """
     a bit more complicated
 
@@ -78,8 +118,6 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift
 
     VERY memory intensive
 
-    not convinced by this implementation yet
-
     some references
     https://github.com/helske/Rlibeemd/blob/master/src/ceemdan.c
     http://bioingenieria.edu.ar/grupos/ldnlys/metorres/re_inter.htm#Codigos
@@ -87,51 +125,63 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2, sd_thresh=.1, sift
 
     """
 
+    import multiprocessing as mp
+    p = mp.Pool(processes=nprocesses)
+
     if X.ndim == 1:
         # add dummy dimension
         X = X[:,None]
 
-    cimf = np.zeros_like( X )
+    # Noise is defined with respect to variance in the data
+    noise_scaling = X.std()*ensemble_noise
+
     continue_sift = True
+    layer = 0
 
     # Compute the noise processes - large matrix here...
     noise = np.random.random_sample( (X.shape[0],nensembles) ) * ensemble_noise
 
-    imf = np.zeros_like( X )
-
     # Do a normal ensemble sift to obtain the first IMF
-    for ii in range(nensembles):
-        # Compute IMF
-        ens_imf = sift(X+noise[:,ii,None],sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=1)
-        # running average of the IMF over ensembles
-        imf = imf + (1./(ii+1))*(ens_imf-imf)
-        # remove first IMF of noise
-        tmp,_ = get_next_imf( noise[:,ii,None] )
-        noise[:,ii] = noise[:,ii] - tmp[:,0]
+    args = [(X,noise_scaling,noise[:,ii,None],sd_thresh,sift_thresh,1) \
+            for ii in range(nensembles)]
+    res = p.starmap( _sift_with_noise, args )
+    imf = np.array([ r for r in res]).mean(axis=0)
+
+    args = [(noise[:,ii,None],sd_thresh,sift_thresh,1) for ii in range(nensembles)]
+    res = p.starmap( sift, args )
+    noise = noise - np.array([ r[:,0] for r in res]).T
 
     while continue_sift:
 
         proto_imf = X - imf.sum(axis=1)[:,None]
 
-        next_imf = np.zeros_like( X )
-
-        # Do a normal ensemble sift to obtain the first IMF
-        for ii in range(nensembles):
-            # Compute IMF
-            ens_imf = sift(proto_imf+noise[:,ii,None],sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=1)
-            # running average of the IMF over ensembles
-            next_imf = next_imf + (1./(ii+1))*(ens_imf-next_imf)
-            # remove first IMF of noise
-            tmp,_ = get_next_imf( noise[:,ii,None] )
-            noise[:,ii] = noise[:,ii] - tmp[:,0]
+        args = [(proto_imf,None,noise[:,ii,None],sd_thresh,sift_thresh,1) \
+                           for ii in range(nensembles)]
+        res = p.starmap( _sift_with_noise, args )
+        next_imf = np.array([ r for r in res]).mean(axis=0)
 
         imf = np.concatenate( (imf, next_imf), axis=1)
+
+        args = [(noise[:,ii,None],sd_thresh,sift_thresh,1) \
+               for ii in range(nensembles)]
+        res = p.starmap( sift, args )
+        noise = noise - np.array([ r[:,0] for r in res]).T
 
         pks,locs = utils.find_extrema( imf[:,-1,None] )
         if len(pks) < 2:
             continue_sift=False
 
-    return imf
+        if max_imfs is not None and layer == max_imfs:
+            continue_sift=False
+
+        if np.abs( next_imf ).mean() < sift_thresh:
+            continue_sift=False
+
+        layer += 1
+
+    p.close()
+
+    return imf,noise
 
 def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8 ):
 
@@ -145,9 +195,8 @@ def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8 ):
 
     return imf2layer
 
-def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=1 ):
 
-    from .frequency_transforms import instantaneous_stats
     if X.ndim == 1:
         # add dummy dimension
         X = X[:,None]
@@ -156,48 +205,43 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
     layer = 0
 
     # First IMF is computed normally
-    imf,continue_sift = get_next_imf( X )
-    IF,IA = instantaneous_stats( imf, 50., 'hilbert' )
+    imf,_ = get_next_imf( X )
+
+    # Compute mask frequency as the number of zero crossings
+    num_zero_crossings = utils.zero_crossing_count(imf)[0,0]
+    freq = num_zero_crossings/X.shape[0]
+    z = 2 * np.pi * num_zero_crossings / X.shape[0] / 2
 
     layer = 1
-    proto_imf = X.copy()
+    proto_imf = X.copy() - imf
     while continue_sift:
 
-        mask_freq = (IA * IF**2).sum() / (IA*IF).sum()
-        print(IF.mean())
-        upz,downz = utils.count_zero_crossings( imf[:,-1] )
-        mask_freq = ( np.pi*(upz+downz) ) / X.shape[0]
-        mask_freq = .5**(1+layer)
+        sd = imf[:,-1].std()
+        amp = mask_amp_ratio*sd
 
-        print(mask_freq)
-        mask = np.sin( 2*np.pi*mask_freq*np.arange(X.shape[0]) )[:,None]
-        mask = mask * .5*np.mean(IA)
+        mask = amp*np.cos( z * np.arange(X.shape[0]) )[:,None]
+        next_imf_up_c,continue_sift = get_next_imf( proto_imf+mask )
+        next_imf_down_c,continue_sift = get_next_imf( proto_imf-mask )
 
-        next_imf_up,continue_sift = get_next_imf( proto_imf+mask )
-        next_imf_down,continue_sift = get_next_imf( proto_imf-mask )
-        next_imf = (next_imf_up+next_imf_down)/2.
-        #next_imf,continue_sift = get_next_imf( proto_imf )
+        mask = amp*np.sin( z * np.arange(X.shape[0]) )[:,None]
+        next_imf_up_s,continue_sift = get_next_imf( proto_imf+mask )
+        next_imf_down_s,continue_sift = get_next_imf( proto_imf-mask )
+
+        next_imf = (next_imf_up_c+next_imf_down_c+next_imf_up_s+next_imf_down_s)/4.
 
         imf = np.concatenate( (imf, next_imf), axis=1)
-        print(imf.shape)
-
-        IF,IA = instantaneous_stats( next_imf, 50., 'hilbert' )
 
         proto_imf = X - imf.sum(axis=1)[:,None]
 
-        #import matplotlib.pyplot as plt
-        #plt.plot(next_imf)
-        #plt.plot(mask)
-        #plt.show()
-
+        z = z / 2
         layer += 1
 
         if max_imfs is not None and layer == max_imfs:
             continue_sift=False
 
-        if utils.is_trend( proto_imf ):
-            imf = np.concatenate( (imf, proto_imf), axis=1)
-            continue_sift=False
+        #if utils.is_trend( proto_imf ):
+        #    imf = np.concatenate( (imf, proto_imf), axis=1)
+        #    continue_sift=False
 
     return imf
 
