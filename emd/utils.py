@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
 
-def amplitude_normalise( X, thresh=1e-10, clip=False ):
+def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
 
     # Don't normalise in place
     X = X.copy()
 
     for iimf in range(X.shape[1]):
 
-        env = interp_envelope( X[:,iimf,None], mode='combined' )
+        env = interp_envelope( X[:,iimf,None], mode='combined', interp_method=interp_method )
 
         if env is None:
             continue_norm = False
@@ -22,7 +22,7 @@ def amplitude_normalise( X, thresh=1e-10, clip=False ):
         while continue_norm:
 
             X[:,iimf,None] = X[:,iimf,None] / env
-            env = interp_envelope( X[:,iimf,None], mode='combined' )
+            env = interp_envelope( X[:,iimf,None], mode='combined', interp_method=interp_method )
 
             if env is None:
                 continue_norm = False
@@ -67,7 +67,7 @@ def get_padded_extrema( X, combined_upper_lower=False ):
 
     return ret_max_locs,ret_max_pks
 
-def interp_envelope( X, to_plot=False, ret_all=False, mode='upper' ):
+def interp_envelope( X, to_plot=False, ret_all=False, mode='upper', interp_method='splrep' ):
 
     if mode == 'upper':
         locs,pks = get_padded_extrema( X, combined_upper_lower=False)
@@ -81,10 +81,14 @@ def interp_envelope( X, to_plot=False, ret_all=False, mode='upper' ):
     if locs is None:
         return None
 
-    # Run interpolation on upper envelope
-    f = interp.splrep( locs, pks )
+    # Run interpolation on envelope
     t = np.arange(locs[0],locs[-1])
-    env = interp.splev(t, f)
+    if interp_method == 'splrep':
+        f = interp.splrep( locs, pks )
+        env = interp.splev(t, f)
+    elif interp_method == 'pchip':
+        pchip = interp.pchip(locs,pks)
+        env = pchip( t )
 
     t_max = np.arange(locs[0],locs[-1])
     tinds = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
