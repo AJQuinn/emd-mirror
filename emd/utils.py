@@ -47,7 +47,7 @@ def get_padded_extrema( X, combined_upper_lower=False ):
         max_locs,max_pks = find_extrema( X[:,0] )
 
     # Return nothing we don't have enough extrema
-    if max_locs.size <= 2:
+    if max_locs.size <= 1:
         return None,None
 
     # Determine how much padding to use
@@ -200,7 +200,7 @@ def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance', pha
     """
 
     if phase_bins is None:
-        phase_bins = np.linspace(-np.pi, np.pi, nbins)
+        phase_bins = np.linspace(0, 2*np.pi, nbins+1)
     else:
         nbins = len(phase_bins)
 
@@ -208,30 +208,33 @@ def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance', pha
 
     avg = np.zeros( (nbins,) )*np.nan
     var = np.zeros( (nbins,) )*np.nan
-    for ii in range( nbins ):
+    for ii in range(1, nbins ):
         inds = bin_inds==ii
         if weights is None:
-            avg[ii] = np.average( x[inds] )
-            v = np.average( (x[inds]-avg[ii])**2 )
+            avg[ii-1] = np.average( x[inds] )
+            v = np.average( (x[inds]-avg[ii-1])**2 )
         else:
             if inds.sum() > 0:
-                avg[ii] = np.average( x[inds], weights=weights[inds] )
-                v = np.average( (x[inds]-avg[ii])**2, weights=weights[inds] )
+                avg[ii-1] = np.average( x[inds], weights=weights[inds] )
+                v = np.average( (x[inds]-avg[ii-1])**2, weights=weights[inds] )
             else:
                 v = np.nan
 
         if variance_metric=='variance':
-            var[ii] = v
+            var[ii-1] = v
         elif variance_metric=='std':
-            var[ii] = np.sqrt( v )
+            var[ii-1] = np.sqrt( v )
         elif variance_metric=='sem':
-            var[ii] = np.sqrt( v ) / np.sqrt( inds.sum() )
+            var[ii-1] = np.sqrt( v ) / np.sqrt( inds.sum() )
 
     return avg,var,phase_bins
 
 
-def wrap_phase( IP, ncycles=1 ):
+def wrap_phase( IP, ncycles=1, mode='2pi' ):
 
-    phases = ( IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi ) - (np.pi*ncycles)
+    if mode == '2pi':
+        phases = ( IP ) % (ncycles * 2 * np.pi )
+    elif mode == '-pi2pi':
+        phases = ( IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi ) - (np.pi*ncycles)
 
     return phases
