@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
-from . import utils
+from . import utils,spectra
 
 def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
     """
@@ -207,10 +207,16 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
     # First IMF is computed normally
     imf,_ = get_next_imf( X )
 
-    # Compute mask frequency as the number of zero crossings
-    num_zero_crossings = utils.zero_crossing_count(imf)[0,0]
-    freq = num_zero_crossings/X.shape[0]
-    z = 2 * np.pi * num_zero_crossings / X.shape[0] / 2
+    # Compute mask frequency
+    mask_method='if'
+    if mask_method == 'zc':
+        num_zero_crossings = utils.zero_crossing_count(imf)[0,0]
+        w = num_zero_crossings / X.shape[0]
+    elif mask_method == 'if':
+        _,IF,IA = spectra.frequency_stats( imf[:,0,None], 1, 'quad', smooth_phase=31 )
+        w = np.average(IF,weights=IA)
+
+    z = 2 * np.pi * w / 2
 
     layer = 1
     proto_imf = X.copy() - imf
