@@ -249,12 +249,11 @@ def get_cycle_inds( phase, return_good=True ):
 
     for ii in range(phase.shape[1]):
 
-        inds = np.where(np.diff( phase[:,ii],axis=0 ) < -6 )[0]
+        inds = np.where( np.abs(np.diff( phase[:,ii])) > 6 )[0]
         unwrapped = np.unwrap(phase[:,ii], axis=0 )
 
-        count = 0
+        count = 1
         for jj in range(len(inds)-1):
-
             dat = unwrapped[inds[jj]:inds[jj+1]];
             if all( np.diff(dat) > 0 ) or return_good is False:
                 cycles[inds[jj]:inds[jj+1],ii] = count;
