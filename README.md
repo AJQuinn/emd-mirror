@@ -58,13 +58,15 @@ imf = emd.sift.sift( x )
 Compute instantaneous frequency, phase and amplitude
 
 ```python
-IP,IF,IA = emd.frequency_transforms.instantaneous_stats( imf, sample_rate, 'quad', smooth_phase=129)
+IP,IF,IA = emd.spectra.frequency_stats( imf, sample_rate, 'quad', smooth_phase=31 )
 ```
 Compute Hilbert-Huang spectrum
 
 ```python
-freq_vect = np.linspace(0,5,128)
-hht = emd.frequency_transforms.hilberthuang( IF, IA, freq_vect, time_vect, time_vect)
+freq_edges,freq_bins = emd.spectra.define_hist_bins(0,5,100)
+time_edges,time_bins = emd.spectra.define_hist_bins(0,seconds,seconds*100)
+
+hht = emd.spectra.hilberthuang( IF, IA, freq_edges, time_edges, time_vect)
 ```
 Make a summary plot
 
@@ -76,7 +78,7 @@ plt.plot(time_vect,x,'k')
 plt.xlim(time_vect[0], time_vect[-1])
 plt.grid(True)
 plt.subplot(3,1,(2,3))
-plt.contourf( time_vect, freq_vect, hht[:,1:].T,np.linspace(.1,1.5,32) )
+plt.contourf( time_bins, freq_bins, hht.T,np.linspace(.1,1.5,32) )
 plt.ylabel('Frequency (Hz)')
 plt.xlabel('Time (secs)')
 plt.grid(True)
