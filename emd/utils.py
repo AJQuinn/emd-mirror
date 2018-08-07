@@ -86,6 +86,9 @@ def interp_envelope( X, to_plot=False, ret_all=False, mode='upper', interp_metho
     if interp_method == 'splrep':
         f = interp.splrep( locs, pks )
         env = interp.splev(t, f)
+    elif interp_method == 'mono_pchip':
+        pchip = interp.PchipInterpolator(locs,pks)
+        env = pchip( t )
     elif interp_method == 'pchip':
         pchip = interp.pchip(locs,pks)
         env = pchip( t )
