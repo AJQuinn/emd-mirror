@@ -195,7 +195,7 @@ def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8 ):
 
     return imf2layer
 
-def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=1 ):
+def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False ):
 
     if X.ndim == 1:
         # add dummy dimension
@@ -216,7 +216,8 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
         _,IF,IA = spectra.frequency_stats( imf[:,0,None], 1, 'quad', smooth_phase=31 )
         w = np.average(IF,weights=IA)
 
-    z = 2 * np.pi * w / 2
+    z = 2 * np.pi * w / mask_step_factor
+    zs = [z]
 
     layer = 1
     proto_imf = X.copy() - imf
@@ -239,7 +240,8 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
 
         proto_imf = X - imf.sum(axis=1)[:,None]
 
-        z = z / 2
+        z = z / mask_step_factor
+        zs.append(z)
         layer += 1
 
         if max_imfs is not None and layer == max_imfs:
