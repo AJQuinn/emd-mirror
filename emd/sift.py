@@ -251,8 +251,10 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
         #    imf = np.concatenate( (imf, proto_imf), axis=1)
         #    continue_sift=False
 
-    return imf
-
+    if ret_mask_freq:
+        return imf,zs
+    else:
+        return imf
 
 
 def get_next_imf( X, sd_thresh=.1 ):
@@ -266,8 +268,10 @@ def get_next_imf( X, sd_thresh=.1 ):
     continue_sift = True
     while continue_imf:
 
-        upper = utils.interp_envelope( proto_imf, mode='upper' )
-        lower = utils.interp_envelope( proto_imf, mode='lower' )
+        upper = utils.interp_envelope( proto_imf, mode='upper',
+        interp_method='mono_pchip' )
+        lower = utils.interp_envelope( proto_imf, mode='lower',
+        interp_method='mono_pchip' )
 
         # If upper or lower are None we should stop sifting alltogether
         if upper is None or lower is None:
