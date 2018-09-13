@@ -59,11 +59,11 @@ def get_padded_extrema( X, combined_upper_lower=False ):
     ret_max_locs = np.pad( max_locs,N,'reflect',reflect_type='odd' )
 
     # Pad peak magnitudes
-    ret_max_pks = np.pad( max_pks,N,'reflect',reflect_type='odd' )
+    ret_max_pks = np.pad( max_pks,N,'symmetric',reflect_type='even' )
 
     while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
         ret_max_locs = np.pad( ret_max_locs,N,'reflect',reflect_type='odd' )
-        ret_max_pks = np.pad( ret_max_pks,N,'reflect',reflect_type='odd' )
+        ret_max_pks = np.pad( ret_max_pks,N,'symmetric',reflect_type='even' )
 
     return ret_max_locs,ret_max_pks
 
