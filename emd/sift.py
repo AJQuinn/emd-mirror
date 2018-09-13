@@ -167,7 +167,7 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
         res = p.starmap( sift, args )
         noise = noise - np.array([ r[:,0] for r in res]).T
 
-        pks,locs = utils.find_extrema( imf[:,-1,None] )
+        pks,locs = utils.find_extrema( imf[:,-1] )
         if len(pks) < 2:
             continue_sift=False
 
