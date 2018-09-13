@@ -115,6 +115,10 @@ def find_extrema( X, ret_min=False ):
         #ind = signal.argrelextrema( X, np.greater)[0]
         ind = signal.argrelmax( X, order=1)[0]
 
+    # Only keep peaks with magnitude above machine precision
+    good_inds = ~( np.isclose( X[ind],X[ind-1] ) * np.isclose( X[ind],X[ind+1] ) )
+    ind = ind[good_inds]
+
     #if ind[0] == 0:
     #    ind = ind[1:]
 
