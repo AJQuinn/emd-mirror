@@ -99,7 +99,7 @@ def interp_envelope( X, to_plot=False, ret_all=False, mode='upper', interp_metho
     env = np.array(env[tinds])
 
     if env.shape[0] != X.shape[0]:
-        raise ValueError('Envelope length does not match input data {0} {1}'.format(upper.shape[0],X.shape[0]))
+        raise ValueError('Envelope length does not match input data {0} {1}'.format(env.shape[0],X.shape[0]))
 
     if mode == 'lower':
         return -env
