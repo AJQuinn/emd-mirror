@@ -250,23 +250,53 @@ def wrap_phase( IP, ncycles=1, mode='2pi' ):
 
     return phases
 
-def get_cycle_inds( phase, return_good=True ):
+
+def get_cycle_inds( phase, return_good=True, mask=None ):
 
     if phase.max() > 2*np.pi:
         print('Wrapping phase')
         phase = wrap_phase(phase)
 
-    cycles = np.zeros_like( phase )
+    cycles = np.zeros_like( phase, dtype=int )
 
     for ii in range(phase.shape[1]):
 
-        inds = np.where( np.abs(np.diff( phase[:,ii])) > 6 )[0]
+        inds = np.where( np.abs(np.diff( phase[:,ii])) > 6 )[0] + 1
         unwrapped = np.unwrap(phase[:,ii], axis=0 )
 
         count = 1
         for jj in range(len(inds)-1):
+
+            if mask is not None:
+                # Ignore cycle if a part of it is masked out
+                if any( ~mask[inds[jj]:inds[jj+1]] ):
+                    continue
+
             dat = unwrapped[inds[jj]:inds[jj+1]];
-            if all( np.diff(dat) > 0 ) or return_good is False:
+
+            if return_good:
+                cycle_checks = np.zeros( (3,), dtype=bool )
+
+                # Check for postively increasing phase
+                if all( np.diff(dat) > 0 ):
+                    cycle_checks[0] = True
+
+                # Check that start of cycle is close to 0
+                if ( phase[inds[jj],ii] >= 0 and
+                     phase[inds[jj],ii] <= np.pi/24 ):
+                    cycle_checks[1] = True
+
+                # Check that end of cycle is close to pi
+                if ( phase[inds[jj+1]-1,ii] <= 2*np.pi and
+                     phase[inds[jj+1]-1,ii] >= 2*np.pi-np.pi/24 ):
+                    cycle_checks[2] = True
+
+            else:
+                # Pretend eveything is ok
+                cycle_checks = np.ones( (3,), dtype=bool )
+
+            # Add cycle to list if the checks are good
+            if all( cycle_checks ):
                 cycles[inds[jj]:inds[jj+1],ii] = count;
                 count += 1
 
