@@ -297,3 +297,11 @@ def get_cycle_inds( phase, return_good=True, mask=None ):
                 count += 1
 
     return cycles
+
+def get_cycle_vals( cycles, values, factor=1 ):
+
+    #https://stackoverflow.com/a/39598529
+    unq,ids,count = np.unique(cycles,return_inverse=True,return_counts=True)
+    vals = np.bincount(ids,values)/count
+
+    return vals
