@@ -114,11 +114,12 @@ def find_extrema( X, ret_min=False ):
         ind = signal.argrelmin( X, order=1 )[0]
     else:
         #ind = signal.argrelextrema( X, np.greater)[0]
-        ind = signal.argrelmax( X, order=1)[0]
+        ind = signal.argrelmax( X, order=1 )[0]
 
     # Only keep peaks with magnitude above machine precision
-    good_inds = ~( np.isclose( X[ind],X[ind-1] ) * np.isclose( X[ind],X[ind+1] ) )
-    ind = ind[good_inds]
+    if len(ind) / X.shape[0] > 1e-3:
+        good_inds = ~( np.isclose( X[ind],X[ind-1] ) * np.isclose( X[ind],X[ind+1] ) )
+        ind = ind[good_inds]
 
     #if ind[0] == 0:
     #    ind = ind[1:]
