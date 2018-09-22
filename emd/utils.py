@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
+from . import spectra
 
 def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
 
@@ -200,18 +201,20 @@ def apply_epochs( X, trls ):
 
     return Y
 
-def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance', phase_bins=None ):
+def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance',
+        bin_edges=None ):
     """
     Compute distribution of x by phase-bins in ip
 
     """
 
-    if phase_bins is None:
-        phase_bins = np.linspace(0, 2*np.pi, nbins+1)
+    if bin_edges is None:
+        bin_edges,bin_centres = spectra.define_hist_bins( 0, 2*np.pi, nbins )
     else:
-        nbins = len(phase_bins)
+        nbins = len(bin_edges) - 1
+        bin_centres = bin_edges[:-1] + np.diff(bin_edges)/2
 
-    bin_inds = np.digitize( ip, phase_bins )
+    bin_inds = np.digitize( ip, bin_edges )
 
     avg = np.zeros( (nbins,) )*np.nan
     var = np.zeros( (nbins,) )*np.nan
@@ -234,7 +237,7 @@ def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance', pha
         elif variance_metric=='sem':
             var[ii-1] = np.sqrt( v ) / np.sqrt( inds.sum() )
 
-    return avg,var,phase_bins
+    return avg,var,bin_centres
 
 
 def wrap_phase( IP, ncycles=1, mode='2pi' ):
