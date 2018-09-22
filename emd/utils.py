@@ -202,8 +202,20 @@ def apply_epochs( X, trls ):
 
     return Y
 
-def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance',
-        bin_edges=None ):
+def wrap_phase( IP, ncycles=1, mode='2pi' ):
+
+    if mode == '2pi':
+        phases = ( IP ) % (ncycles * 2 * np.pi )
+    elif mode == '-pi2pi':
+        phases = ( IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi ) - (np.pi*ncycles)
+
+    return phases
+
+
+## Cycle Metrics
+
+def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
+                  variance_metric='variance', phase_bins=None ):
     """
     Compute distribution of x by phase-bins in ip
 
@@ -240,34 +252,83 @@ def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance',
 
     return avg,var,bin_centres
 
+def phase_align_cycles( ip, x, cycles=None ):
 
-def wrap_phase( IP, ncycles=1, mode='2pi' ):
+    phase_edges,phase_bins = emd.spectra.define_hist_bins( 0, 2*np.pi, 48 )
 
-    if mode == '2pi':
-        phases = ( IP ) % (ncycles * 2 * np.pi )
-    elif mode == '-pi2pi':
-        phases = ( IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi ) - (np.pi*ncycles)
+    if cycles is None:
+        cycles = get_cycle_inds( ip )
 
-    return phases
+    ncycles = cycles.max()
+    avg = np.zeros( (48,ncycles) )
+    for ii in range(1,ncycles+1):
 
-def get_cycle_inds( phase, return_good=True ):
+        phase_data = ip[ cycles[:,0]==ii, 0]
+        x_data = x[ cycles[:,0]==ii]
+
+        f = interp.interp1d( phase_data, x_data,
+                             bounds_error=False, fill_value='extrapolate' )
+
+        avg[:,ii-1] = f( phase_bins )
+
+    return avg
+
+
+def get_cycle_inds( phase, return_good=True, mask=None ):
 
     if phase.max() > 2*np.pi:
         print('Wrapping phase')
         phase = wrap_phase(phase)
 
-    cycles = np.zeros_like( phase )
+    cycles = np.zeros_like( phase, dtype=int )
 
     for ii in range(phase.shape[1]):
 
-        inds = np.where( np.abs(np.diff( phase[:,ii])) > 6 )[0]
+        inds = np.where( np.abs(np.diff( phase[:,ii])) > 6 )[0] + 1
         unwrapped = np.unwrap(phase[:,ii], axis=0 )
 
         count = 1
         for jj in range(len(inds)-1):
+
+            if mask is not None:
+                # Ignore cycle if a part of it is masked out
+                if any( ~mask[inds[jj]:inds[jj+1]] ):
+                    continue
+
             dat = unwrapped[inds[jj]:inds[jj+1]];
-            if all( np.diff(dat) > 0 ) or return_good is False:
+
+            if return_good:
+                cycle_checks = np.zeros( (3,), dtype=bool )
+
+                # Check for postively increasing phase
+                if all( np.diff(dat) > 0 ):
+                    cycle_checks[0] = True
+
+                # Check that start of cycle is close to 0
+                if ( phase[inds[jj],ii] >= 0 and
+                     phase[inds[jj],ii] <= np.pi/24 ):
+                    cycle_checks[1] = True
+
+                # Check that end of cycle is close to pi
+                if ( phase[inds[jj+1]-1,ii] <= 2*np.pi and
+                     phase[inds[jj+1]-1,ii] >= 2*np.pi-np.pi/24 ):
+                    cycle_checks[2] = True
+
+            else:
+                # Pretend eveything is ok
+                cycle_checks = np.ones( (3,), dtype=bool )
+
+            # Add cycle to list if the checks are good
+            if all( cycle_checks ):
                 cycles[inds[jj]:inds[jj+1],ii] = count;
                 count += 1
 
     return cycles
+
+def get_cycle_vals( cycles, values, factor=1 ):
+
+    #https://stackoverflow.com/a/39598529
+    unq,ids,count = np.unique(cycles,return_inverse=True,return_counts=True)
+    vals = np.bincount(ids,values)/count
+
+    return vals
