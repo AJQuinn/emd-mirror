@@ -101,6 +101,14 @@ def freq_from_phase( iphase, sample_rate ):
 
     return ifrequency
 
+def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
+
+    iphase_diff = (f/480) * (2*np.pi)
+
+    iphase = phase_start + np.cumsum(iphase_diff,axis=0)
+
+    return iphase
+
 def direct_quadrature( fm ):
     """
     Section 3.2 of 'on instantaneous frequency'
