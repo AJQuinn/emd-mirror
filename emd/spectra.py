@@ -103,7 +103,7 @@ def freq_from_phase( iphase, sample_rate ):
 
 def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
 
-    iphase_diff = (f/480) * (2*np.pi)
+    iphase_diff = (f/sample_rate) * (2*np.pi)
 
     iphase = phase_start + np.cumsum(iphase_diff,axis=0)
 
