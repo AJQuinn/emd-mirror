@@ -325,10 +325,17 @@ def get_cycle_inds( phase, return_good=True, mask=None ):
 
     return cycles
 
-def get_cycle_vals( cycles, values, factor=1 ):
+def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
 
     #https://stackoverflow.com/a/39598529
     unq,ids,count = np.unique(cycles,return_inverse=True,return_counts=True)
     vals = np.bincount(ids,values)/count
+
+    if mode == 'full':
+        ret = np.zeros_like( cycles, dtype=float )
+        ret.fill(np.nan)
+        for ii in range(1,cycles.max()+1):
+            ret[cycles==ii] = vals[ii]
+        vals = ret
 
     return vals

@@ -216,7 +216,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
         _,IF,IA = spectra.frequency_stats( imf[:,0,None], 1, 'quad', smooth_phase=31 )
         w = np.average(IF,weights=IA)
 
-    z = 2 * np.pi * w / mask_step_factor
+    z = 2 * np.pi * w / 2 / mask_step_factor
     zs = [z]
 
     layer = 1
