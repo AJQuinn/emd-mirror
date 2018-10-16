@@ -10,29 +10,35 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
     # Don't normalise in place
     X = X.copy()
 
+    if X.ndim == 2:
+        X = X[:,:,None]
+
+    container_dim = (X.shape[0],1,1)
+
     for iimf in range(X.shape[1]):
+        for jimf in range(X.shape[2]):
 
-        env = interp_envelope( X[:,iimf,None], mode='combined', interp_method=interp_method )
-
-        if env is None:
-            continue_norm = False
-        else:
-            continue_norm = True
-            env = env[...,None]
-
-        while continue_norm:
-
-            X[:,iimf,None] = X[:,iimf,None] / env
-            env = interp_envelope( X[:,iimf,None], mode='combined', interp_method=interp_method )
+            env = interp_envelope( X[:,iimf,jimf], mode='combined', interp_method=interp_method )
 
             if env is None:
                 continue_norm = False
             else:
                 continue_norm = True
-                env = env[...,None]
+                #env = env.reshape(*container_dim)
 
-                if np.abs(env.sum()-env.shape[0]) < thresh:
+            while continue_norm:
+
+                X[:,iimf,jimf] = X[:,iimf,jimf] / env
+                env = interp_envelope( X[:,iimf,jimf], mode='combined', interp_method=interp_method )
+
+                if env is None:
                     continue_norm = False
+                else:
+                    continue_norm = True
+                    #env = env.reshape(*container_dim)
+
+                    if np.abs(env.sum()-env.shape[0]) < thresh:
+                        continue_norm = False
 
     if clip:
         # Make absolutely sure nothing daft is happening
