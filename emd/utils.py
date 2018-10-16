@@ -48,10 +48,13 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
 
 def get_padded_extrema( X, combined_upper_lower=False ):
 
+    if X.ndim == 2:
+        X = X[:,0]
+
     if combined_upper_lower:
-        max_locs,max_pks = find_extrema( np.abs(X[:,0]) )
+        max_locs,max_pks = find_extrema( np.abs(X) )
     else:
-        max_locs,max_pks = find_extrema( X[:,0] )
+        max_locs,max_pks = find_extrema( X )
 
     # Return nothing we don't have enough extrema
     if max_locs.size <= 1:
