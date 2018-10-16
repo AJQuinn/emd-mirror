@@ -4,7 +4,8 @@ from scipy import interpolate as interp
 from scipy import signal
 from . import utils,spectra
 
-def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
+          interp_method='mono_pchip'):
     """
     Basic sift
 
@@ -21,7 +22,8 @@ def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
 
     while continue_sift:
 
-        next_imf,continue_sift = get_next_imf( proto_imf )
+        next_imf,continue_sift = get_next_imf( proto_imf, sd_thresh=sd_thresh,
+                                               interp_method=interp_method )
 
         if layer == 0:
             imf = next_imf
@@ -319,7 +321,7 @@ def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_a
     else:
         return imf
 
-def get_next_imf( X, sd_thresh=.1 ):
+def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
     """
     Should be passed X as [nsamples,1]
     """
@@ -331,9 +333,9 @@ def get_next_imf( X, sd_thresh=.1 ):
     while continue_imf:
 
         upper = utils.interp_envelope( proto_imf, mode='upper',
-        interp_method='mono_pchip' )
+                                       interp_method=interp_method )
         lower = utils.interp_envelope( proto_imf, mode='lower',
-        interp_method='mono_pchip' )
+                                       interp_method=interp_method )
 
         # If upper or lower are None we should stop sifting alltogether
         if upper is None or lower is None:
