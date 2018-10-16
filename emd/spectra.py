@@ -161,6 +161,40 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 
 ## Time-frequency spectra
 
+
+def holospec( infr, infr2, inam2, fbins, fbins2, tbins, time_vect ):
+
+    tinds = np.digitize( time_vect, tbins )
+
+    # Adjust tinds to ensure that largest value is not in its own bin
+    tinds = np.fmin( tinds, len(tbins)-1 )
+
+    # remove values outside the bin range
+    infr = infr.copy()
+    infr[infr<fbins[0]] = np.nan
+    infr[infr>fbins[-1]] = np.nan
+
+    holo = np.zeros( (len(tbins),len(fbins),len(fbins2)) )
+
+    # for each time bin....
+    holo = np.zeros( (len(tbins)-1,len(fbins)+1,len(fbins2)+1) )
+    # For each time point
+    for ii in range(len(tbins)-1):
+
+        if np.sum(tinds==ii) == 0:
+            continue
+
+        # for each carrier
+        for carrier_freq in range(infr.shape[1]):
+            # put IA2 into correct bins
+
+            carrier_bin = np.digitize( np.nanmean(infr[tinds==ii,carrier_freq]),fbins )
+            am_bins = np.digitize( infr2[tinds==ii,carrier_freq,:], fbins2 )
+
+            holo[ii,carrier_bin,am_bins] = np.nansum(inam2[tinds==ii,carrier_freq,:],0)**2
+
+    return holo[:,1:-1,1:-1]
+
 def hilberthuang( infr, inam, fbins, tbins, time_vect, mode='energy' ):
 
     tinds = np.digitize( time_vect, tbins )
