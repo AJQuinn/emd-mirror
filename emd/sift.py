@@ -187,13 +187,14 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
 
 def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8 ):
 
-    imf2layer = np.ones( (imf.shape[0],imf.shape[1],imf.shape[1] ) ) * np.nan
+    imf2layer = np.zeros( (imf.shape[0],imf.shape[1],imf.shape[1] ) )
 
     for ii in range(imf.shape[1]-1):
 
         envelope = utils.interp_envelope( imf[:,ii,None], mode='upper' )
-        tmp = sift(envelope)
-        imf2layer[:,ii,:tmp.shape[1]] = tmp
+        if envelope is not None:
+            tmp = sift(envelope,interp_method='splrep')
+            imf2layer[:,ii,:tmp.shape[1]] = tmp
 
     return imf2layer
 
