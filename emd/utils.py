@@ -224,7 +224,7 @@ def wrap_phase( IP, ncycles=1, mode='2pi' ):
 ## Cycle Metrics
 
 def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
-                  variance_metric='variance', phase_bins=None ):
+                  variance_metric='variance', bin_edges=None ):
     """
     Compute distribution of x by phase-bins in ip
 
@@ -263,7 +263,7 @@ def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
 
 def phase_align_cycles( ip, x, cycles=None ):
 
-    phase_edges,phase_bins = emd.spectra.define_hist_bins( 0, 2*np.pi, 48 )
+    phase_edges,phase_bins = spectra.define_hist_bins( 0, 2*np.pi, 48 )
 
     if cycles is None:
         cycles = get_cycle_inds( ip )
