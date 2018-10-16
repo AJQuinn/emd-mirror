@@ -224,6 +224,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
 
     layer = 1
     proto_imf = X.copy() - imf
+    allmask = np.zeros_like( proto_imf )
     while continue_sift:
 
         sd = imf[:,-1].std()
@@ -240,9 +241,11 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
         next_imf = (next_imf_up_c+next_imf_down_c+next_imf_up_s+next_imf_down_s)/4.
 
         imf = np.concatenate( (imf, next_imf), axis=1)
+        allmask = np.concatenate( (allmask, mask), axis=1)
 
         proto_imf = X - imf.sum(axis=1)[:,None]
 
+        z = z / mask_step_factor
         z = z / mask_step_factor
         zs.append(z)
         layer += 1
@@ -255,7 +258,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
         #    continue_sift=False
 
     if ret_mask_freq:
-        return imf,zs
+        return imf,allmask,np.array(zs)
     else:
         return imf
 
