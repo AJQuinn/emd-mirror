@@ -161,7 +161,7 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 
 ## Time-frequency spectra
 
-def hilberthuang( infr, inam, fbins, tbins, time_vect ):
+def hilberthuang( infr, inam, fbins, tbins, time_vect, mode='energy' ):
 
     tinds = np.digitize( time_vect, tbins )
 
@@ -186,11 +186,15 @@ def hilberthuang( infr, inam, fbins, tbins, time_vect ):
         finds2 = np.where( (finds>0) & (finds<len(fbins)-1) )[0]
         ia = inam[tinds==ii,:]
 
-        hht[ii,finds[finds2]] = ia[:,finds2].sum(axis=0)
+        if mode == 'power':
+            hht[ii,finds[finds2]] = ia[:,finds2].sum(axis=0)
+        elif mode == 'energy':
+            hht[ii,finds[finds2]] = np.power(ia[:,finds2],2).sum(axis=0)
+
 
     return hht
 
-def hilberthuang_1d( infr, inam, fbins ):
+def hilberthuang_1d( infr, inam, fbins, mode='energy'):
 
     specs = np.zeros( (len(fbins)-1,infr.shape[1]) )
 
@@ -204,7 +208,10 @@ def hilberthuang_1d( infr, inam, fbins ):
     for ii in range( len(fbins)-1 ):
         for jj in range( infr.shape[1] ):
 
-            specs[ii,jj] = np.nansum(inam[finds[:,jj]==ii,jj])
+            if mode == 'power':
+                specs[ii,jj] = np.nansum(inam[finds[:,jj]==ii,jj])
+            elif mode == 'energy':
+                specs[ii,jj] = np.nansum(np.power(inam[finds[:,jj]==ii,jj],2))
 
     return specs
 
