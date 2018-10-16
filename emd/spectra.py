@@ -19,10 +19,14 @@ def frequency_stats( imf, sample_rate, method,
 
         analytic_signal = analytic_signal_from_quadrature( imf )
 
+        if imf.ndim == 2:
+            imf = imf[:,:,None]
+
         # Estimate inst amplitudes with spline interpolation
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
-            iamp[:,ii] = utils.interp_envelope( imf[:,ii,None], mode='combined' )
+            for jj in range(imf.shape[2]):
+                iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
 
     elif method == 'direct_quad':
         raise ValueError('direct_quad method is broken!')
