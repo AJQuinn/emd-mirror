@@ -198,7 +198,9 @@ def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8 ):
 
     return imf2layer
 
-def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False ):
+def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
+        mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
+        mask_initial_freq=None, interp_method='mono_pchip'):
 
     if X.ndim == 1:
         # add dummy dimension
@@ -207,19 +209,34 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
     continue_sift = True
     layer = 0
 
-    # First IMF is computed normally
-    imf,_ = get_next_imf( X )
 
     # Compute mask frequency
-    mask_method='if'
-    if mask_method == 'zc':
-        num_zero_crossings = utils.zero_crossing_count(imf)[0,0]
-        w = num_zero_crossings / X.shape[0]
-    elif mask_method == 'if':
-        _,IF,IA = spectra.frequency_stats( imf[:,0,None], 1, 'quad', smooth_phase=31 )
-        w = np.average(IF,weights=IA)
+    if mask_initial_freq is None:
 
-    z = 2 * np.pi * w / 2 / mask_step_factor
+        # First IMF is computed normally
+        imf,_ = get_next_imf( X )
+
+        # Compute first mask frequency from first IMF
+        mask_method='if'
+        if mask_method == 'zc':
+            num_zero_crossings = utils.zero_crossing_count(imf)[0,0]
+            w = num_zero_crossings / X.shape[0]
+        elif mask_method == 'if':
+            _,IF,IA = spectra.frequency_stats( imf[:,0,None], 1, 'quad', smooth_phase=31 )
+            w = np.average(IF,weights=IA)
+        print(w)
+        z = 2 * np.pi * w / mask_step_factor
+
+    else:
+        # First sift
+        w = mask_initial_freq
+        z = 2 * np.pi * w
+        amp = mask_amp_ratio*X.std()
+        imf = get_next_imf_mask( X, z, amp,
+                                 sd_thresh=sd_thresh,
+                                 interp_method=interp_method,
+                                 mask_type='all' )
+
     zs = [z]
 
     layer = 1
@@ -230,18 +247,13 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
         sd = imf[:,-1].std()
         amp = mask_amp_ratio*sd
 
-        mask = amp*np.cos( z * np.arange(X.shape[0]) )[:,None]
-        next_imf_up_c,continue_sift = get_next_imf( proto_imf+mask )
-        next_imf_down_c,continue_sift = get_next_imf( proto_imf-mask )
-
-        mask = amp*np.sin( z * np.arange(X.shape[0]) )[:,None]
-        next_imf_up_s,continue_sift = get_next_imf( proto_imf+mask )
-        next_imf_down_s,continue_sift = get_next_imf( proto_imf-mask )
-
-        next_imf = (next_imf_up_c+next_imf_down_c+next_imf_up_s+next_imf_down_s)/4.
+        next_imf = get_next_imf_mask( proto_imf, z, amp,
+                                      sd_thresh=sd_thresh,
+                                      interp_method=interp_method,
+                                      mask_type='all' )
 
         imf = np.concatenate( (imf, next_imf), axis=1)
-        allmask = np.concatenate( (allmask, mask), axis=1)
+        #allmask = np.concatenate( (allmask, mask), axis=1)
 
         proto_imf = X - imf.sum(axis=1)[:,None]
 
@@ -258,7 +270,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=
         #    continue_sift=False
 
     if ret_mask_freq:
-        return imf,allmask,np.array(zs)
+        return imf,np.array(zs)
     else:
         return imf
 
@@ -289,17 +301,10 @@ def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_a
         sd = imf[:,-1].std()
         amp = mask_amp_ratio*sd
 
-        # Sine wave Masks
-        mask = amp*np.cos( z * np.arange(X.shape[0]) )[:,None]
-        next_imf_up_c,continue_sift = get_next_imf( proto_imf+mask )
-        next_imf_down_c,continue_sift = get_next_imf( proto_imf-mask )
-
-        # Cosine wave Masks
-        mask = amp*np.sin( z * np.arange(X.shape[0]) )[:,None]
-        next_imf_up_s,continue_sift = get_next_imf( proto_imf+mask )
-        next_imf_down_s,continue_sift = get_next_imf( proto_imf-mask )
-
-        next_imf = (next_imf_up_c+next_imf_down_c+next_imf_up_s+next_imf_down_s)/4.
+        next_imf = get_next_imf_mask( proto_imf, z, amp,
+                                      sd_thresh=sd_thresh,
+                                      interp_method=interp_method,
+                                      mask_type='all' )
 
         if layer == 0:
             imf = next_imf
@@ -366,3 +371,26 @@ def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
         proto_imf = proto_imf[:,None]
 
     return proto_imf, continue_sift
+
+
+def get_next_imf_mask( X, z, amp,
+                       sd_thresh=.1, interp_method='mono_pchip',mask_type='all' ):
+
+    if mask_type is 'all' or mask_type is 'sine':
+        mask = amp*np.cos( z * np.arange(X.shape[0]) )[:,None]
+        next_imf_up_c,continue_sift = get_next_imf( X+mask )
+        next_imf_down_c,continue_sift = get_next_imf( X-mask )
+
+    if mask_type is 'all' or mask_type is 'cosine':
+        mask = amp*np.sin( z * np.arange(X.shape[0]) )[:,None]
+        next_imf_up_s,continue_sift = get_next_imf( X+mask )
+        next_imf_down_s,continue_sift = get_next_imf( X-mask )
+
+    if mask_type is 'all':
+        return (next_imf_up_c+next_imf_down_c+next_imf_up_s+next_imf_down_s)/4.
+    elif mask_type is 'sine':
+        return (next_imf_up_s+next_imf_down_s)/2.
+    elif mask_type is 'cosine':
+        return (next_imf_up_c+next_imf_down_c)/2.
+
+
