@@ -195,13 +195,7 @@ def holospec( infr, infr2, inam2, fbins, fbins2, tbins, time_vect ):
 
     return holo[:,1:-1,1:-1]
 
-def hilberthuang( infr, inam, fbins, tbins, time_vect, mode='energy',
-        return_full=True ):
-
-    tinds = np.digitize( time_vect, tbins )
-
-    # Adjust tinds to ensure that largest value is not in its own bin
-    tinds = np.fmin( tinds, len(tbins)-1 )
+def hilberthuang( infr, inam, fbins, mode='energy', return_sparse=False ):
 
     if mode == 'energy':
         inam = inam**2
@@ -219,10 +213,10 @@ def hilberthuang( infr, inam, fbins, tbins, time_vect, mode='energy',
     # Create sparse matrix
     hht = sparse.coo_matrix( coo_data,shape=(len(fbins)-1,xinds.shape[0]))
 
-    if return_full:
-        return hht.toarray()
-    else:
+    if return_sparse:
         return hht
+    else:
+        return hht.toarray()
 
 def hilberthuang_1d( infr, inam, fbins, mode='energy'):
 
