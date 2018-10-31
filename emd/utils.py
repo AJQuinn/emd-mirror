@@ -236,28 +236,30 @@ def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
         nbins = len(bin_edges) - 1
         bin_centres = bin_edges[:-1] + np.diff(bin_edges)/2
 
-    bin_inds = np.digitize( ip, bin_edges )
+    bin_inds = np.digitize( ip, bin_edges )[:,0]
 
-    avg = np.zeros( (nbins,) )*np.nan
-    var = np.zeros( (nbins,) )*np.nan
+    out_dims = list( (nbins,*x.shape[1:]) )
+    avg = np.zeros( out_dims )*np.nan
+    var = np.zeros( out_dims )*np.nan
     for ii in range(1, nbins ):
         inds = bin_inds==ii
         if weights is None:
-            avg[ii-1] = np.average( x[inds] )
-            v = np.average( (x[inds]-avg[ii-1])**2 )
+            avg[ii-1,...] = np.average( x[inds,...], axis=0 )
+            v = np.average((x[inds,...] - np.repeat(avg[None,ii-1,...],np.sum(inds),axis=0))**2,axis=0 )
         else:
             if inds.sum() > 0:
-                avg[ii-1] = np.average( x[inds], weights=weights[inds] )
-                v = np.average( (x[inds]-avg[ii-1])**2, weights=weights[inds] )
+                avg[ii-1,...] = np.average( x[inds,...], axis=0, weights=weights[inds] )
+                v = np.average( (x[inds,...] - np.repeat(avg[None,ii-1,...],np.sum(inds),axis=0)**2),
+                                 weights=weights[inds], axis=0 )
             else:
                 v = np.nan
 
         if variance_metric=='variance':
-            var[ii-1] = v
+            var[ii-1,...] = v
         elif variance_metric=='std':
-            var[ii-1] = np.sqrt( v )
+            var[ii-1,...] = np.sqrt( v )
         elif variance_metric=='sem':
-            var[ii-1] = np.sqrt( v ) / np.sqrt( inds.sum() )
+            var[ii-1,...] = np.sqrt( v ) / np.repeat(np.sqrt( inds.sum()[None,...]),x.shape[0],axis=0)
 
     return avg,var,bin_centres
 
