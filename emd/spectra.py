@@ -195,38 +195,34 @@ def holospec( infr, infr2, inam2, fbins, fbins2, tbins, time_vect ):
 
     return holo[:,1:-1,1:-1]
 
-def hilberthuang( infr, inam, fbins, tbins, time_vect, mode='energy' ):
+def hilberthuang( infr, inam, fbins, tbins, time_vect, mode='energy',
+        return_full=True ):
 
     tinds = np.digitize( time_vect, tbins )
 
     # Adjust tinds to ensure that largest value is not in its own bin
     tinds = np.fmin( tinds, len(tbins)-1 )
 
-    # remove values outside the bin range
-    infr = infr.copy()
-    infr[infr<fbins[0]] = np.nan
-    infr[infr>fbins[-1]] = np.nan
+    if mode == 'energy':
+        inam = inam**2
 
-    hht = np.zeros( (len(tbins)-1,len(fbins)-1) )
+    # Create sparse co-ordinates
+    yinds = np.digitize(infr,freq_edges)
+    xinds = np.tile( np.arange(yinds.shape[0]),(yinds.shape[1],1) ).T
 
-    # for each time bin....
-    for ii in range(len(tbins)-1):
+    coo_data = (inam.reshape(-1),(yinds.reshape(-1),xinds.reshape(-1)))
 
-        if np.sum(tinds==ii) == 0:
-            continue
+    # Remove values outside our bins
+    goods = any( np.c_[coo_data[1][0]<len(fbins)-1, (coo_data[1][0]==0)],axis=1 )
+    coo_data = (coo_data[0][goods], (coo_data[1][0][goods], coo_data[1][1][goods]))
 
-        # Add frequency info for this time bin
-        finds = np.digitize( infr[tinds==ii,:].mean(axis=0), fbins )
-        finds2 = np.where( (finds>0) & (finds<len(fbins)-1) )[0]
-        ia = inam[tinds==ii,:]
+    # Create sparse matrix
+    hht = sparse.coo_matrix( coo_data,shape=(len(fbins)-1,xinds.shape[0]))
 
-        if mode == 'power':
-            hht[ii,finds[finds2]] = ia[:,finds2].sum(axis=0)
-        elif mode == 'energy':
-            hht[ii,finds[finds2]] = np.power(ia[:,finds2],2).sum(axis=0)
-
-
-    return hht
+    if return_full:
+        return hht.toarray()
+    else:
+        return hht
 
 def hilberthuang_1d( infr, inam, fbins, mode='energy'):
 
