@@ -288,7 +288,6 @@ def phase_align_cycles( ip, x, cycles=None ):
 
     return avg
 
-
 def get_cycle_inds( phase, return_good=True, mask=None ):
 
     if phase.max() > 2*np.pi:
@@ -354,3 +353,18 @@ def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
         vals = ret
 
     return vals
+
+def get_control_points( x, good_cycles ):
+
+    ctrl = list()
+    for ii in range(1,good_cycles.max()):
+        cycle = x[good_cycles==ii]
+
+        # Note! we're currently just taking the first peak or trough if there
+        # are more than one. This is dumb.
+        ctrl.append( (0,emd.utils.find_extrema( cycle )[0][0],
+                     np.where(np.gradient(np.sign( cycle ))==-1)[0][0],
+                     emd.utils.find_extrema( -cycle )[0][0],
+                     len(cycle)) )
+
+    return np.array(ctrl)
