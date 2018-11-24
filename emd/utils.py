@@ -10,6 +10,7 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
     # Don't normalise in place
     X = X.copy()
 
+    orig_dim = X.ndim
     if X.ndim == 2:
         X = X[:,:,None]
 
@@ -43,6 +44,9 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
     if clip:
         # Make absolutely sure nothing daft is happening
         X = np.clip( X, -1, 1)
+
+    if orig_dim == 2:
+        X = X[:,:,0]
 
     return X
 
