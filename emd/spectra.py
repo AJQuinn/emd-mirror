@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import signal
+from scipy import signal,sparse
 from . import utils
 
 ##
@@ -19,6 +19,7 @@ def frequency_stats( imf, sample_rate, method,
 
         analytic_signal = analytic_signal_from_quadrature( imf )
 
+        orig_dim = imf.ndim
         if imf.ndim == 2:
             imf = imf[:,:,None]
 
@@ -26,7 +27,12 @@ def frequency_stats( imf, sample_rate, method,
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
             for jj in range(imf.shape[2]):
-                iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
+                #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
+                iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj],
+                                    mode='upper' )
+
+        if orig_dim == 2:
+            iamp = iamp[:,:,0]
 
     elif method == 'direct_quad':
         raise ValueError('direct_quad method is broken!')
@@ -195,7 +201,7 @@ def holospec( infr, infr2, inam2, fbins, fbins2, tbins, time_vect ):
 
     return holo[:,1:-1,1:-1]
 
-def hilberthuang( infr, inam, fbins, mode='energy', return_sparse=False ):
+def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
 
     if mode == 'energy':
         inam = inam**2
@@ -207,11 +213,11 @@ def hilberthuang( infr, inam, fbins, mode='energy', return_sparse=False ):
     coo_data = (inam.reshape(-1),(yinds.reshape(-1),xinds.reshape(-1)))
 
     # Remove values outside our bins
-    goods = any( np.c_[coo_data[1][0]<len(fbins)-1, (coo_data[1][0]==0)],axis=1 )
+    goods = np.any( np.c_[coo_data[1][0]<len(freq_edges)-1, (coo_data[1][0]==0)],axis=1 )
     coo_data = (coo_data[0][goods], (coo_data[1][0][goods], coo_data[1][1][goods]))
 
     # Create sparse matrix
-    hht = sparse.coo_matrix( coo_data,shape=(len(fbins)-1,xinds.shape[0]))
+    hht = sparse.coo_matrix( coo_data,shape=(len(freq_edges)-1,xinds.shape[0]))
 
     if return_sparse:
         return hht
