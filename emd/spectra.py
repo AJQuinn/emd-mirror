@@ -168,38 +168,40 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 ## Time-frequency spectra
 
 
-def holospec( infr, infr2, inam2, fbins, fbins2, tbins, time_vect ):
+def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
+        return_time=True ):
 
-    tinds = np.digitize( time_vect, tbins )
+    if mode == 'energy':
+        inam2 = inam2**2
 
-    # Adjust tinds to ensure that largest value is not in its own bin
-    tinds = np.fmin( tinds, len(tbins)-1 )
+    IA_inds = np.digitize( infr2, freq_edges2 )
+    infr_inds = np.digitize( infr, freq_edges )
 
-    # remove values outside the bin range
-    infr = infr.copy()
-    infr[infr<fbins[0]] = np.nan
-    infr[infr>fbins[-1]] = np.nan
+    new_shape = (infr_inds.shape[0],infr_inds.shape[1],imf2.shape[2])
+    infr_inds = np.broadcast_to( infr_inds[:,:,None], new_shape )
 
-    holo = np.zeros( (len(tbins),len(fbins),len(fbins2)) )
+    fold_dim1 = len(freq_edges)+1
+    fold_dim2 = len(freq_edges2)+1
 
-    # for each time bin....
-    holo = np.zeros( (len(tbins)-1,len(fbins)+1,len(fbins2)+1) )
-    # For each time point
-    for ii in range(len(tbins)-1):
+    infr_inds = infr_inds + IA_inds *  fold_dim1
 
-        if np.sum(tinds==ii) == 0:
-            continue
+    T_inds = np.arange(infr.shape[0])[:,None,None]
+    T_inds = np.broadcast_to( T_inds, new_shape )
 
-        # for each carrier
-        for carrier_freq in range(infr.shape[1]):
-            # put IA2 into correct bins
+    coords =(T_inds.reshape(-1),infr_inds.reshape(-1))
+    holo = sparse.coo_matrix( (inam2.reshape(-1),coords),
+            shape=(infr.shape[0],fold_dim1*fold_dim2) )
 
-            carrier_bin = np.digitize( np.nanmean(infr[tinds==ii,carrier_freq]),fbins )
-            am_bins = np.digitize( infr2[tinds==ii,carrier_freq,:], fbins2 )
-
-            holo[ii,carrier_bin,am_bins] = np.nansum(inam2[tinds==ii,carrier_freq,:],0)**2
-
-    return holo[:,1:-1,1:-1]
+    # Always returns full matrix until someone implements ND sparse in scipy
+    if return_time:
+        # Return the full matrix
+        holo = holo.toarray().reshape(new_shape[0],fold_dim2,fold_dim1)
+        return holo[:,1:-1,1:-1]
+    else:
+        # Collapse time dimension while we're still sparse
+        holo = holo.sum(axis=0)
+        holo = holo.reshape(fold_dim2,fold_dim1)
+        return np.array(holo[1:-1,1:-1]) # don't return a matrix
 
 def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
 
@@ -282,3 +284,4 @@ def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
             raise ValueError('mode {0} not recognised, please use \'sqrt\'')
 
     return define_hist_bins( data_min, data_max, nbins, scale=scale )
+
