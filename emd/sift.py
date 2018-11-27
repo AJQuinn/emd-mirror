@@ -185,15 +185,18 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
 
     return imf,noise
 
-def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8 ):
+def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8, max_imfs=None ):
 
-    imf2layer = np.zeros( (imf.shape[0],imf.shape[1],imf.shape[1] ) )
+    if max_imfs is None:
+        max_imfs = imf.shape[1]
 
-    for ii in range(imf.shape[1]-1):
+    #imf2layer = np.zeros( (imf.shape[0],imf.shape[1],imf.shape[1] ) )
+    imf2layer = np.zeros( (imf.shape[0],imf.shape[1],max_imfs ) )
 
-        envelope = utils.interp_envelope( imf[:,ii,None], mode='upper' )
+    for ii in range(max_imfs):
+        envelope = utils.interp_envelope( imf[:,ii,None], mode='upper')
         if envelope is not None:
-            tmp = sift(envelope,interp_method='splrep')
+            tmp = sift(envelope,interp_method='splrep', max_imfs=max_imfs )
             imf2layer[:,ii,:tmp.shape[1]] = tmp
 
     return imf2layer
