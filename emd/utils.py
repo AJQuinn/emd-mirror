@@ -252,9 +252,9 @@ def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
             v = np.average((x[inds,...] - np.repeat(avg[None,ii-1,...],np.sum(inds),axis=0))**2,axis=0 )
         else:
             if inds.sum() > 0:
-                avg[ii-1,...] = np.average( x[inds,...], axis=0, weights=weights[inds] )
+                avg[ii-1,...] = np.average( x[inds,...], axis=0, weights=weights[inds].dot(np.ones((1,x.shape[1])) ) )
                 v = np.average( (x[inds,...] - np.repeat(avg[None,ii-1,...],np.sum(inds),axis=0)**2),
-                                 weights=weights[inds], axis=0 )
+                                 weights=weights[inds].dot(np.ones((1,x.shape[1])) ), axis=0 )
             else:
                 v = np.nan
 
