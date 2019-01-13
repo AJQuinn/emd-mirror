@@ -285,3 +285,8 @@ def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
 
     return define_hist_bins( data_min, data_max, nbins, scale=scale )
 
+def mean_vector( IP, IA, mask=None ):
+
+    phi = np.sin(IP) + 1j*np.cos(IP)
+    mv = phi[:,None] * IA
+    return mv.mean(axis=0)
