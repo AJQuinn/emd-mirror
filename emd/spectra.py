@@ -177,7 +177,7 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     IA_inds = np.digitize( infr2, freq_edges2 )
     infr_inds = np.digitize( infr, freq_edges )
 
-    new_shape = (infr_inds.shape[0],infr_inds.shape[1],imf2.shape[2])
+    new_shape = (infr_inds.shape[0],infr_inds.shape[1],infr2.shape[2])
     infr_inds = np.broadcast_to( infr_inds[:,:,None], new_shape )
 
     fold_dim1 = len(freq_edges)+1
@@ -190,7 +190,7 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
 
     coords =(T_inds.reshape(-1),infr_inds.reshape(-1))
     holo = sparse.coo_matrix( (inam2.reshape(-1),coords),
-            shape=(infr.shape[0],fold_dim1*fold_dim2) )
+                                shape=(infr.shape[0],fold_dim1*fold_dim2) )
 
     # Always returns full matrix until someone implements ND sparse in scipy
     if return_time:
