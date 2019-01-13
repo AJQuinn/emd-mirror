@@ -362,9 +362,9 @@ def get_control_points( x, good_cycles ):
 
         # Note! we're currently just taking the first peak or trough if there
         # are more than one. This is dumb.
-        ctrl.append( (0,emd.utils.find_extrema( cycle )[0][0],
+        ctrl.append( (0,find_extrema( cycle )[0][0],
                      np.where(np.gradient(np.sign( cycle ))==-1)[0][0],
-                     emd.utils.find_extrema( -cycle )[0][0],
+                     find_extrema( -cycle )[0][0],
                      len(cycle)) )
 
     return np.array(ctrl)
