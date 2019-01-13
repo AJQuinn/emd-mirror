@@ -288,7 +288,7 @@ def phase_align_cycles( ip, x, cycles=None ):
 
     return avg
 
-def get_cycle_inds( phase, return_good=True, mask=None ):
+def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
 
     if phase.max() > 2*np.pi:
         print('Wrapping phase')
@@ -312,7 +312,7 @@ def get_cycle_inds( phase, return_good=True, mask=None ):
             dat = unwrapped[inds[jj]:inds[jj+1]];
 
             if return_good:
-                cycle_checks = np.zeros( (3,), dtype=bool )
+                cycle_checks = np.zeros( (4,), dtype=bool )
 
                 # Check for postively increasing phase
                 if all( np.diff(dat) > 0 ):
@@ -327,6 +327,24 @@ def get_cycle_inds( phase, return_good=True, mask=None ):
                 if ( phase[inds[jj+1]-1,ii] <= 2*np.pi and
                      phase[inds[jj+1]-1,ii] >= 2*np.pi-np.pi/24 ):
                     cycle_checks[2] = True
+
+                if imf is not None:
+                    # Check we find 5 sensible control points if imf is provided
+                    try:
+                        cycle = imf[inds[jj]:inds[jj+1]]
+                        # Should extend this to cope with multiple peaks etc
+                        ctrl = (0,find_extrema( cycle )[0][0],
+                                     np.where(np.gradient(np.sign( cycle ))==-1)[0][0],
+                                     find_extrema( -cycle )[0][0],
+                                     len(cycle))
+                        if len(ctrl) == 5 and np.all(np.sign(np.diff(ctrl))):
+                            cycle_checks[3] = True
+                    except IndexError:
+                        # Sometimes we don't find any candidate for a control point
+                        cycle_checks[3] = False
+                else:
+                    # No time-series so assume everything is fine
+                    cycle_checks[3] = True
 
             else:
                 # Pretend eveything is ok
@@ -363,8 +381,8 @@ def get_control_points( x, good_cycles ):
         # Note! we're currently just taking the first peak or trough if there
         # are more than one. This is dumb.
         ctrl.append( (0,find_extrema( cycle )[0][0],
-                     np.where(np.gradient(np.sign( cycle ))==-1)[0][0],
-                     find_extrema( -cycle )[0][0],
-                     len(cycle)) )
+                         np.where(np.gradient(np.sign( cycle ))==-1)[0][0],
+                         find_extrema( -cycle )[0][0],
+                         len(cycle)) )
 
     return np.array(ctrl)
