@@ -359,7 +359,6 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         elif mask_method == 'if':
             _,IF,IA = spectra.frequency_stats( imf[:,0,None], 1, 'quad', smooth_phase=31 )
             w = np.average(IF,weights=IA)
-        print(w)
         z = 2 * np.pi * w / mask_step_factor
 
     else:
@@ -369,7 +368,6 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         else:
             w = mask_freqs[0]
 
-        print(w)
         z = w
         amp = mask_amp_ratio*X.std()
         imf = get_next_imf_mask( X, z, amp,
