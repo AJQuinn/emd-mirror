@@ -386,3 +386,25 @@ def get_control_points( x, good_cycles ):
                          len(cycle)) )
 
     return np.array(ctrl)
+
+def get_cycle_chain( cycles, min_chain=1 ):
+
+    chains = list()
+    new_chain = True
+    chn = None
+    # get diff to next cycle for each cycle
+    for ii in range(1,cycles.max()+1):
+
+        di = theta_cycles[np.where(theta_cycles==ii)[0][-1]+1][0] - ii
+
+        if di < 1 or ii == 1:
+            if chn is not None:
+                if len(chn) >= min_chain:
+                    chains.append(chn)
+            # Start New chain
+            chn = [ii]
+        else:
+            # Extend current chain
+            chn.append(ii)
+
+    return chains
