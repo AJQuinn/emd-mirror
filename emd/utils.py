@@ -7,22 +7,33 @@ from . import spectra
 
 def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
     """
+    Normalise the amplitude envelope of an IMF to be 1. Mutiple runs of
+    normalisation are carried out until the desired threshold is reached.
+
+    This uses the method described as part of the AM-FM transform [1]
 
     Parameters
     ----------
-    X :
-        
-    thresh :
-         (Default value = 1e-10)
-    clip :
-         (Default value = False)
-    interp_method :
-         (Default value = 'pchip')
+    X : ndarray
+        Input array of IMFs to be normalised
+    thresh : scalar
+         Threshold for stopping normalisation (Default value = 1e-10)
+    clip : bool
+         Whether to clip the output between -1 and 1 (Default value = False)
+    interp_method : {'pchip','mono_pchip','splrep'}
+         Method used to interpolate envelopes (Default value = 'pchip')
 
     Returns
     -------
+    ndarray
+        Amplitude normalised IMFs
 
-    
+    References
+    ----------
+    .. [2] Huang, N. E., Wu, Z., Long, S. R., Arnold, K. C., Chen, X., & Blank,
+       K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
+       1(2), 177–229. https://doi.org/10.1142/s1793536909000096
+
     """
 
     # Don't normalise in place
@@ -70,18 +81,25 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
 
 def get_padded_extrema( X, combined_upper_lower=False ):
     """
+    Return a set of extrema from a signal including padded extrema at the edges
+    of the signal.
 
     Parameters
     ----------
-    X :
-        
-    combined_upper_lower :
-         (Default value = False)
+    X : ndarray
+        Input signal
+    combined_upper_lower : bool
+         Flag to indicate whether both upper and lower extrema should be
+         considered (Default value = False)
 
     Returns
     -------
+    max_locs : ndarray
+        location of extrema in samples
+    max_pks : ndarray
+        Magnitude of each extrema
 
-    
+
     """
 
     if X.ndim == 2:
@@ -113,26 +131,25 @@ def get_padded_extrema( X, combined_upper_lower=False ):
 
     return ret_max_locs,ret_max_pks
 
-def interp_envelope( X, to_plot=False, ret_all=False, mode='upper', interp_method='splrep' ):
+def interp_envelope( X, mode='upper', interp_method='splrep' ):
     """
+    Interpolate the amplitude envelope of a signal.
 
     Parameters
     ----------
-    X :
-        
-    to_plot :
-         (Default value = False)
-    ret_all :
-         (Default value = False)
-    mode :
-         (Default value = 'upper')
-    interp_method :
-         (Default value = 'splrep')
+    X : ndarray
+        Input signal
+    mode : {'upper','lower','combined'}
+         Flag to set which envelope should be computed (Default value = 'upper')
+    interp_method : {'splrep','pchip','mono_pchip'}
+         Flag to indicate which interpolation method should be used (Default value = 'splrep')
 
     Returns
     -------
+    ndarray
+        Interpolated amplitude envelope
 
-    
+
     """
 
     if mode == 'upper':
@@ -174,18 +191,24 @@ def interp_envelope( X, to_plot=False, ret_all=False, mode='upper', interp_metho
 
 def find_extrema( X, ret_min=False ):
     """
+    Identify extrema within a time-course and reject extrema whose magnitude is
+    below a set threshold.
 
     Parameters
     ----------
-    X :
-        
-    ret_min :
-         (Default value = False)
+    X : ndarray
+       Input signal
+    ret_min : bool
+         Flag to indicate whether maxima (False) or minima (True) should be identified(Default value = False)
 
     Returns
     -------
+    locs : ndarray
+        Location of extrema in samples
+    extrema : ndarray
+        Value of each extrema
 
-    
+
     """
 
     if ret_min:
@@ -210,16 +233,19 @@ def find_extrema( X, ret_min=False ):
 
 def zero_crossing_count( X ):
     """
+    Count the number of zero-crossings within a time-course through
+    differentiation of the sign of the signal.
 
     Parameters
     ----------
-    X :
-        
+    X : ndarray
+        Input array
 
     Returns
     -------
+    int
+        Number of zero-crossings
 
-    
     """
 
     if X.ndim == 2:
@@ -230,24 +256,34 @@ def zero_crossing_count( X ):
 
 def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
     """
+    Simulate a non-linear waveform using equation 9 in [1].
 
     Parameters
     ----------
-    f :
-        
-    nonlin_deg :
-        
-    nonlin_phi :
-        
-    sample_rate :
-        
-    seconds :
-        
+    f : scalar
+        Fundamental frequency of generated signal
+    nonlin_deg : scalar
+        Degree of non-linearity in generated signal
+    nonlin_phi : scalar
+        Skew in non-linearity of generated signal
+    sample_rate : scalar
+        The sampling frequency of the generated signal
+    seconds : scalar
+        The number of seconds of data to generate
 
     Returns
     -------
+    ndarray
+        Simulated signal containing non-linear wave
 
-    
+    References
+    ----------
+    .. [1] Abreu, T., Silva, P. A., Sancho, F., & Temperville, A. (2010).
+       Analytical approximate wave form for asymmetric waves. Coastal Engineering,
+       57(7), 656–667. https://doi.org/10.1016/j.coastaleng.2010.02.005
+
+
+
     """
 
     time_vect = np.linspace(0,seconds,seconds*sample_rate)
@@ -262,16 +298,27 @@ def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
 
 def est_orthogonality( imf ):
     """
+    Compute the index of orthogonality as described in equation 6.5 of [1].
 
     Parameters
     ----------
-    imf :
-        
+    imf : ndarray
+        Input array of IMFs
 
     Returns
     -------
+    ndarray
+        Matrix of orthogonality values [nimfs x nimfs]
 
-    
+    References
+    ----------
+    .. [1] Huang, N. E., Shen, Z., Long, S. R., Wu, M. C., Shih, H. H., Zheng,
+       Q., … Liu, H. H. (1998). The empirical mode decomposition and the Hilbert
+       spectrum for nonlinear and non-stationary time series analysis. Proceedings
+       of the Royal Society of London. Series A: Mathematical, Physical and
+       Engineering Sciences, 454(1971), 903–995.
+       https://doi.org/10.1098/rspa.1998.0193
+
     """
 
 
@@ -284,22 +331,26 @@ def est_orthogonality( imf ):
 
     return ortho
 
-def find_peaks( X, winsize, lock_to='max', percentile=None ):
-    """Helper function for defining trials around peaks within the data
+def find_extrema_locked_epochs( X, winsize, lock_to='max', percentile=None ):
+    """
+    Helper function for defining epochs around peaks or troughs within the data
 
     Parameters
     ----------
-    X :
-        
-    winsize :
-        
-    lock_to :
-         (Default value = 'max')
-    percentile :
-         (Default value = None)
+    X : ndarray
+        Input time-series
+    winsize : integer
+        Width of window to extract around each extrema
+    lock_to : {'max','min'}
+         Flag to select peak or trough locking (Default value = 'max')
+    percentile : scalar
+         Optional flag to selection only the upper percentile of extrema by
+         magnitude (Default value = None)
 
     Returns
     -------
+    ndarray
+        Array of start and end indices for epochs around extrema.
 
     """
 
@@ -328,17 +379,21 @@ def find_peaks( X, winsize, lock_to='max', percentile=None ):
     return trls
 
 def apply_epochs( X, trls ):
-    """Helper function which applies a set of epochs to a continuous dataset
+    """
+    Apply a set of epochs to a continuous dataset
 
     Parameters
     ----------
-    X :
-        
-    trls :
-        
+    X : ndarray
+        Input dataset to be epoched
+    trls : ndarray
+        2D array of start and end indices for each epoch. The second dimension
+        should be of len==2 and contain start and end indices in order.
 
     Returns
     -------
+    ndarray
+        Epoched time-series
 
     """
 
@@ -351,20 +406,22 @@ def apply_epochs( X, trls ):
 
 def wrap_phase( IP, ncycles=1, mode='2pi' ):
     """
+    Wrap a phase time-course.
 
     Parameters
     ----------
-    IP :
-        
-    ncycles :
-         (Default value = 1)
-    mode :
-         (Default value = '2pi')
+    IP : ndarray
+        Input array of unwrapped phase values
+    ncycles : integer
+         Number of cycles per wrap (Default value = 1)
+    mode : {'2pi','-pi2pi'}
+         Flag to indicate the values to wrap phase within (Default value = '2pi')
 
     Returns
     -------
+    ndarray
+        Wrapped phase time-course
 
-    
     """
 
     if mode == '2pi':
@@ -384,9 +441,9 @@ def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
     Parameters
     ----------
     ip :
-        
+
     x :
-        
+
     nbins :
          (Default value = 24)
     weights :
@@ -442,16 +499,16 @@ def phase_align_cycles( ip, x, cycles=None ):
     Parameters
     ----------
     ip :
-        
+
     x :
-        
+
     cycles :
          (Default value = None)
 
     Returns
     -------
 
-    
+
     """
 
     phase_edges,phase_bins = spectra.define_hist_bins( 0, 2*np.pi, 48 )
@@ -479,7 +536,7 @@ def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
     Parameters
     ----------
     phase :
-        
+
     return_good :
          (Default value = True)
     mask :
@@ -490,7 +547,7 @@ def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
     Returns
     -------
 
-    
+
     """
 
     if phase.max() > 2*np.pi:
@@ -566,9 +623,9 @@ def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
     Parameters
     ----------
     cycles :
-        
+
     values :
-        
+
     factor :
          (Default value = 1)
     mode :
@@ -577,7 +634,7 @@ def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
     Returns
     -------
 
-    
+
     """
 
     #https://stackoverflow.com/a/39598529
@@ -599,14 +656,14 @@ def get_control_points( x, good_cycles ):
     Parameters
     ----------
     x :
-        
+
     good_cycles :
-        
+
 
     Returns
     -------
 
-    
+
     """
 
     ctrl = list()
@@ -628,14 +685,14 @@ def get_cycle_chain( cycles, min_chain=1 ):
     Parameters
     ----------
     cycles :
-        
+
     min_chain :
          (Default value = 1)
 
     Returns
     -------
 
-    
+
     """
 
     chains = list()
