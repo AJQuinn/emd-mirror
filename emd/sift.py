@@ -185,21 +185,19 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
 
     return imf,noise
 
-def sift_second_layer( imf, sd_thresh=.1, sift_thresh=1e8, max_imfs=None ):
+def sift_second_layer( IA, sift_func=sift, sift_args=None ):
+    if (sift_args is None) or ('max_imfs' not in sift_args):
+        max_imfs = IA.shape[1]
+    elif 'max_imfs' in sift_args:
+        max_imfs = sift_args['max_imfs']
 
-    if max_imfs is None:
-        max_imfs = imf.shape[1]
-
-    #imf2layer = np.zeros( (imf.shape[0],imf.shape[1],imf.shape[1] ) )
-    imf2layer = np.zeros( (imf.shape[0],imf.shape[1],max_imfs ) )
+    imf2 = np.zeros( (IA.shape[0],IA.shape[1],max_imfs ) )
 
     for ii in range(max_imfs):
-        envelope = utils.interp_envelope( imf[:,ii,None], mode='upper')
-        if envelope is not None:
-            tmp = sift(envelope,interp_method='splrep', max_imfs=max_imfs )
-            imf2layer[:,ii,:tmp.shape[1]] = tmp
+        tmp = sift_func( IA[:,ii], **sift_args )
+        imf2[:,ii,:tmp.shape[1]] = tmp
 
-    return imf2layer
+    return imf2
 
 def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
