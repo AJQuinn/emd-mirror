@@ -434,29 +434,37 @@ def wrap_phase( IP, ncycles=1, mode='2pi' ):
 
 ## Cycle Metrics
 
-def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
-                  variance_metric='variance', bin_edges=None ):
-    """Compute distribution of x by phase-bins in ip
+def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance',
+                        bin_edges=None ):
+    """
+    Compute distribution of x by phase-bins in the Instantaneous Frequency.
 
     Parameters
     ----------
-    ip :
-
-    x :
-
-    nbins :
-         (Default value = 24)
-    weights :
-         (Default value = None)
-    mode :
-         (Default value = 'average')
-    variance_metric :
-         (Default value = 'variance')
-    bin_edges :
-         (Default value = None)
+    ip : ndarray
+        Input vector of instataneous phase values
+    x : ndarray
+        Input array of values to be binned, first dimension much match length of
+        IP
+    nbins : integer
+         number of phase bins to define (Default value = 24)
+    weights : ndarray (optional)
+         Optional set of linear weights to apply before averaging (Default value = None)
+    variance_metric : {'variance','std','sem'}
+         Flag to select whether the variance, standard deviation or standard
+         error of the mean in computed across cycles (Default value = 'variance')
+    bin_edges : ndarray (optional)
+         Optional set of bin edges to override automatic bin specification (Default value = None)
 
     Returns
     -------
+    avg : ndarray
+        Vector containing the average across cycles as a function of phase
+    var : ndarray
+        Vector containing the selected variance metric across cycles as a
+        function of phase
+    bin_centres : ndarray
+        Vector of bin centres
 
     """
 
@@ -495,19 +503,21 @@ def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
 
 def phase_align_cycles( ip, x, cycles=None ):
     """
+    Compute phase alignment of a vector of observed values across a set of cycles.
 
     Parameters
     ----------
-    ip :
-
-    x :
-
-    cycles :
-         (Default value = None)
+    ip : ndarray
+        Input array of Instantaneous Phase values to base alignment on
+    x : ndarray
+        Input array of observed values to phase align
+    cycles : ndarray (optional)
+         Optional set of cycles within IP to use (Default value = None)
 
     Returns
     -------
-
+    ndarray :
+        array containing the phase aligned observations
 
     """
 
@@ -532,20 +542,46 @@ def phase_align_cycles( ip, x, cycles=None ):
 
 def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
     """
+    Identify cycles within a instantaneous phase time-course and, optionally,
+    remove 'bad' cycles by a number of criteria.
 
     Parameters
     ----------
-    phase :
-
-    return_good :
-         (Default value = True)
-    mask :
-         (Default value = None)
-    imf :
-         (Default value = None)
+    phase : ndarray
+        Input vector of Instantaneous Phase values
+    return_good : bool
+         Boolen indicating whether 'bad' cycles should be removed (Default value = True)
+    mask : ndarray
+         Vector of mask values that should be ignored (Default value = None)
+    imf : ndarray
+         Optional array of IMFs to used for control point identification when
+         identifying good/bad cycles (Default value = None)
 
     Returns
     -------
+    ndarray
+        Vector of integers indexing the location of each cycle
+
+    Notes
+    -----
+    Good cycles are those with
+    1 : A strictly positively increasing phase
+    2 : A phase starting within pi/24 of zero
+    3 : A phase ending within pi/24 of 2pi
+    4 : A set of 4 unqiue control points
+            (ascending zero, peak, descending zero & trough)
+
+    Good cycles can be idenfied with:
+    >> good_cycles = emd.utils.get_cycle_inds( phase )
+
+    The total number of cycles is then
+    >> good_cycles.max()
+
+    Indices where good cycles is zero do not contain a valid cycle
+    bad_segments = good_cycles>0
+
+    A single cycle can be isolated by matching its index, eg for the 5th cycle
+    cycle_5_inds = good_cycles==5
 
 
     """
@@ -617,22 +653,25 @@ def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
 
     return cycles
 
-def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
+def get_cycle_vals( cycles, values, mode='compressed' ):
     """
+    Compute the average of a set of observations for each cycle.
 
     Parameters
     ----------
-    cycles :
-
-    values :
-
-    factor :
-         (Default value = 1)
-    mode :
+    cycles : ndarray
+        array whose content index cycle locations
+    values : ndarray
+        array of observations to average within each cycle
+    mode : {'compressed','full'}
+         Flag to indicate whether to return a single value per cycle or the
+         average values filled within a vector of the same size as values
          (Default value = 'compressed')
 
     Returns
     -------
+    ndarray
+        Array containing the cycle-averaged values
 
 
     """
@@ -652,16 +691,20 @@ def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
 
 def get_control_points( x, good_cycles ):
     """
+    Indentify sets of control points from identified cycles. The control points
+    are the ascending zero, peak, descending zero & trough.
 
     Parameters
     ----------
-    x :
-
-    good_cycles :
-
+    x : ndarray
+        Input array of oscillatory data
+    good_cycles : ndarray
+        array whose content index cycle locations
 
     Returns
     -------
+    ndarray
+        The control points for each cycle in x
 
 
     """
@@ -681,16 +724,19 @@ def get_control_points( x, good_cycles ):
 
 def get_cycle_chain( cycles, min_chain=1 ):
     """
+    Indentify chains of valid cycles in a set of cycles.
 
     Parameters
     ----------
-    cycles :
-
-    min_chain :
-         (Default value = 1)
+    cycles : ndarray
+        array whose content index cycle locations
+    min_chain : integer
+         Minumum length of chain to return (Default value = 1)
 
     Returns
     -------
+    list
+        nested  list of cycle numbers within each chain
 
 
     """
