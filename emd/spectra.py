@@ -5,6 +5,41 @@ from . import utils
 ##
 def frequency_stats( imf, sample_rate, method,
                      smooth_phase=31 ):
+    """
+
+    Parameters
+    ----------
+    imf : ndarray
+        Input array of IMFs.
+    sample_rate : scalar
+        Sampling frequency of the signal in Hz
+    method : {'hilbert','quad','direct_quad'}
+        The method for computing the frequency stats
+    smooth_phase : integer
+         Length of window when smoothing the unwrapped phase (Default value = 31)
+
+    Returns
+    -------
+    IP : ndarray
+        Array of instantaneous phase estimates
+    IF : ndarray
+        Array of instantaneous frequency estimates
+    IA : ndarray
+        Array of instantaneous amplitude estimates
+
+    References
+    ----------
+    .. [1] Huang, N. E., Shen, Z., Long, S. R., Wu, M. C., Shih, H. H., Zheng,
+       Q., … Liu, H. H. (1998). The empirical mode decomposition and the Hilbert
+       spectrum for nonlinear and non-stationary time series analysis. Proceedings
+       of the Royal Society of London. Series A: Mathematical, Physical and
+       Engineering Sciences, 454(1971), 903–995.
+       https://doi.org/10.1098/rspa.1998.0193
+    .. [2] Huang, N. E., Wu, Z., Long, S. R., Arnold, K. C., Chen, X., & Blank,
+       K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
+       1(2), 177–229. https://doi.org/10.1142/s1793536909000096
+
+    """
 
     # Each case here should compute the analytic form of the imfs and the
     # instantaneous amplitude.
@@ -59,10 +94,34 @@ def frequency_stats( imf, sample_rate, method,
 # Frequency stat utils
 
 def analytic_signal_from_hilbert( X ):
+    """
+
+    Parameters
+    ----------
+    X :
+
+
+    Returns
+    -------
+
+
+    """
 
     return signal.hilbert( X, axis=0 )
 
 def analytic_signal_from_quadrature( X ):
+    """
+
+    Parameters
+    ----------
+    X :
+
+
+    Returns
+    -------
+
+
+    """
 
     nX = utils.amplitude_normalise( X.copy(), clip=True )
 
@@ -78,6 +137,24 @@ def analytic_signal_from_quadrature( X ):
 
 def phase_from_analytic_signal( analytic_signal, smoothing=None,
                                 ret_phase='wrapped', phase_jump='ascending' ):
+    """
+
+    Parameters
+    ----------
+    analytic_signal :
+
+    smoothing :
+         (Default value = None)
+    ret_phase :
+         (Default value = 'wrapped')
+    phase_jump :
+         (Default value = 'ascending')
+
+    Returns
+    -------
+
+
+    """
 
     # Compute unwrapped phase
     iphase = np.unwrap(np.angle(analytic_signal),axis=0)
@@ -102,6 +179,20 @@ def phase_from_analytic_signal( analytic_signal, smoothing=None,
         return iphase
 
 def freq_from_phase( iphase, sample_rate ):
+    """
+
+    Parameters
+    ----------
+    iphase :
+
+    sample_rate :
+
+
+    Returns
+    -------
+
+
+    """
 
     # Differential of instantaneous phase
     iphase = np.gradient( iphase, axis=0 )
@@ -112,6 +203,22 @@ def freq_from_phase( iphase, sample_rate ):
     return ifrequency
 
 def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
+    """
+
+    Parameters
+    ----------
+    ifrequency :
+
+    sample_rate :
+
+    phase_start :
+         (Default value = -np.pi)
+
+    Returns
+    -------
+
+
+    """
 
     iphase_diff = (ifrequency/sample_rate) * (2*np.pi)
 
@@ -120,8 +227,16 @@ def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
     return iphase
 
 def direct_quadrature( fm ):
-    """
-    Section 3.2 of 'on instantaneous frequency'
+    """Section 3.2 of 'on instantaneous frequency'
+
+    Parameters
+    ----------
+    fm :
+
+
+    Returns
+    -------
+
     """
     ph = phase_angle( fm )
 
@@ -134,9 +249,17 @@ def direct_quadrature( fm ):
     return ph
 
 def phase_angle( fm ):
-    """
-    Eqn 35 in 'On Instantaneous Frequency'
+    """Eqn 35 in 'On Instantaneous Frequency'
     ... with additional factor of 2 to make the range [-pi, pi]
+
+    Parameters
+    ----------
+    fm :
+
+
+    Returns
+    -------
+
     """
 
     return np.arctan( fm / np.lib.scimath.sqrt( 1 - np.power(fm,2) ) )
@@ -145,7 +268,25 @@ def phase_angle( fm ):
 
 
 def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
-    """ Not so sure where to start"""
+    """Not so sure where to start
+
+    Parameters
+    ----------
+    infr :
+
+    infr2 :
+
+    inam2 :
+
+    fbins :
+
+    fbins2 :
+
+
+    Returns
+    -------
+
+    """
 
     # carrier x am x time
     holo = np.zeros( ( len(fbins)+1, len(fbins2)+1, infr.shape[0], infr.shape[1] ) )
@@ -170,6 +311,30 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 
 def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         return_time=True ):
+    """
+
+    Parameters
+    ----------
+    infr :
+
+    infr2 :
+
+    inam2 :
+
+    freq_edges :
+
+    freq_edges2 :
+
+    mode :
+         (Default value = 'energy')
+    return_time :
+         (Default value = True)
+
+    Returns
+    -------
+
+
+    """
 
     if mode == 'energy':
         inam2 = inam2**2
@@ -204,6 +369,26 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         return np.array(holo[1:-1,1:-1]) # don't return a matrix
 
 def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
+    """
+
+    Parameters
+    ----------
+    infr :
+
+    inam :
+
+    freq_edges :
+
+    mode :
+         (Default value = 'energy')
+    return_sparse :
+         (Default value = False)
+
+    Returns
+    -------
+
+
+    """
 
     if mode == 'energy':
         inam = inam**2
@@ -227,6 +412,24 @@ def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
         return hht.toarray()
 
 def hilberthuang_1d( infr, inam, fbins, mode='energy'):
+    """
+
+    Parameters
+    ----------
+    infr :
+
+    inam :
+
+    fbins :
+
+    mode :
+         (Default value = 'energy')
+
+    Returns
+    -------
+
+
+    """
 
     specs = np.zeros( (len(fbins)-1,infr.shape[1]) )
 
@@ -249,8 +452,22 @@ def hilberthuang_1d( infr, inam, fbins, mode='energy'):
 
 
 def define_hist_bins( data_min, data_max, nbins, scale='linear' ):
-    """
-    Find the bin edges and centre frequencies for use in a histogram
+    """Find the bin edges and centre frequencies for use in a histogram
+
+    Parameters
+    ----------
+    data_min :
+
+    data_max :
+
+    nbins :
+
+    scale :
+         (Default value = 'linear')
+
+    Returns
+    -------
+
     """
 
     if scale == 'log':
@@ -268,10 +485,24 @@ def define_hist_bins( data_min, data_max, nbins, scale='linear' ):
     return edges, centres
 
 def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
-    """
-    Find the bin edges and centre frequencies for use in a histogram
+    """Find the bin edges and centre frequencies for use in a histogram
 
     if nbins is defined, mode is ignored
+
+    Parameters
+    ----------
+    X :
+
+    nbins :
+         (Default value = None)
+    mode :
+         (Default value = 'sqrt')
+    scale :
+         (Default value = 'linear')
+
+    Returns
+    -------
+
     """
 
     data_min = X.min()
@@ -286,6 +517,22 @@ def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
     return define_hist_bins( data_min, data_max, nbins, scale=scale )
 
 def mean_vector( IP, IA, mask=None ):
+    """
+
+    Parameters
+    ----------
+    IP :
+
+    IA :
+
+    mask :
+         (Default value = None)
+
+    Returns
+    -------
+
+
+    """
 
     phi = np.sin(IP) + 1j*np.cos(IP)
     mv = phi[:,None] * IA
