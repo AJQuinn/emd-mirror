@@ -84,7 +84,7 @@ def frequency_stats( imf, sample_rate, method,
         print('Method not recognised')
 
     # Compute unwrapped phase for frequency estimation
-    iphase = phase_from_analytic_signal( analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped' )
+    iphase = phase_from_complex_signal( analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped' )
     ifreq = freq_from_phase( iphase, sample_rate )
 
     # Return wrapped phase
@@ -96,15 +96,25 @@ def frequency_stats( imf, sample_rate, method,
 
 def quadrature_transform( X ):
     """
+    Compute the quadrature transform on a set of time-series as defined in
+    equation 34 of [1]. The return is a complex array with the input data as
+    the real part and the quadrature transform as the imaginary part.
 
     Parameters
     ----------
-    X :
-
+    X : ndarray
+        Array containing time-series to transform
 
     Returns
     -------
+    quad_signal : ndarray
+        Complex valued array containing the quadrature transformed signal
 
+    References
+    ----------
+    .. [1] Huang, N. E., Wu, Z., Long, S. R., Arnold, K. C., Chen, X., & Blank,
+       K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
+       1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
     """
 
@@ -120,29 +130,32 @@ def quadrature_transform( X ):
 
     return  nX + 1j * q
 
-def phase_from_analytic_signal( analytic_signal, smoothing=None,
+def phase_from_complex_signal( complex_signal, smoothing=None,
                                 ret_phase='wrapped', phase_jump='ascending' ):
     """
+    Compute the instantaneous phase from a complex signal obtained from either
+    the Hilbert Transform or by Direct Quadrature.
 
     Parameters
     ----------
-    analytic_signal :
-
-    smoothing :
-         (Default value = None)
-    ret_phase :
-         (Default value = 'wrapped')
-    phase_jump :
-         (Default value = 'ascending')
+    complex_signal : complex ndarray
+        Complex valued input array
+    smoothing : int
+         Integer window length used in phase smoothing (Default value = None)
+    ret_phase : {'wrapped','unwrapped'}
+         Flag indicating whether to return the wrapped or unwrapped phase (Default value = 'wrapped')
+    phase_jump : {'ascending','peak','descending','trough'}
+         Flag indicating where in the cycle the phase jump should be (Default value = 'ascending')
 
     Returns
     -------
-
+    IP : ndarray
+        Array of instantaneous phase values
 
     """
 
     # Compute unwrapped phase
-    iphase = np.unwrap(np.angle(analytic_signal),axis=0)
+    iphase = np.unwrap(np.angle(complex_signal),axis=0)
 
     # Apply smoothing if requested
     if smoothing is not None:
@@ -165,17 +178,20 @@ def phase_from_analytic_signal( analytic_signal, smoothing=None,
 
 def freq_from_phase( iphase, sample_rate ):
     """
+    Compute the instantaneous frequency from the differential of the
+    instantaneous phase.
 
     Parameters
     ----------
-    iphase :
-
-    sample_rate :
-
+    iphase : ndarray
+        Input array containing the unwrapped instantaneous phase time-course
+    sample_rate : scalar
+        The sampling frequency of the data
 
     Returns
     -------
-
+    IF : ndarray
+        Array containing the instantaneous frequencies
 
     """
 
@@ -189,19 +205,21 @@ def freq_from_phase( iphase, sample_rate ):
 
 def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
     """
+    Compute the instantaneous phase of a signal from its instantaneous phase.
 
     Parameters
     ----------
-    ifrequency :
-
-    sample_rate :
-
-    phase_start :
-         (Default value = -np.pi)
+    ifrequency : ndarray
+        Input array containing the instantaneous frequencies of a signal
+    sample_rate : scalar
+        The sampling frequency of the data
+    phase_start : scalar
+         Start value of the phase output (Default value = -np.pi)
 
     Returns
     -------
-
+    IP : ndarray
+        The instantaneous phase of the signal
 
     """
 
@@ -213,6 +231,10 @@ def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
 
 def direct_quadrature( fm ):
     """Section 3.2 of 'on instantaneous frequency'
+    Compute the quadrature transform on a set of time-series as defined in
+    equation 35 of [1].
+
+    THIS IS IN DEVELOPMENT
 
     Parameters
     ----------
@@ -234,22 +256,36 @@ def direct_quadrature( fm ):
     return ph
 
 def phase_angle( fm ):
-    """Eqn 35 in 'On Instantaneous Frequency'
-    ... with additional factor of 2 to make the range [-pi, pi]
+    """
+    Compute the quadrature transform on a set of time-series as defined in
+    equation 35 of [1].
+
+    THIS IS IN DEVELOPMENT
+
+    Parameters
+    ----------
+    X : ndarray
+        Array containing time-series to transform
+
+    Returns
+    -------
+    quad_signal : ndarray
+        Complex valued array containing the quadrature transformed signal
+
+    References
+    ----------
+    .. [1] Huang, N. E., Wu, Z., Long, S. R., Arnold, K. C., Chen, X., & Blank,
+       K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
+       1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
     Parameters
     ----------
     fm :
 
 
-    Returns
-    -------
-
     """
 
     return np.arctan( fm / np.lib.scimath.sqrt( 1 - np.power(fm,2) ) )
-
-
 
 
 def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
@@ -293,31 +329,49 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 
 ## Time-frequency spectra
 
-
 def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         return_time=True ):
     """
+    Compute the Holospectrum from the first and second layer frequecy
+    statistics of a dataset. The Holospectrum represents the energy of a signal
+    across time, carrier frequency and amplitude-modulation frequency [1].
 
     Parameters
     ----------
-    infr :
-
-    infr2 :
-
-    inam2 :
-
-    freq_edges :
-
+    infr : ndarray
+        2D first level instantaneous frequencies
+    infr2 : ndarray
+        3D second level instantaneous frequencies
+    inam2 : ndarray
+        3D second level instantaneous amplitudes
+    freq_edges : ndarray
+        Vector of frequency bins for carrier frequencies
     freq_edges2 :
-
-    mode :
-         (Default value = 'energy')
-    return_time :
-         (Default value = True)
+        Vector of frequency bins for amplitude-modulation frequencies
+    mode : {'energy','amplitude'}
+         Flag indicating whether to sum the energy or amplitudes (Default value = 'energy')
+    return_time : bool
+         Flag indicating whether to marginalise over the time dimension (Default value = True)
 
     Returns
     -------
+    holo : ndarray
+        Holospectrum of input data.
 
+    Notes
+    -----
+    output will be a 3D [samples x am_freq x carrier_freq] array if
+    return_time is True else a 2D [ am_freq x carrier_freq ] array is returned
+
+
+    References
+    ----------
+    .. [1] Huang, N. E., Hu, K., Yang, A. C. C., Chang, H.-C., Jia, D., Liang,
+       W.-K., … Wu, Z. (2016). On Holo-Hilbert spectral analysis: a full
+       informational spectral representation for nonlinear and non-stationary
+       data. Philosophical Transactions of the Royal Society A: Mathematical,
+       Physical and Engineering Sciences, 374(2065), 20150206.
+       https://doi.org/10.1098/rsta.2015.0206
 
     """
 
@@ -355,23 +409,43 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
 
 def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
     """
+    Compute the Hilbert-Huang transform from the instataneous frequency
+    statistics of a dataset. The Hilbert-Huang Transform represents the energy
+    of a signal across time and frequency.
 
     Parameters
     ----------
-    infr :
-
-    inam :
-
-    freq_edges :
-
-    mode :
-         (Default value = 'energy')
-    return_sparse :
-         (Default value = False)
+    infr : ndarray
+        2D first level instantaneous frequencies
+    inam : ndarray
+        2D first level instantaneous amplitudes
+    freq_edges : ndarray
+        Vector of frequency bins for carrier frequencies
+    mode : {'energy','amplitude'}
+         Flag indicating whether to sum the energy or amplitudes (Default value = 'energy')
+    return_sparse : bool
+         Flag indicating whether to return the full or sparse form(Default value = True)
 
     Returns
     -------
+    hht : ndarray
+        2D array containing the Hilbert-Huang Transform
 
+    Notes
+    -----
+    If return_sparse is set to True the returned array is a sparse matrix in
+    COOrdinate form (scipy.sparse.coo_matrix), also known as 'ijv' or 'triplet'
+    form. This is much more memory efficient than the full form but may not
+    behave as expected in functions expecting full arrays.
+
+    References
+    ----------
+    .. [1] Huang, N. E., Shen, Z., Long, S. R., Wu, M. C., Shih, H. H., Zheng,
+       Q., … Liu, H. H. (1998). The empirical mode decomposition and the Hilbert
+       spectrum for nonlinear and non-stationary time series analysis. Proceedings
+       of the Royal Society of London. Series A: Mathematical, Physical and
+       Engineering Sciences, 454(1971), 903–995.
+       https://doi.org/10.1098/rspa.1998.0193
 
     """
 
@@ -396,36 +470,49 @@ def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
     else:
         return hht.toarray()
 
-def hilberthuang_1d( infr, inam, fbins, mode='energy'):
+def hilberthuang_1d( infr, inam, freq_edges, mode='energy'):
     """
+    Compute the Hilbert-Huang transform from the instataneous frequency
+    statistics of a dataset. The 1D Hilbert-Huang Transform represents the
+    energy in a signal across frequencies and IMFs.
 
     Parameters
     ----------
-    infr :
-
-    inam :
-
-    fbins :
-
-    mode :
-         (Default value = 'energy')
+    infr : ndarray
+        2D first level instantaneous frequencies
+    inam : ndarray
+        2D first level instantaneous amplitudes
+    freq_edges : ndarray
+        Vector of frequency bins for carrier frequencies
+    mode : {'energy','amplitude'}
+         Flag indicating whether to sum the energy or amplitudes (Default value = 'energy')
 
     Returns
     -------
+    specs : ndarray
+        2D array containing Hilbert-Huang Spectrum [ frequencies x imfs ]
 
+    References
+    ----------
+    .. [1] Huang, N. E., Shen, Z., Long, S. R., Wu, M. C., Shih, H. H., Zheng,
+       Q., … Liu, H. H. (1998). The empirical mode decomposition and the Hilbert
+       spectrum for nonlinear and non-stationary time series analysis. Proceedings
+       of the Royal Society of London. Series A: Mathematical, Physical and
+       Engineering Sciences, 454(1971), 903–995.
+       https://doi.org/10.1098/rspa.1998.0193
 
     """
 
-    specs = np.zeros( (len(fbins)-1,infr.shape[1]) )
+    specs = np.zeros( (len(freq_edges)-1,infr.shape[1]) )
 
     # Remove values outside the bin range
     infr = infr.copy()
-    infr[infr<fbins[0]] = np.nan
-    infr[infr>fbins[-1]] = np.nan
+    infr[infr<freq_edges[0]] = np.nan
+    infr[infr>freq_edges[-1]] = np.nan
 
-    finds = np.digitize( infr, fbins )
+    finds = np.digitize( infr, freq_edges )
 
-    for ii in range( len(fbins)-1 ):
+    for ii in range( len(freq_edges)-1 ):
         for jj in range( infr.shape[1] ):
 
             if mode == 'power':
@@ -437,21 +524,36 @@ def hilberthuang_1d( infr, inam, fbins, mode='energy'):
 
 
 def define_hist_bins( data_min, data_max, nbins, scale='linear' ):
-    """Find the bin edges and centre frequencies for use in a histogram
+    """
+    Define the bin edges and centre values for use in a histogram
 
     Parameters
     ----------
-    data_min :
-
-    data_max :
-
-    nbins :
-
-    scale :
-         (Default value = 'linear')
+    data_min : scalar
+        Value for minimum edge
+    data_max : scalar
+        Value for maximum edge
+    nbins : integer
+        Number of bins to create
+    scale : {'linear','log'}
+         Flag indicating whether to use a linear or log spacing between bins (Default value = 'linear')
 
     Returns
     -------
+    edges : ndarray
+        1D array of bin edges
+    centres : ndarray
+        1D array of bin centres
+
+    Notes
+    -----
+    an example function call creating a vector of 4 bin edges and 3 bin centre
+    values.
+    >> edges,centres = emd.spectra.define_hist_bins( 1, 5, 3 )
+    >> print(edges)
+    [1. 2. 3. 4. 5.]
+    >> print(centres)
+    [1.5 2.5 3.5 4.5]
 
     """
 
@@ -476,17 +578,21 @@ def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
 
     Parameters
     ----------
-    X :
-
-    nbins :
-         (Default value = None)
-    mode :
-         (Default value = 'sqrt')
-    scale :
+    X : ndarray
+        Dataset whose summary stats will define the histogram
+    nbins : int
+         Number of bins to create, if undefined this is derived from the data (Default value = None)
+    mode : {'sqrt'}
+         Method for deriving number of bins if nbins is undefined (Default value = 'sqrt')
+    scale : {'linear','log'}
          (Default value = 'linear')
 
     Returns
     -------
+    edges : ndarray
+        1D array of bin edges
+    centres : ndarray
+        1D array of bin centres
 
     """
 
@@ -501,20 +607,23 @@ def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
 
     return define_hist_bins( data_min, data_max, nbins, scale=scale )
 
-def mean_vector( IP, IA, mask=None ):
+def mean_vector( IP, X, mask=None ):
     """
+    Compute the mean vector of a set of values wrapped around the unit circle.
 
     Parameters
     ----------
-    IP :
-
-    IA :
-
+    IP : ndarray
+        Instantaneous Phase values
+    X : ndarray
+        Observations corresponding to IP values
     mask :
          (Default value = None)
 
     Returns
     -------
+    mv : ndarray
+        Set of mean vectors
 
 
     """
