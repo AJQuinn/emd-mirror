@@ -3,6 +3,28 @@ import numpy as np
 
 def abreu( nonlinearity_deg=.3, nonlinearity_phi=-np.pi/4,
             seconds=10, freq=1, sample_rate=1000, noise=0 ):
+    """
+
+    Parameters
+    ----------
+    nonlinearity_deg :
+         (Default value = .3)
+    nonlinearity_phi :
+         (Default value = -np.pi/4)
+    seconds :
+         (Default value = 10)
+    freq :
+         (Default value = 1)
+    sample_rate :
+         (Default value = 1000)
+    noise :
+         (Default value = 0)
+
+    Returns
+    -------
+
+    
+    """
 
     num_samples = sample_rate*seconds
 

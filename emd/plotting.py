@@ -3,6 +3,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_imfs( imfs, time_vect=None, scale_y=False ):
+    """
+
+    Parameters
+    ----------
+    imfs :
+        
+    time_vect :
+         (Default value = None)
+    scale_y :
+         (Default value = False)
+
+    Returns
+    -------
+
+    
+    """
 
     nplots = imfs.shape[1] + 1
     if time_vect is None:

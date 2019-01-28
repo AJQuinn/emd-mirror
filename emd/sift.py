@@ -7,7 +7,35 @@ from . import utils,spectra
 def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
           interp_method='mono_pchip'):
     """
-    Basic sift
+    Compute Intrinsic Mode Functions from an input data vector using the
+    original sift algorithm [1].
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+    interp_method : {'mono_pchip','splrep','pchip'}
+         The interpolation method used when computing upper and lower envelopes (Default value = 'mono_pchip')
+
+    Returns
+    -------
+    imf: ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+
+    References
+    ----------
+    .. [1] Huang, N. E., Shen, Z., Long, S. R., Wu, M. C., Shih, H. H., Zheng,
+       Q., … Liu, H. H. (1998). The empirical mode decomposition and the Hilbert
+       spectrum for nonlinear and non-stationary time series analysis. Proceedings
+       of the Royal Society of London. Series A: Mathematical, Physical and
+       Engineering Sciences, 454(1971), 903–995.
+       https://doi.org/10.1098/rspa.1998.0193
 
     """
 
@@ -41,41 +69,56 @@ def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
     return imf
 
-# Some ensemble helper functions
-def _sift_with_noise( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
-
-    if noise is None:
-        noise = np.random.randn( *X.shape )
-
-    if noise_scaling is not None:
-        noise = noise * noise_scaling
-
-    ensX = X.copy() + noise
-
-    return sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
-
-def _sift_with_noise_flip( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
-
-    if noise is None:
-        noise = np.random.randn( *X.shape )
-
-    if noise_scaling is not None:
-        noise = noise * noise_scaling
-
-    ensX = X.copy() + noise
-    imf = sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
-
-    ensX = X.copy() - noise
-    imf += sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
-
-    return imf / 2
-
 def ensemble_sift( X, nensembles, ensemble_noise=.2,
                         sd_thresh=.1, sift_thresh=1e-8,
                         max_imfs=None, nprocesses=1,
                         noise_mode='single' ):
     """
-    Ensemble sifting, add noise n times and average the IMFs
+    Compute Intrinsic Mode Functions from an input data vector using the
+    ensemble empirical model decomposition algorithm [1]. This approach sifts
+    an ensemble of signals with white-noise added and treats the mean IMFs as
+    the result.
+
+    The resulting IMFs from the ensemble sift resembles a dyadic filter [2].
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    nensembles : int
+        Integer number of different ensembles to compute the sift across.
+    ensemble_noise : scalar
+         Standard deviation of noise to add to each ensemble (Default value = .2)
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+    nprocesses : integer
+         Integer number of parallel processes to compute. Each process computes
+         a single realisation of the total ensemble (Default value = 1)
+    noise_mode : {'single','flip'}
+         Flag indicating whether to compute each ensemble with noise once or
+         twice with the noise and sign-flipped noise (Default value = 'single')
+
+    Returns
+    -------
+    imf : ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+
+    References
+    ----------
+    .. [1] Wu, Z., & Huang, N. E. (2009). Ensemble Empirical Mode Decomposition:
+       A Noise-Assisted Data Analysis Method. Advances in Adaptive Data Analysis,
+       1(1), 1–41. https://doi.org/10.1142/s1793536909000047
+    .. [2] Wu, Z., & Huang, N. E. (2004). A study of the characteristics of
+       white noise using the empirical mode decomposition method. Proceedings of
+       the Royal Society of London. Series A: Mathematical, Physical and
+       Engineering Sciences, 460(2046), 1597–1611.
+       https://doi.org/10.1098/rspa.2003.1221
+
+
     """
 
     if noise_mode not in ['single','flip']:
@@ -108,22 +151,47 @@ def ensemble_sift( X, nensembles, ensemble_noise=.2,
 
     return imfs
 
-
 def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
                             sd_thresh=.1, sift_thresh=1e-8,
                             max_imfs=None, nprocesses=1 ):
     """
-    a bit more complicated
+    Compute Intrinsic Mode Functions from an input data vector using the
+    complete ensemble empirical model decomposition algorithm [1]. This approach sifts
+    an ensemble of signals with white-noise added taking a single IMF across
+    all ensembles at before moving to the next IMF.
 
-    need to extract the first IMF by EEMD as normal
-    then compute the subsequent IMFs with the second IMFs of the noise added to the X-IMF1
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    nensembles : int
+        Integer number of different ensembles to compute the sift across.
+    ensemble_noise : scalar
+         Standard deviation of noise to add to each ensemble (Default value = .2)
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+    nprocesses : integer
+         Integer number of parallel processes to compute. Each process computes
+         a single realisation of the total ensemble (Default value = 1)
 
-    VERY memory intensive
+    Returns
+    -------
+    imf: ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+    noise: array_like
+        The Intrisic Mode Functions from the decomposition of X.
 
-    some references
-    https://github.com/helske/Rlibeemd/blob/master/src/ceemdan.c
-    http://bioingenieria.edu.ar/grupos/ldnlys/metorres/re_inter.htm#Codigos
-    http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=5947265
+    References
+    ----------
+    .. [1] Torres, M. E., Colominas, M. A., Schlotthauer, G., & Flandrin, P.
+       (2011). A complete ensemble empirical mode decomposition with adaptive
+       noise. In 2011 IEEE International Conference on Acoustics, Speech and
+       Signal Processing (ICASSP). IEEE.
+       https://doi.org/10.1109/icassp.2011.5947265
 
     """
 
@@ -186,6 +254,37 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
     return imf,noise
 
 def sift_second_layer( IA, sift_func=sift, sift_args=None ):
+    """
+    Compute second layer IMFs from the amplitude envelopes of a set of first
+    layer IMFs [1].
+
+    Parameters
+    ----------
+    IA : ndarray
+        Input array containing a set of first layer IMFs
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+
+    Returns
+    -------
+    imf2 : ndarray
+        3D array [samples x first layer imfs x second layer imfs ] containing
+        the second layer IMFs
+
+    References
+    ----------
+    .. [1] Huang, N. E., Hu, K., Yang, A. C. C., Chang, H.-C., Jia, D., Liang,
+       W.-K., … Wu, Z. (2016). On Holo-Hilbert spectral analysis: a full
+       informational spectral representation for nonlinear and non-stationary
+       data. Philosophical Transactions of the Royal Society A: Mathematical,
+       Physical and Engineering Sciences, 374(2065), 20150206.
+       https://doi.org/10.1098/rsta.2015.0206
+
+    """
     if (sift_args is None) or ('max_imfs' not in sift_args):
         max_imfs = IA.shape[1]
     elif 'max_imfs' in sift_args:
@@ -203,6 +302,40 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
         mask_initial_freq=None, mask_freqs=None,
         interp_method='mono_pchip'):
+    """
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+    mask_amp_ratio : scalar
+         Amplitude of mask signals relative to amplitude of previous IMF (Default value = 1)
+    mask_step_factor : scalar
+         Step in frequency between successive masks (Default value = 2)
+    ret_mask_freq : bool
+         Boolean flag indicating whether mask frequencies are returned (Default value = False)
+    mask_initial_freq : scalar
+         Frequency of initial mask as a proportion of the sampling frequency (Default value = None)
+    mask_freqs : array_like
+         1D array, list or tuple of mask frequencies as a proportion of the
+         sampling frequency (Default value = None)
+    interp_method : {'mono_pchip','splrep','pchip'}
+         The interpolation method used when computing upper and lower envelopes (Default value = 'mono_pchip')
+
+    Returns
+    -------
+    imf : ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+    mask_freqs : ndarray
+        1D array of mask frequencies, if ret_mask_freq is set to True.
+
+    """
 
     if X.ndim == 1:
         # add dummy dimension
@@ -285,8 +418,29 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     else:
         return imf
 
-
 def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=1, ret_mask_freq=False ):
+    """ Not sure really,againwenf
+
+    Parameters
+    ----------
+    X :
+
+    sd_thresh :
+         (Default value = .1)
+    sift_thresh :
+         (Default value = 1e-8)
+    max_imfs :
+         (Default value = None)
+    mask_amp_ratio :
+         (Default value = 1)
+    ret_mask_freq :
+         (Default value = False)
+
+    Returns
+    -------
+
+
+    """
 
     if X.ndim == 1:
         # add dummy dimension
@@ -341,15 +495,114 @@ def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_a
     else:
         return imf
 
-def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
+## Sift Utils
+def _sift_with_noise( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
     """
-    Should be passed X as [nsamples,1]
+    Helper function for applying white noise to a signal prior to computing the
+    sift.
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    noise_scaling : scalar
+         Standard deviation of noise to add to each ensemble (Default value =
+         None)
+    noise : ndarray
+         array of noise values the same size as X to add prior to sift (Default value = None)
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+
+    Returns
+    -------
+    imf: ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+
+
+    """
+
+    if noise is None:
+        noise = np.random.randn( *X.shape )
+
+    if noise_scaling is not None:
+        noise = noise * noise_scaling
+
+    ensX = X.copy() + noise
+
+    return sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
+
+def _sift_with_noise_flip( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+    """
+    Helper function for applying white noise to a signal prior to computing the
+    sift.
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    noise_scaling : scalar
+         Standard deviation of noise to add to each ensemble (Default value =
+         None)
+    noise : ndarray
+         array of noise values the same size as X to add prior to sift (Default value = None)
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+
+    Returns
+    -------
+    imf: ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+
+
+    """
+
+    if noise is None:
+        noise = np.random.randn( *X.shape )
+
+    if noise_scaling is not None:
+        noise = noise * noise_scaling
+
+    ensX = X.copy() + noise
+    imf = sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
+
+    ensX = X.copy() - noise
+    imf += sift(ensX,sd_thresh=sd_thresh,sift_thresh=sift_thresh,max_imfs=max_imfs)
+
+    return imf / 2
+
+def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
+    """Should be passed X as [nsamples,1]
+
+    Parameters
+    ----------
+    X : ndarray [nsamples x 1]
+        1D input array containing the time-series data to be decomposed
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    interp_method : {'mono_pchip','splrep','pchip'}
+         The interpolation method used when computing upper and lower envelopes (Default value = 'mono_pchip')
+
+    Returns
+    -------
+    proto_imf : ndarray
+        1D vector containing the next IMF extracted from X
+    continue_flag : bool
+        Boolean indicating whether the sift can be continued beyond this IMF
+
     """
 
     proto_imf = X.copy()
 
     continue_imf = True
-    continue_sift = True
+    continue_flag = True
     while continue_imf:
 
         upper = utils.interp_envelope( proto_imf, mode='upper',
@@ -359,7 +612,7 @@ def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
 
         # If upper or lower are None we should stop sifting alltogether
         if upper is None or lower is None:
-            continue_sift=False
+            continue_flag=False
             continue_imf=False
             continue
 
@@ -381,11 +634,33 @@ def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
     if proto_imf.ndim == 1:
         proto_imf = proto_imf[:,None]
 
-    return proto_imf, continue_sift
-
+    return proto_imf, continue_flag
 
 def get_next_imf_mask( X, z, amp,
                        sd_thresh=.1, interp_method='mono_pchip',mask_type='all' ):
+    """
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    z : scalar
+        Mask frequency as a proportion of the sampling rate, values between 0->z->.5
+    amp : scalar
+        Mask amplitude
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    interp_method : {'mono_pchip','splrep','pchip'}
+         The interpolation method used when computing upper and lower envelopes (Default value = 'mono_pchip')
+    mask_type : {'all','sine','cosine'}
+         Flag indicating whether to apply sine, cosine or all masks (Default value = 'all')
+
+    Returns
+    -------
+    proto_imf : ndarray
+        1D vector containing the next IMF extracted from X
+
+    """
     z = z * 2 * np.pi
 
     if mask_type is 'all' or mask_type is 'sine':

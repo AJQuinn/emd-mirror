@@ -6,6 +6,24 @@ from scipy import signal
 from . import spectra
 
 def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
+    """
+
+    Parameters
+    ----------
+    X :
+        
+    thresh :
+         (Default value = 1e-10)
+    clip :
+         (Default value = False)
+    interp_method :
+         (Default value = 'pchip')
+
+    Returns
+    -------
+
+    
+    """
 
     # Don't normalise in place
     X = X.copy()
@@ -51,6 +69,20 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
     return X
 
 def get_padded_extrema( X, combined_upper_lower=False ):
+    """
+
+    Parameters
+    ----------
+    X :
+        
+    combined_upper_lower :
+         (Default value = False)
+
+    Returns
+    -------
+
+    
+    """
 
     if X.ndim == 2:
         X = X[:,0]
@@ -82,6 +114,26 @@ def get_padded_extrema( X, combined_upper_lower=False ):
     return ret_max_locs,ret_max_pks
 
 def interp_envelope( X, to_plot=False, ret_all=False, mode='upper', interp_method='splrep' ):
+    """
+
+    Parameters
+    ----------
+    X :
+        
+    to_plot :
+         (Default value = False)
+    ret_all :
+         (Default value = False)
+    mode :
+         (Default value = 'upper')
+    interp_method :
+         (Default value = 'splrep')
+
+    Returns
+    -------
+
+    
+    """
 
     if mode == 'upper':
         locs,pks = get_padded_extrema( X, combined_upper_lower=False)
@@ -121,6 +173,20 @@ def interp_envelope( X, to_plot=False, ret_all=False, mode='upper', interp_metho
         return env
 
 def find_extrema( X, ret_min=False ):
+    """
+
+    Parameters
+    ----------
+    X :
+        
+    ret_min :
+         (Default value = False)
+
+    Returns
+    -------
+
+    
+    """
 
     if ret_min:
         #ind = signal.argrelextrema( X, np.less)[0]
@@ -143,6 +209,18 @@ def find_extrema( X, ret_min=False ):
     return ind, X[ind]
 
 def zero_crossing_count( X ):
+    """
+
+    Parameters
+    ----------
+    X :
+        
+
+    Returns
+    -------
+
+    
+    """
 
     if X.ndim == 2:
         X = X[:,None]
@@ -151,6 +229,26 @@ def zero_crossing_count( X ):
 
 
 def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
+    """
+
+    Parameters
+    ----------
+    f :
+        
+    nonlin_deg :
+        
+    nonlin_phi :
+        
+    sample_rate :
+        
+    seconds :
+        
+
+    Returns
+    -------
+
+    
+    """
 
     time_vect = np.linspace(0,seconds,seconds*sample_rate)
 
@@ -163,6 +261,18 @@ def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
     return factor * ( num / denom )
 
 def est_orthogonality( imf ):
+    """
+
+    Parameters
+    ----------
+    imf :
+        
+
+    Returns
+    -------
+
+    
+    """
 
 
     ortho = np.ones( (imf.shape[1],imf.shape[1]) ) * np.nan
@@ -175,8 +285,22 @@ def est_orthogonality( imf ):
     return ortho
 
 def find_peaks( X, winsize, lock_to='max', percentile=None ):
-    """
-    Helper function for defining trials around peaks within the data
+    """Helper function for defining trials around peaks within the data
+
+    Parameters
+    ----------
+    X :
+        
+    winsize :
+        
+    lock_to :
+         (Default value = 'max')
+    percentile :
+         (Default value = None)
+
+    Returns
+    -------
+
     """
 
     if lock_to=='max':
@@ -204,8 +328,18 @@ def find_peaks( X, winsize, lock_to='max', percentile=None ):
     return trls
 
 def apply_epochs( X, trls ):
-    """
-    Helper function which applies a set of epochs to a continuous dataset
+    """Helper function which applies a set of epochs to a continuous dataset
+
+    Parameters
+    ----------
+    X :
+        
+    trls :
+        
+
+    Returns
+    -------
+
     """
 
     Y = np.zeros( (trls[0,1]-trls[0,0],X.shape[1],trls.shape[0]) )
@@ -216,6 +350,22 @@ def apply_epochs( X, trls ):
     return Y
 
 def wrap_phase( IP, ncycles=1, mode='2pi' ):
+    """
+
+    Parameters
+    ----------
+    IP :
+        
+    ncycles :
+         (Default value = 1)
+    mode :
+         (Default value = '2pi')
+
+    Returns
+    -------
+
+    
+    """
 
     if mode == '2pi':
         phases = ( IP ) % (ncycles * 2 * np.pi )
@@ -229,8 +379,27 @@ def wrap_phase( IP, ncycles=1, mode='2pi' ):
 
 def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
                   variance_metric='variance', bin_edges=None ):
-    """
-    Compute distribution of x by phase-bins in ip
+    """Compute distribution of x by phase-bins in ip
+
+    Parameters
+    ----------
+    ip :
+        
+    x :
+        
+    nbins :
+         (Default value = 24)
+    weights :
+         (Default value = None)
+    mode :
+         (Default value = 'average')
+    variance_metric :
+         (Default value = 'variance')
+    bin_edges :
+         (Default value = None)
+
+    Returns
+    -------
 
     """
 
@@ -268,6 +437,22 @@ def bin_by_phase( ip, x, nbins=24, weights=None, mode='average',
     return avg,var,bin_centres
 
 def phase_align_cycles( ip, x, cycles=None ):
+    """
+
+    Parameters
+    ----------
+    ip :
+        
+    x :
+        
+    cycles :
+         (Default value = None)
+
+    Returns
+    -------
+
+    
+    """
 
     phase_edges,phase_bins = spectra.define_hist_bins( 0, 2*np.pi, 48 )
 
@@ -289,6 +474,24 @@ def phase_align_cycles( ip, x, cycles=None ):
     return avg
 
 def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
+    """
+
+    Parameters
+    ----------
+    phase :
+        
+    return_good :
+         (Default value = True)
+    mask :
+         (Default value = None)
+    imf :
+         (Default value = None)
+
+    Returns
+    -------
+
+    
+    """
 
     if phase.max() > 2*np.pi:
         print('Wrapping phase')
@@ -358,6 +561,24 @@ def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
     return cycles
 
 def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
+    """
+
+    Parameters
+    ----------
+    cycles :
+        
+    values :
+        
+    factor :
+         (Default value = 1)
+    mode :
+         (Default value = 'compressed')
+
+    Returns
+    -------
+
+    
+    """
 
     #https://stackoverflow.com/a/39598529
     unq,ids,count = np.unique(cycles,return_inverse=True,return_counts=True)
@@ -373,6 +594,20 @@ def get_cycle_vals( cycles, values, factor=1, mode='compressed' ):
     return vals
 
 def get_control_points( x, good_cycles ):
+    """
+
+    Parameters
+    ----------
+    x :
+        
+    good_cycles :
+        
+
+    Returns
+    -------
+
+    
+    """
 
     ctrl = list()
     for ii in range(1,good_cycles.max()):
@@ -388,6 +623,20 @@ def get_control_points( x, good_cycles ):
     return np.array(ctrl)
 
 def get_cycle_chain( cycles, min_chain=1 ):
+    """
+
+    Parameters
+    ----------
+    cycles :
+        
+    min_chain :
+         (Default value = 1)
+
+    Returns
+    -------
+
+    
+    """
 
     chains = list()
     new_chain = True
