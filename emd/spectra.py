@@ -278,10 +278,6 @@ def phase_angle( fm ):
        K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
        1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
-    Parameters
-    ----------
-    fm :
-
 
     """
 
