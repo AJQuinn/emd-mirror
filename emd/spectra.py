@@ -6,6 +6,7 @@ from . import utils
 def frequency_stats( imf, sample_rate, method,
                      smooth_phase=31 ):
     """
+    Compute instantaneous phase, frequency and amplitude from a set of IMFs.
 
     Parameters
     ----------
@@ -45,14 +46,14 @@ def frequency_stats( imf, sample_rate, method,
     # instantaneous amplitude.
     if method == 'hilbert':
 
-        analytic_signal = analytic_signal_from_hilbert( imf )
+        analytic_signal = signal.hilbert( X, axis=0 )
 
         # Estimate instantaneous amplitudes directly from analytic signal
         iamp = np.abs(analytic_signal)
 
     elif method == 'quad':
 
-        analytic_signal = analytic_signal_from_quadrature( imf )
+        analytic_signal = quadrature_transform( imf )
 
         orig_dim = imf.ndim
         if imf.ndim == 2:
@@ -93,23 +94,7 @@ def frequency_stats( imf, sample_rate, method,
 
 # Frequency stat utils
 
-def analytic_signal_from_hilbert( X ):
-    """
-
-    Parameters
-    ----------
-    X :
-
-
-    Returns
-    -------
-
-
-    """
-
-    return signal.hilbert( X, axis=0 )
-
-def analytic_signal_from_quadrature( X ):
+def quadrature_transform( X ):
     """
 
     Parameters
