@@ -53,7 +53,7 @@ def frequency_stats( imf, sample_rate, method,
 
     elif method == 'nht':
 
-        n_imf = emd.utils.amplitude_normalise( imf )
+        n_imf = utils.amplitude_normalise( imf )
         analytic_signal = signal.hilbert( n_imf,axis=0 )
 
         # Estimate inst amplitudes with spline interpolation
