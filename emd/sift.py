@@ -8,7 +8,7 @@ def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
           interp_method='mono_pchip'):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
-    original sift algorithm [1].
+    original sift algorithm [1]_.
 
     Parameters
     ----------
@@ -75,11 +75,11 @@ def ensemble_sift( X, nensembles, ensemble_noise=.2,
                         noise_mode='single' ):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
-    ensemble empirical model decomposition algorithm [1]. This approach sifts
+    ensemble empirical model decomposition algorithm [1]_. This approach sifts
     an ensemble of signals with white-noise added and treats the mean IMFs as
     the result.
 
-    The resulting IMFs from the ensemble sift resembles a dyadic filter [2].
+    The resulting IMFs from the ensemble sift resembles a dyadic filter [2]_.
 
     Parameters
     ----------
@@ -156,7 +156,7 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
                             max_imfs=None, nprocesses=1 ):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
-    complete ensemble empirical model decomposition algorithm [1]. This approach sifts
+    complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
     an ensemble of signals with white-noise added taking a single IMF across
     all ensembles at before moving to the next IMF.
 
@@ -256,7 +256,7 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
 def sift_second_layer( IA, sift_func=sift, sift_args=None ):
     """
     Compute second layer IMFs from the amplitude envelopes of a set of first
-    layer IMFs [1].
+    layer IMFs [1]_.
 
     Parameters
     ----------
@@ -303,6 +303,14 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         mask_initial_freq=None, mask_freqs=None,
         interp_method='mono_pchip'):
     """
+    Compute Intrinsic Mode Functions from a dataset using a set of masking
+    signals to reduce mixing of components between modes.
+
+    The simplest masking signal approach uses single mask for each IMF after
+    hte first is computed as normal [1]_. This has since been expanded to the
+    complete mask sift which uses a set of positive and negative sign sine and
+    cosine signals as masks for each IMF. The mean of the four is taken as the
+    IMF.
 
     Parameters
     ----------
@@ -334,6 +342,13 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
     mask_freqs : ndarray
         1D array of mask frequencies, if ret_mask_freq is set to True.
+
+    References
+    ----------
+    .. [1] Ryan Deering, & James F. Kaiser. (2005). The Use of a Masking Signal
+       to Improve Empirical Mode Decomposition. In Proceedings. (ICASSP ’05). IEEE
+       International Conference on Acoustics, Speech, and Signal Processing, 2005.
+       IEEE. https://doi.org/10.1109/icassp.2005.1416051
 
     """
 
@@ -577,7 +592,9 @@ def _sift_with_noise_flip( X, noise_scaling=None, noise=None, sd_thresh=.1, sift
     return imf / 2
 
 def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
-    """Should be passed X as [nsamples,1]
+    """
+    Compute the next IMF from a data set. This is a helper function used within
+    the more general sifting functions.
 
     Parameters
     ----------
@@ -637,6 +654,8 @@ def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
 def get_next_imf_mask( X, z, amp,
                        sd_thresh=.1, interp_method='mono_pchip',mask_type='all' ):
     """
+    Compute the next IMF from a data set using the mask sift appraoch. This is
+    a helper function used within the more general sifting functions.
 
     Parameters
     ----------

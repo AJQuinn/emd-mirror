@@ -7,6 +7,7 @@ def frequency_stats( imf, sample_rate, method,
                      smooth_phase=31 ):
     """
     Compute instantaneous phase, frequency and amplitude from a set of IMFs.
+    Several approaches are implemented from [1]_ and [2]_.
 
     Parameters
     ----------
@@ -14,7 +15,7 @@ def frequency_stats( imf, sample_rate, method,
         Input array of IMFs.
     sample_rate : scalar
         Sampling frequency of the signal in Hz
-    method : {'hilbert','quad','direct_quad'}
+    method : {'hilbert','quad','direct_quad','nht'}
         The method for computing the frequency stats
     smooth_phase : integer
          Length of window when smoothing the unwrapped phase (Default value = 31)
@@ -116,7 +117,7 @@ def frequency_stats( imf, sample_rate, method,
 def quadrature_transform( X ):
     """
     Compute the quadrature transform on a set of time-series as defined in
-    equation 34 of [1]. The return is a complex array with the input data as
+    equation 34 of [1]_. The return is a complex array with the input data as
     the real part and the quadrature transform as the imaginary part.
 
     Parameters
@@ -265,6 +266,12 @@ def direct_quadrature( fm ):
     Returns
     -------
 
+    References
+    ----------
+    .. [1] Huang, N. E., Wu, Z., Long, S. R., Arnold, K. C., Chen, X., & Blank,
+       K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
+       1(2), 177–229. https://doi.org/10.1142/s1793536909000096
+
     """
     ph = phase_angle( fm )
 
@@ -279,7 +286,7 @@ def direct_quadrature( fm ):
 def phase_angle( fm ):
     """
     Compute the quadrature transform on a set of time-series as defined in
-    equation 35 of [1].
+    equation 35 of [1]_.
 
     THIS IS IN DEVELOPMENT
 
@@ -351,7 +358,7 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     """
     Compute the Holospectrum from the first and second layer frequecy
     statistics of a dataset. The Holospectrum represents the energy of a signal
-    across time, carrier frequency and amplitude-modulation frequency [1].
+    across time, carrier frequency and amplitude-modulation frequency [1]_.
 
     Parameters
     ----------
@@ -428,7 +435,7 @@ def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
     """
     Compute the Hilbert-Huang transform from the instataneous frequency
     statistics of a dataset. The Hilbert-Huang Transform represents the energy
-    of a signal across time and frequency.
+    of a signal across time and frequency [1]_.
 
     Parameters
     ----------
@@ -491,7 +498,7 @@ def hilberthuang_1d( infr, inam, freq_edges, mode='energy'):
     """
     Compute the Hilbert-Huang transform from the instataneous frequency
     statistics of a dataset. The 1D Hilbert-Huang Transform represents the
-    energy in a signal across frequencies and IMFs.
+    energy in a signal across frequencies and IMFs [1]_.
 
     Parameters
     ----------

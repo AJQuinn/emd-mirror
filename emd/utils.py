@@ -11,7 +11,7 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip',
     Normalise the amplitude envelope of an IMF to be 1. Mutiple runs of
     normalisation are carried out until the desired threshold is reached.
 
-    This uses the method described as part of the AM-FM transform [1]
+    This uses the method described as part of the AM-FM transform [1]_
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip',
 
     References
     ----------
-    .. [2] Huang, N. E., Wu, Z., Long, S. R., Arnold, K. C., Chen, X., & Blank,
+    .. [1] Huang, N. E., Wu, Z., Long, S. R., Arnold, K. C., Chen, X., & Blank,
        K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
        1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
@@ -259,7 +259,7 @@ def zero_crossing_count( X ):
 
 def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
     """
-    Simulate a non-linear waveform using equation 9 in [1].
+    Simulate a non-linear waveform using equation 9 in [1]_.
 
     Parameters
     ----------
@@ -285,8 +285,6 @@ def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
        Analytical approximate wave form for asymmetric waves. Coastal Engineering,
        57(7), 656–667. https://doi.org/10.1016/j.coastaleng.2010.02.005
 
-
-
     """
 
     time_vect = np.linspace(0,seconds,seconds*sample_rate)
@@ -301,7 +299,7 @@ def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
 
 def est_orthogonality( imf ):
     """
-    Compute the index of orthogonality as described in equation 6.5 of [1].
+    Compute the index of orthogonality as described in equation 6.5 of [1]_.
 
     Parameters
     ----------
