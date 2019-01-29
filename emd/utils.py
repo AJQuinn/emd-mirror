@@ -5,7 +5,8 @@ from scipy import interpolate as interp
 from scipy import signal
 from . import spectra
 
-def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
+def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip',
+                            max_iters=3 ):
     """
     Normalise the amplitude envelope of an IMF to be 1. Mutiple runs of
     normalisation are carried out until the desired threshold is reached.
@@ -56,7 +57,9 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip' ):
                 continue_norm = True
                 #env = env.reshape(*container_dim)
 
-            while continue_norm:
+            iters = 0
+            while continue_norm and (iters<max_iters):
+                iters += 1
 
                 X[:,iimf,jimf] = X[:,iimf,jimf] / env
                 env = interp_envelope( X[:,iimf,jimf], mode='combined', interp_method=interp_method )
