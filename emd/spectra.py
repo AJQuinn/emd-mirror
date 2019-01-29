@@ -56,6 +56,10 @@ def frequency_stats( imf, sample_rate, method,
         n_imf = utils.amplitude_normalise( imf )
         analytic_signal = signal.hilbert( n_imf,axis=0 )
 
+        orig_dim = imf.ndim
+        if imf.ndim == 2:
+            imf = imf[:,:,None]
+
         # Estimate inst amplitudes with spline interpolation
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
@@ -63,6 +67,8 @@ def frequency_stats( imf, sample_rate, method,
                 #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
                 iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj],
                                     mode='upper' )
+        if orig_dim == 2:
+            iamp = iamp[:,:,0]
 
     elif method == 'quad':
 
