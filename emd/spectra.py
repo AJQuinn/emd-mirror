@@ -171,8 +171,10 @@ def phase_from_complex_signal( complex_signal, smoothing=None,
     iphase = np.unwrap(np.angle(complex_signal),axis=0)
 
     # Apply smoothing if requested
-    if smoothing is not None:
-        iphase = signal.savgol_filter(iphase,smoothing,1,axis=0)
+    #if smoothing is not None:
+    #    iphase = signal.savgol_filter(iphase,smoothing,1,axis=0)
+    for ii in range(iphase.shape[1]):
+        iphase[:,ii] = signal.medfilt( iphase[:,ii], 5 )
 
     # Set phase jump point to requested part of cycle
     if phase_jump=='ascending':
