@@ -51,6 +51,19 @@ def frequency_stats( imf, sample_rate, method,
         # Estimate instantaneous amplitudes directly from analytic signal
         iamp = np.abs(analytic_signal)
 
+    elif method == 'nht':
+
+        n_imf = emd.utils.amplitude_normalise( imf )
+        analytic_signal = signal.hilbert( n_imf,axis=0 )
+
+        # Estimate inst amplitudes with spline interpolation
+        iamp = np.zeros_like(imf)
+        for ii in range(imf.shape[1]):
+            for jj in range(imf.shape[2]):
+                #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
+                iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj],
+                                    mode='upper' )
+
     elif method == 'quad':
 
         analytic_signal = quadrature_transform( imf )
