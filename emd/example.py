@@ -35,7 +35,7 @@ def abreu( nonlinearity_deg=.3, nonlinearity_phi=-np.pi/4,
 
     imf = emd.sift.sift( x )
 
-    IP,IF,IA = emd.spectra.frequency_stats( imf, sample_rate, 'quad', smooth_phase=31 )
+    IP, IF, IA = emd.spectra.frequency_stats( imf, sample_rate, 'quad', smooth_phase=31 )
 
-    return imf,IP,IF,IA
+    return imf, IP, IF, IA
 

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import signal,sparse
+from scipy import signal, sparse
 from . import utils
 
 ##
@@ -55,21 +55,21 @@ def frequency_stats( imf, sample_rate, method,
     elif method == 'nht':
 
         n_imf = utils.amplitude_normalise( imf )
-        analytic_signal = signal.hilbert( n_imf,axis=0 )
+        analytic_signal = signal.hilbert( n_imf, axis=0 )
 
         orig_dim = imf.ndim
         if imf.ndim == 2:
-            imf = imf[:,:,None]
+            imf = imf[:, :, None]
 
         # Estimate inst amplitudes with spline interpolation
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
             for jj in range(imf.shape[2]):
                 #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
-                iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj],
+                iamp[:, ii, jj] = utils.interp_envelope( imf[:, ii, jj],
                                     mode='upper' )
         if orig_dim == 2:
-            iamp = iamp[:,:,0]
+            iamp = iamp[:, :, 0]
 
     elif method == 'quad':
 
@@ -77,18 +77,18 @@ def frequency_stats( imf, sample_rate, method,
 
         orig_dim = imf.ndim
         if imf.ndim == 2:
-            imf = imf[:,:,None]
+            imf = imf[:, :, None]
 
         # Estimate inst amplitudes with spline interpolation
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
             for jj in range(imf.shape[2]):
                 #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
-                iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj],
+                iamp[:, ii, jj] = utils.interp_envelope( imf[:, ii, jj],
                                     mode='upper' )
 
         if orig_dim == 2:
-            iamp = iamp[:,:,0]
+            iamp = iamp[:, :, 0]
 
     elif method == 'direct_quad':
         raise ValueError('direct_quad method is broken!')
@@ -98,7 +98,7 @@ def frequency_stats( imf, sample_rate, method,
 
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
-            iamp[:,ii] = utils.interp_envelope( imf[:,ii,None], mode='combined' )
+            iamp[:, ii] = utils.interp_envelope( imf[:, ii, None], mode='combined' )
 
     else:
         print('Method not recognised')
@@ -110,7 +110,7 @@ def frequency_stats( imf, sample_rate, method,
     # Return wrapped phase
     iphase = utils.wrap_phase( iphase )
 
-    return iphase,ifreq,iamp
+    return iphase, ifreq, iamp
 
 # Frequency stat utils
 
@@ -140,11 +140,11 @@ def quadrature_transform( X ):
 
     nX = utils.amplitude_normalise( X.copy(), clip=True )
 
-    imagX = np.lib.scimath.sqrt(1-np.power( nX,2 )).real
+    imagX = np.lib.scimath.sqrt(1-np.power( nX, 2 )).real
 
-    mask = ((np.diff(nX,axis=0)>0) * -2) + 1
+    mask = ((np.diff(nX, axis=0)>0) * -2) + 1
     mask[mask==0] = -1
-    mask = np.r_[mask,mask[-1,None,:]]
+    mask = np.r_[mask, mask[-1, None, :]]
 
     q = imagX * mask
 
@@ -175,13 +175,13 @@ def phase_from_complex_signal( complex_signal, smoothing=None,
     """
 
     # Compute unwrapped phase
-    iphase = np.unwrap(np.angle(complex_signal),axis=0)
+    iphase = np.unwrap(np.angle(complex_signal), axis=0)
 
     # Apply smoothing if requested
     #if smoothing is not None:
     #    iphase = signal.savgol_filter(iphase,smoothing,1,axis=0)
     for ii in range(iphase.shape[1]):
-        iphase[:,ii] = signal.medfilt( iphase[:,ii], 5 )
+        iphase[:, ii] = signal.medfilt( iphase[:, ii], 5 )
 
     # Set phase jump point to requested part of cycle
     if phase_jump=='ascending':
@@ -247,7 +247,7 @@ def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
 
     iphase_diff = (ifrequency/sample_rate) * (2*np.pi)
 
-    iphase = phase_start + np.cumsum(iphase_diff,axis=0)
+    iphase = phase_start + np.cumsum(iphase_diff, axis=0)
 
     return iphase
 
@@ -278,8 +278,8 @@ def direct_quadrature( fm ):
     # We'll have occasional nans where fm==1 or -1
     inds = np.argwhere(np.isnan(ph))
 
-    vals = (ph[inds[:,0]-1,:] + ph[inds[:,0]+1,:] ) / 2
-    ph[inds[:,0]] = vals
+    vals = (ph[inds[:, 0]-1, :] + ph[inds[:, 0]+1, :] ) / 2
+    ph[inds[:, 0]] = vals
 
     return ph
 
@@ -309,7 +309,7 @@ def phase_angle( fm ):
 
     """
 
-    return np.arctan( fm / np.lib.scimath.sqrt( 1 - np.power(fm,2) ) )
+    return np.arctan( fm / np.lib.scimath.sqrt( 1 - np.power(fm, 2) ) )
 
 
 def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
@@ -339,15 +339,15 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
     for t_ind in range(infr.shape[0]):
 
          # carrier freq inds
-         finds_carrier = np.digitize( infr[t_ind,:], fbins )
+         finds_carrier = np.digitize( infr[t_ind, :], fbins )
 
          for imf2_ind in range(infr2.shape[2]):
 
              # am freq inds
-             finds_am = np.digitize( infr2[t_ind,:,imf2_ind], fbins2 )
-             tmp = inam2[t_ind,:,:]
+             finds_am = np.digitize( infr2[t_ind, :, imf2_ind], fbins2 )
+             tmp = inam2[t_ind, :, :]
              tmp[tmp==np.nan] = 0
-             holo[finds_carrier,finds_am,t_ind,:] += tmp
+             holo[finds_carrier, finds_am, t_ind, :] += tmp
 
     return holo
 
@@ -405,31 +405,31 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     IA_inds = np.digitize( infr2, freq_edges2 )
     infr_inds = np.digitize( infr, freq_edges )
 
-    new_shape = (infr_inds.shape[0],infr_inds.shape[1],infr2.shape[2])
-    infr_inds = np.broadcast_to( infr_inds[:,:,None], new_shape )
+    new_shape = (infr_inds.shape[0], infr_inds.shape[1], infr2.shape[2])
+    infr_inds = np.broadcast_to( infr_inds[:, :, None], new_shape )
 
     fold_dim1 = len(freq_edges)+1
     fold_dim2 = len(freq_edges2)+1
 
     infr_inds = infr_inds + IA_inds *  fold_dim1
 
-    T_inds = np.arange(infr.shape[0])[:,None,None]
+    T_inds = np.arange(infr.shape[0])[:, None, None]
     T_inds = np.broadcast_to( T_inds, new_shape )
 
-    coords =(T_inds.reshape(-1),infr_inds.reshape(-1))
-    holo = sparse.coo_matrix( (inam2.reshape(-1),coords),
-                                shape=(infr.shape[0],fold_dim1*fold_dim2) )
+    coords =(T_inds.reshape(-1), infr_inds.reshape(-1))
+    holo = sparse.coo_matrix( (inam2.reshape(-1), coords),
+                                shape=(infr.shape[0], fold_dim1*fold_dim2) )
 
     # Always returns full matrix until someone implements ND sparse in scipy
     if return_time:
         # Return the full matrix
-        holo = holo.toarray().reshape(new_shape[0],fold_dim2,fold_dim1)
-        return holo[:,1:-1,1:-1]
+        holo = holo.toarray().reshape(new_shape[0], fold_dim2, fold_dim1)
+        return holo[:, 1:-1, 1:-1]
     else:
         # Collapse time dimension while we're still sparse
         holo = holo.sum(axis=0)
-        holo = holo.reshape(fold_dim2,fold_dim1)
-        return np.array(holo[1:-1,1:-1]) # don't return a matrix
+        holo = holo.reshape(fold_dim2, fold_dim1)
+        return np.array(holo[1:-1, 1:-1]) # don't return a matrix
 
 def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
     """
@@ -477,17 +477,17 @@ def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
         inam = inam**2
 
     # Create sparse co-ordinates
-    yinds = np.digitize(infr,freq_edges)
-    xinds = np.tile( np.arange(yinds.shape[0]),(yinds.shape[1],1) ).T
+    yinds = np.digitize(infr, freq_edges)
+    xinds = np.tile( np.arange(yinds.shape[0]), (yinds.shape[1], 1) ).T
 
-    coo_data = (inam.reshape(-1),(yinds.reshape(-1),xinds.reshape(-1)))
+    coo_data = (inam.reshape(-1), (yinds.reshape(-1), xinds.reshape(-1)))
 
     # Remove values outside our bins
-    goods = np.any( np.c_[coo_data[1][0]<len(freq_edges)-1, (coo_data[1][0]==0)],axis=1 )
+    goods = np.any( np.c_[coo_data[1][0]<len(freq_edges)-1, (coo_data[1][0]==0)], axis=1 )
     coo_data = (coo_data[0][goods], (coo_data[1][0][goods], coo_data[1][1][goods]))
 
     # Create sparse matrix
-    hht = sparse.coo_matrix( coo_data,shape=(len(freq_edges)-1,xinds.shape[0]))
+    hht = sparse.coo_matrix( coo_data, shape=(len(freq_edges)-1, xinds.shape[0]))
 
     if return_sparse:
         return hht
@@ -527,7 +527,7 @@ def hilberthuang_1d( infr, inam, freq_edges, mode='energy'):
 
     """
 
-    specs = np.zeros( (len(freq_edges)-1,infr.shape[1]) )
+    specs = np.zeros( (len(freq_edges)-1, infr.shape[1]) )
 
     # Remove values outside the bin range
     infr = infr.copy()
@@ -540,9 +540,9 @@ def hilberthuang_1d( infr, inam, freq_edges, mode='energy'):
         for jj in range( infr.shape[1] ):
 
             if mode == 'power':
-                specs[ii,jj] = np.nansum(inam[finds[:,jj]==ii,jj])
+                specs[ii, jj] = np.nansum(inam[finds[:, jj]==ii, jj])
             elif mode == 'energy':
-                specs[ii,jj] = np.nansum(np.power(inam[finds[:,jj]==ii,jj],2))
+                specs[ii, jj] = np.nansum(np.power(inam[finds[:, jj]==ii, jj], 2))
 
     return specs
 
@@ -582,8 +582,8 @@ def define_hist_bins( data_min, data_max, nbins, scale='linear' ):
     """
 
     if scale == 'log':
-        p = np.log([data_min,data_max])
-        edges = np.linspace(p[0],p[1],nbins+1)
+        p = np.log([data_min, data_max])
+        edges = np.linspace(p[0], p[1], nbins+1)
         edges = np.exp(edges)
     elif scale == 'linear':
         edges = np.linspace( data_min, data_max, nbins+1 )
@@ -653,5 +653,5 @@ def mean_vector( IP, X, mask=None ):
     """
 
     phi = np.sin(IP) + 1j*np.cos(IP)
-    mv = phi[:,None] * IA
+    mv = phi[:, None] * IA
     return mv.mean(axis=0)

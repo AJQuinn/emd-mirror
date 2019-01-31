@@ -27,13 +27,13 @@ def plot_imfs( imfs, time_vect=None, scale_y=False ):
     mx = np.abs(imfs).max()
 
     plt.figure()
-    ax = plt.subplot(nplots,1,1)
+    ax = plt.subplot(nplots, 1, 1)
     ax.plot( time_vect, imfs.sum(axis=1), 'k' )
     ax.tick_params( axis='x', labelbottom='off')
 
-    for ii in range(1,nplots):
-        ax = plt.subplot(nplots,1,ii+1)
-        ax.plot( time_vect, imfs[:,ii-1],'k' )
+    for ii in range(1, nplots):
+        ax = plt.subplot(nplots, 1, ii+1)
+        ax.plot( time_vect, imfs[:, ii-1], 'k' )
         if scale_y:
             ax.set_ylim( -mx*1.2, mx*1.2 )
 
