@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_imfs( imfs, time_vect=None, scale_y=False ):
+def plot_imfs(imfs, time_vect=None, scale_y=False):
     """
 
     Parameters
@@ -28,14 +28,14 @@ def plot_imfs( imfs, time_vect=None, scale_y=False ):
 
     plt.figure()
     ax = plt.subplot(nplots, 1, 1)
-    ax.plot( time_vect, imfs.sum(axis=1), 'k' )
-    ax.tick_params( axis='x', labelbottom='off')
+    ax.plot(time_vect, imfs.sum(axis=1), 'k')
+    ax.tick_params(axis='x', labelbottom='off')
 
     for ii in range(1, nplots):
         ax = plt.subplot(nplots, 1, ii+1)
-        ax.plot( time_vect, imfs[:, ii-1], 'k' )
+        ax.plot(time_vect, imfs[:, ii-1], 'k')
         if scale_y:
-            ax.set_ylim( -mx*1.2, mx*1.2 )
+            ax.set_ylim(-mx*1.2, mx*1.2)
 
         if ii < nplots:
-           ax.tick_params( axis='x', labelbottom='off')
+           ax.tick_params(axis='x', labelbottom='off')

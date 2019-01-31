@@ -3,8 +3,8 @@ from scipy import signal, sparse
 from . import utils
 
 ##
-def frequency_stats( imf, sample_rate, method,
-                     smooth_phase=31 ):
+def frequency_stats(imf, sample_rate, method,
+                     smooth_phase=31):
     """
     Compute instantaneous phase, frequency and amplitude from a set of IMFs.
     Several approaches are implemented from [1]_ and [2]_.
@@ -47,15 +47,15 @@ def frequency_stats( imf, sample_rate, method,
     # instantaneous amplitude.
     if method == 'hilbert':
 
-        analytic_signal = signal.hilbert( X, axis=0 )
+        analytic_signal = signal.hilbert(X, axis=0)
 
         # Estimate instantaneous amplitudes directly from analytic signal
         iamp = np.abs(analytic_signal)
 
     elif method == 'nht':
 
-        n_imf = utils.amplitude_normalise( imf )
-        analytic_signal = signal.hilbert( n_imf, axis=0 )
+        n_imf = utils.amplitude_normalise(imf)
+        analytic_signal = signal.hilbert(n_imf, axis=0)
 
         orig_dim = imf.ndim
         if imf.ndim == 2:
@@ -66,14 +66,14 @@ def frequency_stats( imf, sample_rate, method,
         for ii in range(imf.shape[1]):
             for jj in range(imf.shape[2]):
                 #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
-                iamp[:, ii, jj] = utils.interp_envelope( imf[:, ii, jj],
-                                    mode='upper' )
+                iamp[:, ii, jj] = utils.interp_envelope(imf[:, ii, jj],
+                                    mode='upper')
         if orig_dim == 2:
             iamp = iamp[:, :, 0]
 
     elif method == 'quad':
 
-        analytic_signal = quadrature_transform( imf )
+        analytic_signal = quadrature_transform(imf)
 
         orig_dim = imf.ndim
         if imf.ndim == 2:
@@ -84,8 +84,8 @@ def frequency_stats( imf, sample_rate, method,
         for ii in range(imf.shape[1]):
             for jj in range(imf.shape[2]):
                 #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
-                iamp[:, ii, jj] = utils.interp_envelope( imf[:, ii, jj],
-                                    mode='upper' )
+                iamp[:, ii, jj] = utils.interp_envelope(imf[:, ii, jj],
+                                    mode='upper')
 
         if orig_dim == 2:
             iamp = iamp[:, :, 0]
@@ -93,28 +93,28 @@ def frequency_stats( imf, sample_rate, method,
     elif method == 'direct_quad':
         raise ValueError('direct_quad method is broken!')
 
-        n_imf = utils.amplitude_normalise( imf.copy() )
-        iphase = np.unwrap(phase_angle( n_imf ))
+        n_imf = utils.amplitude_normalise(imf.copy())
+        iphase = np.unwrap(phase_angle(n_imf))
 
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
-            iamp[:, ii] = utils.interp_envelope( imf[:, ii, None], mode='combined' )
+            iamp[:, ii] = utils.interp_envelope(imf[:, ii, None], mode='combined')
 
     else:
         print('Method not recognised')
 
     # Compute unwrapped phase for frequency estimation
-    iphase = phase_from_complex_signal( analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped' )
-    ifreq = freq_from_phase( iphase, sample_rate )
+    iphase = phase_from_complex_signal(analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped')
+    ifreq = freq_from_phase(iphase, sample_rate)
 
     # Return wrapped phase
-    iphase = utils.wrap_phase( iphase )
+    iphase = utils.wrap_phase(iphase)
 
     return iphase, ifreq, iamp
 
 # Frequency stat utils
 
-def quadrature_transform( X ):
+def quadrature_transform(X):
     """
     Compute the quadrature transform on a set of time-series as defined in
     equation 34 of [1]_. The return is a complex array with the input data as
@@ -138,9 +138,9 @@ def quadrature_transform( X ):
 
     """
 
-    nX = utils.amplitude_normalise( X.copy(), clip=True )
+    nX = utils.amplitude_normalise(X.copy(), clip=True)
 
-    imagX = np.lib.scimath.sqrt(1-np.power( nX, 2 )).real
+    imagX = np.lib.scimath.sqrt(1-np.power(nX, 2)).real
 
     mask = ((np.diff(nX, axis=0)>0) * -2) + 1
     mask[mask==0] = -1
@@ -150,8 +150,8 @@ def quadrature_transform( X ):
 
     return  nX + 1j * q
 
-def phase_from_complex_signal( complex_signal, smoothing=None,
-                                ret_phase='wrapped', phase_jump='ascending' ):
+def phase_from_complex_signal(complex_signal, smoothing=None,
+                                ret_phase='wrapped', phase_jump='ascending'):
     """
     Compute the instantaneous phase from a complex signal obtained from either
     the Hilbert Transform or by Direct Quadrature.
@@ -181,7 +181,7 @@ def phase_from_complex_signal( complex_signal, smoothing=None,
     #if smoothing is not None:
     #    iphase = signal.savgol_filter(iphase,smoothing,1,axis=0)
     for ii in range(iphase.shape[1]):
-        iphase[:, ii] = signal.medfilt( iphase[:, ii], 5 )
+        iphase[:, ii] = signal.medfilt(iphase[:, ii], 5)
 
     # Set phase jump point to requested part of cycle
     if phase_jump=='ascending':
@@ -194,11 +194,11 @@ def phase_from_complex_signal( complex_signal, smoothing=None,
         iphase = iphase + np.pi
 
     if ret_phase=='wrapped':
-        return utils.wrap_phase( iphase )
+        return utils.wrap_phase(iphase)
     elif ret_phase=='unwrapped':
         return iphase
 
-def freq_from_phase( iphase, sample_rate ):
+def freq_from_phase(iphase, sample_rate):
     """
     Compute the instantaneous frequency from the differential of the
     instantaneous phase.
@@ -218,14 +218,14 @@ def freq_from_phase( iphase, sample_rate ):
     """
 
     # Differential of instantaneous phase
-    iphase = np.gradient( iphase, axis=0 )
+    iphase = np.gradient(iphase, axis=0)
 
     # Convert to freq
     ifrequency = iphase / (2.0*np.pi) * sample_rate
 
     return ifrequency
 
-def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
+def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
     """
     Compute the instantaneous phase of a signal from its instantaneous phase.
 
@@ -251,7 +251,7 @@ def phase_from_freq( ifrequency, sample_rate, phase_start=-np.pi):
 
     return iphase
 
-def direct_quadrature( fm ):
+def direct_quadrature(fm):
     """Section 3.2 of 'on instantaneous frequency'
     Compute the quadrature transform on a set of time-series as defined in
     equation 35 of [1].
@@ -273,17 +273,17 @@ def direct_quadrature( fm ):
        1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
     """
-    ph = phase_angle( fm )
+    ph = phase_angle(fm)
 
     # We'll have occasional nans where fm==1 or -1
     inds = np.argwhere(np.isnan(ph))
 
-    vals = (ph[inds[:, 0]-1, :] + ph[inds[:, 0]+1, :] ) / 2
+    vals = (ph[inds[:, 0]-1, :] + ph[inds[:, 0]+1, :]) / 2
     ph[inds[:, 0]] = vals
 
     return ph
 
-def phase_angle( fm ):
+def phase_angle(fm):
     """
     Compute the quadrature transform on a set of time-series as defined in
     equation 35 of [1]_.
@@ -309,10 +309,10 @@ def phase_angle( fm ):
 
     """
 
-    return np.arctan( fm / np.lib.scimath.sqrt( 1 - np.power(fm, 2) ) )
+    return np.arctan(fm / np.lib.scimath.sqrt(1 - np.power(fm, 2)))
 
 
-def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
+def holospectrum_am(infr, infr2, inam2, fbins, fbins2):
     """Not so sure where to start
 
     Parameters
@@ -334,17 +334,17 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
     """
 
     # carrier x am x time
-    holo = np.zeros( ( len(fbins)+1, len(fbins2)+1, infr.shape[0], infr.shape[1] ) )
+    holo = np.zeros((len(fbins)+1, len(fbins2)+1, infr.shape[0], infr.shape[1]))
 
     for t_ind in range(infr.shape[0]):
 
          # carrier freq inds
-         finds_carrier = np.digitize( infr[t_ind, :], fbins )
+         finds_carrier = np.digitize(infr[t_ind, :], fbins)
 
          for imf2_ind in range(infr2.shape[2]):
 
              # am freq inds
-             finds_am = np.digitize( infr2[t_ind, :, imf2_ind], fbins2 )
+             finds_am = np.digitize(infr2[t_ind, :, imf2_ind], fbins2)
              tmp = inam2[t_ind, :, :]
              tmp[tmp==np.nan] = 0
              holo[finds_carrier, finds_am, t_ind, :] += tmp
@@ -353,8 +353,8 @@ def holospectrum_am( infr, infr2, inam2, fbins, fbins2 ):
 
 ## Time-frequency spectra
 
-def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
-        return_time=True ):
+def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
+        return_time=True):
     """
     Compute the Holospectrum from the first and second layer frequecy
     statistics of a dataset. The Holospectrum represents the energy of a signal
@@ -402,11 +402,11 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     if mode == 'energy':
         inam2 = inam2**2
 
-    IA_inds = np.digitize( infr2, freq_edges2 )
-    infr_inds = np.digitize( infr, freq_edges )
+    IA_inds = np.digitize(infr2, freq_edges2)
+    infr_inds = np.digitize(infr, freq_edges)
 
     new_shape = (infr_inds.shape[0], infr_inds.shape[1], infr2.shape[2])
-    infr_inds = np.broadcast_to( infr_inds[:, :, None], new_shape )
+    infr_inds = np.broadcast_to(infr_inds[:, :, None], new_shape)
 
     fold_dim1 = len(freq_edges)+1
     fold_dim2 = len(freq_edges2)+1
@@ -414,11 +414,11 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     infr_inds = infr_inds + IA_inds *  fold_dim1
 
     T_inds = np.arange(infr.shape[0])[:, None, None]
-    T_inds = np.broadcast_to( T_inds, new_shape )
+    T_inds = np.broadcast_to(T_inds, new_shape)
 
     coords =(T_inds.reshape(-1), infr_inds.reshape(-1))
-    holo = sparse.coo_matrix( (inam2.reshape(-1), coords),
-                                shape=(infr.shape[0], fold_dim1*fold_dim2) )
+    holo = sparse.coo_matrix((inam2.reshape(-1), coords),
+                                shape=(infr.shape[0], fold_dim1*fold_dim2))
 
     # Always returns full matrix until someone implements ND sparse in scipy
     if return_time:
@@ -431,7 +431,7 @@ def holospectrum( infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         holo = holo.reshape(fold_dim2, fold_dim1)
         return np.array(holo[1:-1, 1:-1]) # don't return a matrix
 
-def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
+def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
     """
     Compute the Hilbert-Huang transform from the instataneous frequency
     statistics of a dataset. The Hilbert-Huang Transform represents the energy
@@ -478,23 +478,23 @@ def hilberthuang( infr, inam, freq_edges, mode='energy', return_sparse=False ):
 
     # Create sparse co-ordinates
     yinds = np.digitize(infr, freq_edges)
-    xinds = np.tile( np.arange(yinds.shape[0]), (yinds.shape[1], 1) ).T
+    xinds = np.tile(np.arange(yinds.shape[0]), (yinds.shape[1], 1)).T
 
     coo_data = (inam.reshape(-1), (yinds.reshape(-1), xinds.reshape(-1)))
 
     # Remove values outside our bins
-    goods = np.any( np.c_[coo_data[1][0]<len(freq_edges)-1, (coo_data[1][0]==0)], axis=1 )
+    goods = np.any(np.c_[coo_data[1][0]<len(freq_edges)-1, (coo_data[1][0]==0)], axis=1)
     coo_data = (coo_data[0][goods], (coo_data[1][0][goods], coo_data[1][1][goods]))
 
     # Create sparse matrix
-    hht = sparse.coo_matrix( coo_data, shape=(len(freq_edges)-1, xinds.shape[0]))
+    hht = sparse.coo_matrix(coo_data, shape=(len(freq_edges)-1, xinds.shape[0]))
 
     if return_sparse:
         return hht
     else:
         return hht.toarray()
 
-def hilberthuang_1d( infr, inam, freq_edges, mode='energy'):
+def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
     """
     Compute the Hilbert-Huang transform from the instataneous frequency
     statistics of a dataset. The 1D Hilbert-Huang Transform represents the
@@ -527,17 +527,17 @@ def hilberthuang_1d( infr, inam, freq_edges, mode='energy'):
 
     """
 
-    specs = np.zeros( (len(freq_edges)-1, infr.shape[1]) )
+    specs = np.zeros((len(freq_edges)-1, infr.shape[1]))
 
     # Remove values outside the bin range
     infr = infr.copy()
     infr[infr<freq_edges[0]] = np.nan
     infr[infr>freq_edges[-1]] = np.nan
 
-    finds = np.digitize( infr, freq_edges )
+    finds = np.digitize(infr, freq_edges)
 
-    for ii in range( len(freq_edges)-1 ):
-        for jj in range( infr.shape[1] ):
+    for ii in range(len(freq_edges)-1):
+        for jj in range(infr.shape[1]):
 
             if mode == 'power':
                 specs[ii, jj] = np.nansum(inam[finds[:, jj]==ii, jj])
@@ -547,7 +547,7 @@ def hilberthuang_1d( infr, inam, freq_edges, mode='energy'):
     return specs
 
 
-def define_hist_bins( data_min, data_max, nbins, scale='linear' ):
+def define_hist_bins(data_min, data_max, nbins, scale='linear'):
     """
     Define the bin edges and centre values for use in a histogram
 
@@ -586,16 +586,16 @@ def define_hist_bins( data_min, data_max, nbins, scale='linear' ):
         edges = np.linspace(p[0], p[1], nbins+1)
         edges = np.exp(edges)
     elif scale == 'linear':
-        edges = np.linspace( data_min, data_max, nbins+1 )
+        edges = np.linspace(data_min, data_max, nbins+1)
     else:
-        raise ValueError( 'scale \'{0}\' not recognised. please use \'log\' or \'linear\'.')
+        raise ValueError('scale \'{0}\' not recognised. please use \'log\' or \'linear\'.')
 
     # Get centre frequecy for the bins
-    centres = np.array( [ (edges[ii]+edges[ii+1])/2 for ii in range(len(edges)-1) ] )
+    centres = np.array([(edges[ii]+edges[ii+1])/2 for ii in range(len(edges)-1)])
 
     return edges, centres
 
-def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
+def define_hist_bins_from_data(X, nbins=None, mode='sqrt', scale='linear'):
     """Find the bin edges and centre frequencies for use in a histogram
 
     if nbins is defined, mode is ignored
@@ -629,9 +629,9 @@ def define_hist_bins_from_data( X, nbins=None, mode='sqrt', scale='linear' ):
         else:
             raise ValueError('mode {0} not recognised, please use \'sqrt\'')
 
-    return define_hist_bins( data_min, data_max, nbins, scale=scale )
+    return define_hist_bins(data_min, data_max, nbins, scale=scale)
 
-def mean_vector( IP, X, mask=None ):
+def mean_vector(IP, X, mask=None):
     """
     Compute the mean vector of a set of values wrapped around the unit circle.
 

@@ -4,7 +4,7 @@ from scipy import interpolate as interp
 from scipy import signal
 from . import utils, spectra
 
-def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
+def sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
           interp_method='mono_pchip'):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
@@ -50,13 +50,13 @@ def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
     while continue_sift:
 
-        next_imf, continue_sift = get_next_imf( proto_imf, sd_thresh=sd_thresh,
-                                               interp_method=interp_method )
+        next_imf, continue_sift = get_next_imf(proto_imf, sd_thresh=sd_thresh,
+                                               interp_method=interp_method)
 
         if layer == 0:
             imf = next_imf
         else:
-            imf = np.concatenate( (imf, next_imf), axis=1)
+            imf = np.concatenate((imf, next_imf), axis=1)
 
         proto_imf = X - imf.sum(axis=1)[:, None]
         layer += 1
@@ -64,15 +64,15 @@ def sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         if max_imfs is not None and layer == max_imfs:
             continue_sift=False
 
-        if np.abs( next_imf ).sum() < sift_thresh:
+        if np.abs(next_imf).sum() < sift_thresh:
             continue_sift=False
 
     return imf
 
-def ensemble_sift( X, nensembles, ensemble_noise=.2,
+def ensemble_sift(X, nensembles, ensemble_noise=.2,
                         sd_thresh=.1, sift_thresh=1e-8,
                         max_imfs=None, nprocesses=1,
-                        noise_mode='single' ):
+                        noise_mode='single'):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -138,22 +138,22 @@ def ensemble_sift( X, nensembles, ensemble_noise=.2,
     noise = None
     args = [(X, noise_scaling, noise, sd_thresh, sift_thresh, max_imfs) for ii in range(nensembles)]
 
-    res = p.starmap( sift_func, args )
+    res = p.starmap(sift_func, args)
 
     p.close()
 
     if max_imfs is None:
         max_imfs = res[0].shape[1]
 
-    imfs = np.zeros( (X.shape[0], max_imfs) )
+    imfs = np.zeros((X.shape[0], max_imfs))
     for ii in range(max_imfs):
-        imfs[:, ii] = np.array([ r[:, ii] for r in res]).mean(axis=0)
+        imfs[:, ii] = np.array([r[:, ii] for r in res]).mean(axis=0)
 
     return imfs
 
-def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
+def complete_ensemble_sift(X, nensembles, ensemble_noise=.2,
                             sd_thresh=.1, sift_thresh=1e-8,
-                            max_imfs=None, nprocesses=1 ):
+                            max_imfs=None, nprocesses=1):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -209,17 +209,17 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
     layer = 0
 
     # Compute the noise processes - large matrix here...
-    noise = np.random.random_sample( (X.shape[0], nensembles) ) * ensemble_noise
+    noise = np.random.random_sample((X.shape[0], nensembles)) * ensemble_noise
 
     # Do a normal ensemble sift to obtain the first IMF
     args = [(X, noise_scaling, noise[:, ii, None], sd_thresh, sift_thresh, 1) \
             for ii in range(nensembles)]
-    res = p.starmap( _sift_with_noise, args )
-    imf = np.array([ r for r in res]).mean(axis=0)
+    res = p.starmap(_sift_with_noise, args)
+    imf = np.array([r for r in res]).mean(axis=0)
 
     args = [(noise[:, ii, None], sd_thresh, sift_thresh, 1) for ii in range(nensembles)]
-    res = p.starmap( sift, args )
-    noise = noise - np.array([ r[:, 0] for r in res]).T
+    res = p.starmap(sift, args)
+    noise = noise - np.array([r[:, 0] for r in res]).T
 
     while continue_sift:
 
@@ -227,24 +227,24 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
 
         args = [(proto_imf, None, noise[:, ii, None], sd_thresh, sift_thresh, 1) \
                            for ii in range(nensembles)]
-        res = p.starmap( _sift_with_noise, args )
-        next_imf = np.array([ r for r in res]).mean(axis=0)
+        res = p.starmap(_sift_with_noise, args)
+        next_imf = np.array([r for r in res]).mean(axis=0)
 
-        imf = np.concatenate( (imf, next_imf), axis=1)
+        imf = np.concatenate((imf, next_imf), axis=1)
 
         args = [(noise[:, ii, None], sd_thresh, sift_thresh, 1) \
                for ii in range(nensembles)]
-        res = p.starmap( sift, args )
-        noise = noise - np.array([ r[:, 0] for r in res]).T
+        res = p.starmap(sift, args)
+        noise = noise - np.array([r[:, 0] for r in res]).T
 
-        pks, locs = utils.find_extrema( imf[:, -1] )
+        pks, locs = utils.find_extrema(imf[:, -1])
         if len(pks) < 2:
             continue_sift=False
 
         if max_imfs is not None and layer == max_imfs:
             continue_sift=False
 
-        if np.abs( next_imf ).mean() < sift_thresh:
+        if np.abs(next_imf).mean() < sift_thresh:
             continue_sift=False
 
         layer += 1
@@ -253,7 +253,7 @@ def complete_ensemble_sift( X, nensembles, ensemble_noise=.2,
 
     return imf, noise
 
-def sift_second_layer( IA, sift_func=sift, sift_args=None ):
+def sift_second_layer(IA, sift_func=sift, sift_args=None):
     """
     Compute second layer IMFs from the amplitude envelopes of a set of first
     layer IMFs [1]_.
@@ -290,15 +290,15 @@ def sift_second_layer( IA, sift_func=sift, sift_args=None ):
     elif 'max_imfs' in sift_args:
         max_imfs = sift_args['max_imfs']
 
-    imf2 = np.zeros( (IA.shape[0], IA.shape[1], max_imfs ) )
+    imf2 = np.zeros((IA.shape[0], IA.shape[1], max_imfs))
 
     for ii in range(max_imfs):
-        tmp = sift_func( IA[:, ii], **sift_args )
+        tmp = sift_func(IA[:, ii], **sift_args)
         imf2[:, ii, :tmp.shape[1]] = tmp
 
     return imf2
 
-def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
+def mask_sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
         mask_initial_freq=None, mask_freqs=None,
         interp_method='mono_pchip'):
@@ -364,7 +364,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     if (mask_initial_freq is None) and (mask_freqs is None):
 
         # First IMF is computed normally
-        imf, _ = get_next_imf( X )
+        imf, _ = get_next_imf(X)
 
         # Compute first mask frequency from first IMF
         mask_method='if'
@@ -372,7 +372,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
             num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
             w = num_zero_crossings / X.shape[0]
         elif mask_method == 'if':
-            _, IF, IA = spectra.frequency_stats( imf[:, 0, None], 1, 'quad', smooth_phase=31 )
+            _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'quad', smooth_phase=31)
             w = np.average(IF, weights=IA)
         z = 2 * np.pi * w / mask_step_factor
 
@@ -385,27 +385,27 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
         z = w
         amp = mask_amp_ratio*X.std()
-        imf = get_next_imf_mask( X, z, amp,
+        imf = get_next_imf_mask(X, z, amp,
                                  sd_thresh=sd_thresh,
                                  interp_method=interp_method,
-                                 mask_type='all' )
+                                 mask_type='all')
 
     zs = [z]
 
     layer = 1
     proto_imf = X.copy() - imf
-    allmask = np.zeros_like( proto_imf )
+    allmask = np.zeros_like(proto_imf)
     while continue_sift:
 
         sd = imf[:, -1].std()
         amp = mask_amp_ratio*sd
 
-        next_imf = get_next_imf_mask( proto_imf, z, amp,
+        next_imf = get_next_imf_mask(proto_imf, z, amp,
                                       sd_thresh=sd_thresh,
                                       interp_method=interp_method,
-                                      mask_type='all' )
+                                      mask_type='all')
 
-        imf = np.concatenate( (imf, next_imf), axis=1)
+        imf = np.concatenate((imf, next_imf), axis=1)
         #allmask = np.concatenate( (allmask, mask), axis=1)
 
         proto_imf = X - imf.sum(axis=1)[:, None]
@@ -431,7 +431,7 @@ def mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     else:
         return imf
 
-def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=1, ret_mask_freq=False ):
+def adaptive_mask_sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_amp_ratio=1, ret_mask_freq=False):
     """ Not sure really,againwenf
 
     Parameters
@@ -463,7 +463,7 @@ def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_a
     layer = 0
 
     # First IMF is computed normally
-    imf, _ = get_next_imf( X )
+    imf, _ = get_next_imf(X)
 
     # Compute mask frequency
     num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
@@ -479,15 +479,15 @@ def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_a
         sd = imf[:, -1].std()
         amp = mask_amp_ratio*sd
 
-        next_imf = get_next_imf_mask( proto_imf, z, amp,
+        next_imf = get_next_imf_mask(proto_imf, z, amp,
                                       sd_thresh=sd_thresh,
                                       interp_method=interp_method,
-                                      mask_type='all' )
+                                      mask_type='all')
 
         if layer == 0:
             imf = next_imf
         else:
-            imf = np.concatenate( (imf, next_imf), axis=1)
+            imf = np.concatenate((imf, next_imf), axis=1)
 
         # Compute frequency for next mask
         num_zero_crossings = utils.zero_crossing_count(imf[:, -1])
@@ -509,7 +509,7 @@ def adaptive_mask_sift( X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_a
         return imf
 
 ## Sift Utils
-def _sift_with_noise( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+def _sift_with_noise(X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None):
     """
     Helper function for applying white noise to a signal prior to computing the
     sift.
@@ -539,7 +539,7 @@ def _sift_with_noise( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thre
     """
 
     if noise is None:
-        noise = np.random.randn( *X.shape )
+        noise = np.random.randn(*X.shape)
 
     if noise_scaling is not None:
         noise = noise * noise_scaling
@@ -548,7 +548,7 @@ def _sift_with_noise( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thre
 
     return sift(ensX, sd_thresh=sd_thresh, sift_thresh=sift_thresh, max_imfs=max_imfs)
 
-def _sift_with_noise_flip( X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None ):
+def _sift_with_noise_flip(X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None):
     """
     Helper function for applying white noise to a signal prior to computing the
     sift.
@@ -578,7 +578,7 @@ def _sift_with_noise_flip( X, noise_scaling=None, noise=None, sd_thresh=.1, sift
     """
 
     if noise is None:
-        noise = np.random.randn( *X.shape )
+        noise = np.random.randn(*X.shape)
 
     if noise_scaling is not None:
         noise = noise * noise_scaling
@@ -591,7 +591,7 @@ def _sift_with_noise_flip( X, noise_scaling=None, noise=None, sd_thresh=.1, sift
 
     return imf / 2
 
-def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
+def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -620,10 +620,10 @@ def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
     continue_flag = True
     while continue_imf:
 
-        upper = utils.interp_envelope( proto_imf, mode='upper',
-                                       interp_method=interp_method )
-        lower = utils.interp_envelope( proto_imf, mode='lower',
-                                       interp_method=interp_method )
+        upper = utils.interp_envelope(proto_imf, mode='upper',
+                                       interp_method=interp_method)
+        lower = utils.interp_envelope(proto_imf, mode='lower',
+                                       interp_method=interp_method)
 
         # If upper or lower are None we should stop sifting alltogether
         if upper is None or lower is None:
@@ -651,8 +651,8 @@ def get_next_imf( X, sd_thresh=.1, interp_method='mono_pchip' ):
 
     return proto_imf, continue_flag
 
-def get_next_imf_mask( X, z, amp,
-                       sd_thresh=.1, interp_method='mono_pchip', mask_type='all' ):
+def get_next_imf_mask(X, z, amp,
+                       sd_thresh=.1, interp_method='mono_pchip', mask_type='all'):
     """
     Compute the next IMF from a data set using the mask sift appraoch. This is
     a helper function used within the more general sifting functions.
@@ -681,17 +681,17 @@ def get_next_imf_mask( X, z, amp,
     z = z * 2 * np.pi
 
     if mask_type is 'all' or mask_type is 'sine':
-        mask = amp*np.cos( z * np.arange(X.shape[0]) )[:, None]
-        next_imf_up_c, continue_sift = get_next_imf( X+mask )
+        mask = amp*np.cos(z * np.arange(X.shape[0]))[:, None]
+        next_imf_up_c, continue_sift = get_next_imf(X+mask)
         next_imf_up_c -= mask
-        next_imf_down_c, continue_sift = get_next_imf( X-mask )
+        next_imf_down_c, continue_sift = get_next_imf(X-mask)
         next_imf_down_c += mask
 
     if mask_type is 'all' or mask_type is 'cosine':
-        mask = amp*np.sin( z * np.arange(X.shape[0]) )[:, None]
-        next_imf_up_s, continue_sift = get_next_imf( X+mask )
+        mask = amp*np.sin(z * np.arange(X.shape[0]))[:, None]
+        next_imf_up_s, continue_sift = get_next_imf(X+mask)
         next_imf_up_s -= mask
-        next_imf_down_s, continue_sift = get_next_imf( X-mask )
+        next_imf_down_s, continue_sift = get_next_imf(X-mask)
         next_imf_down_s += mask
 
     if mask_type is 'all':

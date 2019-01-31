@@ -49,7 +49,7 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip',
     for iimf in range(X.shape[1]):
         for jimf in range(X.shape[2]):
 
-            env = interp_envelope( X[:, iimf, jimf], mode='combined', interp_method=interp_method )
+            env = interp_envelope(X[:, iimf, jimf], mode='combined', interp_method=interp_method)
 
             if env is None:
                 continue_norm = False
@@ -62,7 +62,7 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip',
                 iters += 1
 
                 X[:, iimf, jimf] = X[:, iimf, jimf] / env
-                env = interp_envelope( X[:, iimf, jimf], mode='combined', interp_method=interp_method )
+                env = interp_envelope(X[:, iimf, jimf], mode='combined', interp_method=interp_method)
 
                 if env is None:
                     continue_norm = False
@@ -75,14 +75,14 @@ def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip',
 
     if clip:
         # Make absolutely sure nothing daft is happening
-        X = np.clip( X, -1, 1)
+        X = np.clip(X, -1, 1)
 
     if orig_dim == 2:
         X = X[:, :, 0]
 
     return X
 
-def get_padded_extrema( X, combined_upper_lower=False ):
+def get_padded_extrema(X, combined_upper_lower=False):
     """
     Return a set of extrema from a signal including padded extrema at the edges
     of the signal.
@@ -109,9 +109,9 @@ def get_padded_extrema( X, combined_upper_lower=False ):
         X = X[:, 0]
 
     if combined_upper_lower:
-        max_locs, max_pks = find_extrema( np.abs(X) )
+        max_locs, max_pks = find_extrema(np.abs(X))
     else:
-        max_locs, max_pks = find_extrema( X )
+        max_locs, max_pks = find_extrema(X)
 
     # Return nothing we don't have enough extrema
     if max_locs.size <= 1:
@@ -123,18 +123,18 @@ def get_padded_extrema( X, combined_upper_lower=False ):
         N = max_locs.size
 
     # Pad peak locations
-    ret_max_locs = np.pad( max_locs, N, 'reflect', reflect_type='odd' )
+    ret_max_locs = np.pad(max_locs, N, 'reflect', reflect_type='odd')
 
     # Pad peak magnitudes
-    ret_max_pks = np.pad( max_pks, N, 'median', stat_length=1)
+    ret_max_pks = np.pad(max_pks, N, 'median', stat_length=1)
 
     while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
-        ret_max_locs = np.pad( ret_max_locs, N, 'reflect', reflect_type='odd' )
-        ret_max_pks = np.pad( ret_max_pks, N, 'median', stat_length=1 )
+        ret_max_locs = np.pad(ret_max_locs, N, 'reflect', reflect_type='odd')
+        ret_max_pks = np.pad(ret_max_pks, N, 'median', stat_length=1)
 
     return ret_max_locs, ret_max_pks
 
-def interp_envelope( X, mode='upper', interp_method='splrep' ):
+def interp_envelope(X, mode='upper', interp_method='splrep'):
     """
     Interpolate the amplitude envelope of a signal.
 
@@ -156,11 +156,11 @@ def interp_envelope( X, mode='upper', interp_method='splrep' ):
     """
 
     if mode == 'upper':
-        locs, pks = get_padded_extrema( X, combined_upper_lower=False)
+        locs, pks = get_padded_extrema(X, combined_upper_lower=False)
     elif mode == 'lower':
-        locs, pks = get_padded_extrema( -X, combined_upper_lower=False)
+        locs, pks = get_padded_extrema(-X, combined_upper_lower=False)
     elif mode == 'combined':
-        locs, pks = get_padded_extrema( X, combined_upper_lower=True)
+        locs, pks = get_padded_extrema(X, combined_upper_lower=True)
     else:
         raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')
 
@@ -170,14 +170,14 @@ def interp_envelope( X, mode='upper', interp_method='splrep' ):
     # Run interpolation on envelope
     t = np.arange(locs[0], locs[-1])
     if interp_method == 'splrep':
-        f = interp.splrep( locs, pks )
+        f = interp.splrep(locs, pks)
         env = interp.splev(t, f)
     elif interp_method == 'mono_pchip':
         pchip = interp.PchipInterpolator(locs, pks)
-        env = pchip( t )
+        env = pchip(t)
     elif interp_method == 'pchip':
         pchip = interp.pchip(locs, pks)
-        env = pchip( t )
+        env = pchip(t)
 
     t_max = np.arange(locs[0], locs[-1])
     tinds = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
@@ -192,7 +192,7 @@ def interp_envelope( X, mode='upper', interp_method='splrep' ):
     else:
         return env
 
-def find_extrema( X, ret_min=False ):
+def find_extrema(X, ret_min=False):
     """
     Identify extrema within a time-course and reject extrema whose magnitude is
     below a set threshold.
@@ -216,14 +216,14 @@ def find_extrema( X, ret_min=False ):
 
     if ret_min:
         #ind = signal.argrelextrema( X, np.less)[0]
-        ind = signal.argrelmin( X, order=1 )[0]
+        ind = signal.argrelmin(X, order=1)[0]
     else:
         #ind = signal.argrelextrema( X, np.greater)[0]
-        ind = signal.argrelmax( X, order=1 )[0]
+        ind = signal.argrelmax(X, order=1)[0]
 
     # Only keep peaks with magnitude above machine precision
     if len(ind) / X.shape[0] > 1e-3:
-        good_inds = ~( np.isclose( X[ind], X[ind-1] ) * np.isclose( X[ind], X[ind+1] ) )
+        good_inds = ~(np.isclose(X[ind], X[ind-1]) * np.isclose(X[ind], X[ind+1]))
         ind = ind[good_inds]
 
     #if ind[0] == 0:
@@ -234,7 +234,7 @@ def find_extrema( X, ret_min=False ):
 
     return ind, X[ind]
 
-def zero_crossing_count( X ):
+def zero_crossing_count(X):
     """
     Count the number of zero-crossings within a time-course through
     differentiation of the sign of the signal.
@@ -257,7 +257,7 @@ def zero_crossing_count( X ):
     return (np.diff(np.sign(X), axis=0) != 0).sum(axis=0)
 
 
-def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
+def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
     """
     Simulate a non-linear waveform using equation 9 in [1]_.
 
@@ -289,15 +289,15 @@ def abreu2010( f, nonlin_deg, nonlin_phi, sample_rate, seconds ):
 
     time_vect = np.linspace(0, seconds, seconds*sample_rate)
 
-    factor = np.sqrt( 1- nonlin_deg**2 )
-    num = nonlin_deg*np.sin(nonlin_phi) / 1+np.sqrt( 1-nonlin_deg**2 )
-    num = num + np.sin( 2*np.pi*f*time_vect)
+    factor = np.sqrt(1- nonlin_deg**2)
+    num = nonlin_deg*np.sin(nonlin_phi) / 1+np.sqrt(1-nonlin_deg**2)
+    num = num + np.sin(2*np.pi*f*time_vect)
 
-    denom = 1 - nonlin_deg * np.cos( 2*np.pi*f*time_vect + nonlin_phi )
+    denom = 1 - nonlin_deg * np.cos(2*np.pi*f*time_vect + nonlin_phi)
 
-    return factor * ( num / denom )
+    return factor * (num / denom)
 
-def est_orthogonality( imf ):
+def est_orthogonality(imf):
     """
     Compute the index of orthogonality as described in equation 6.5 of [1]_.
 
@@ -323,16 +323,16 @@ def est_orthogonality( imf ):
     """
 
 
-    ortho = np.ones( (imf.shape[1], imf.shape[1]) ) * np.nan
+    ortho = np.ones((imf.shape[1], imf.shape[1])) * np.nan
 
     for ii in range(imf.shape[1]):
         for jj in range(imf.shape[1]):
-            ortho[ii, jj] = np.abs( np.sum(imf[:, ii]*imf[:, jj]) ) / \
-                        ( np.sqrt(np.sum(imf[:, jj]*imf[:, jj])) * np.sqrt(np.sum(imf[:, ii]*imf[:, ii])) );
+            ortho[ii, jj] = np.abs(np.sum(imf[:, ii]*imf[:, jj])) / \
+                        (np.sqrt(np.sum(imf[:, jj]*imf[:, jj])) * np.sqrt(np.sum(imf[:, ii]*imf[:, ii])));
 
     return ortho
 
-def find_extrema_locked_epochs( X, winsize, lock_to='max', percentile=None ):
+def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
     """
     Helper function for defining epochs around peaks or troughs within the data
 
@@ -356,9 +356,9 @@ def find_extrema_locked_epochs( X, winsize, lock_to='max', percentile=None ):
     """
 
     if lock_to=='max':
-        locs, pks = find_extrema( X, ret_min=False )
+        locs, pks = find_extrema(X, ret_min=False)
     else:
-        locs, pks = find_extrema( X, ret_min=True )
+        locs, pks = find_extrema(X, ret_min=True)
 
     if percentile is not None:
         thresh = np.percentile(pks[:, 0], percentile)
@@ -379,7 +379,7 @@ def find_extrema_locked_epochs( X, winsize, lock_to='max', percentile=None ):
 
     return trls
 
-def apply_epochs( X, trls ):
+def apply_epochs(X, trls):
     """
     Apply a set of epochs to a continuous dataset
 
@@ -398,14 +398,14 @@ def apply_epochs( X, trls ):
 
     """
 
-    Y = np.zeros( (trls[0, 1]-trls[0, 0], X.shape[1], trls.shape[0]) )
+    Y = np.zeros((trls[0, 1]-trls[0, 0], X.shape[1], trls.shape[0]))
     for ii in np.arange(trls.shape[0]):
 
         Y[:, :, ii] = X[trls[ii, 0]:trls[ii, 1], :]
 
     return Y
 
-def wrap_phase( IP, ncycles=1, mode='2pi' ):
+def wrap_phase(IP, ncycles=1, mode='2pi'):
     """
     Wrap a phase time-course.
 
@@ -426,17 +426,17 @@ def wrap_phase( IP, ncycles=1, mode='2pi' ):
     """
 
     if mode == '2pi':
-        phases = ( IP ) % (ncycles * 2 * np.pi )
+        phases = (IP) % (ncycles * 2 * np.pi)
     elif mode == '-pi2pi':
-        phases = ( IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi ) - (np.pi*ncycles)
+        phases = (IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi) - (np.pi*ncycles)
 
     return phases
 
 
 ## Cycle Metrics
 
-def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance',
-                        bin_edges=None ):
+def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
+                        bin_edges=None):
     """
     Compute distribution of x by phase-bins in the Instantaneous Frequency.
 
@@ -470,39 +470,39 @@ def bin_by_phase( ip, x, nbins=24, weights=None, variance_metric='variance',
     """
 
     if bin_edges is None:
-        bin_edges, bin_centres = spectra.define_hist_bins( 0, 2*np.pi, nbins )
+        bin_edges, bin_centres = spectra.define_hist_bins(0, 2*np.pi, nbins)
     else:
         nbins = len(bin_edges) - 1
         bin_centres = bin_edges[:-1] + np.diff(bin_edges)/2
 
-    bin_inds = np.digitize( ip, bin_edges )[:, 0]
+    bin_inds = np.digitize(ip, bin_edges)[:, 0]
 
-    out_dims = list( (nbins, *x.shape[1:]) )
-    avg = np.zeros( out_dims )*np.nan
-    var = np.zeros( out_dims )*np.nan
-    for ii in range(1, nbins ):
+    out_dims = list((nbins, *x.shape[1:]))
+    avg = np.zeros(out_dims)*np.nan
+    var = np.zeros(out_dims)*np.nan
+    for ii in range(1, nbins):
         inds = bin_inds==ii
         if weights is None:
-            avg[ii-1, ...] = np.average( x[inds, ...], axis=0 )
-            v = np.average((x[inds, ...] - np.repeat(avg[None, ii-1, ...], np.sum(inds), axis=0))**2, axis=0 )
+            avg[ii-1, ...] = np.average(x[inds, ...], axis=0)
+            v = np.average((x[inds, ...] - np.repeat(avg[None, ii-1, ...], np.sum(inds), axis=0))**2, axis=0)
         else:
             if inds.sum() > 0:
-                avg[ii-1, ...] = np.average( x[inds, ...], axis=0, weights=weights[inds].dot(np.ones((1, x.shape[1])) ) )
-                v = np.average( (x[inds, ...] - np.repeat(avg[None, ii-1, ...], np.sum(inds), axis=0)**2),
-                                 weights=weights[inds].dot(np.ones((1, x.shape[1])) ), axis=0 )
+                avg[ii-1, ...] = np.average(x[inds, ...], axis=0, weights=weights[inds].dot(np.ones((1, x.shape[1]))))
+                v = np.average((x[inds, ...] - np.repeat(avg[None, ii-1, ...], np.sum(inds), axis=0)**2),
+                                 weights=weights[inds].dot(np.ones((1, x.shape[1]))), axis=0)
             else:
                 v = np.nan
 
         if variance_metric=='variance':
             var[ii-1, ...] = v
         elif variance_metric=='std':
-            var[ii-1, ...] = np.sqrt( v )
+            var[ii-1, ...] = np.sqrt(v)
         elif variance_metric=='sem':
-            var[ii-1, ...] = np.sqrt( v ) / np.repeat(np.sqrt( inds.sum()[None, ...]), x.shape[0], axis=0)
+            var[ii-1, ...] = np.sqrt(v) / np.repeat(np.sqrt(inds.sum()[None, ...]), x.shape[0], axis=0)
 
     return avg, var, bin_centres
 
-def phase_align_cycles( ip, x, cycles=None ):
+def phase_align_cycles(ip, x, cycles=None):
     """
     Compute phase alignment of a vector of observed values across a set of cycles.
 
@@ -522,26 +522,26 @@ def phase_align_cycles( ip, x, cycles=None ):
 
     """
 
-    phase_edges, phase_bins = spectra.define_hist_bins( 0, 2*np.pi, 48 )
+    phase_edges, phase_bins = spectra.define_hist_bins(0, 2*np.pi, 48)
 
     if cycles is None:
-        cycles = get_cycle_inds( ip )
+        cycles = get_cycle_inds(ip)
 
     ncycles = cycles.max()
-    avg = np.zeros( (48, ncycles) )
+    avg = np.zeros((48, ncycles))
     for ii in range(1, ncycles+1):
 
-        phase_data = ip[ cycles[:, 0]==ii, 0]
-        x_data = x[ cycles[:, 0]==ii]
+        phase_data = ip[cycles[:, 0]==ii, 0]
+        x_data = x[cycles[:, 0]==ii]
 
-        f = interp.interp1d( phase_data, x_data,
-                             bounds_error=False, fill_value='extrapolate' )
+        f = interp.interp1d(phase_data, x_data,
+                             bounds_error=False, fill_value='extrapolate')
 
-        avg[:, ii-1] = f( phase_bins )
+        avg[:, ii-1] = f(phase_bins)
 
     return avg
 
-def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
+def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
     """
     Identify cycles within a instantaneous phase time-course and, optionally,
     remove 'bad' cycles by a number of criteria.
@@ -591,38 +591,38 @@ def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
         print('Wrapping phase')
         phase = wrap_phase(phase)
 
-    cycles = np.zeros_like( phase, dtype=int )
+    cycles = np.zeros_like(phase, dtype=int)
 
     for ii in range(phase.shape[1]):
 
-        inds = np.where( np.abs(np.diff( phase[:, ii])) > 6 )[0] + 1
-        unwrapped = np.unwrap(phase[:, ii], axis=0 )
+        inds = np.where(np.abs(np.diff(phase[:, ii])) > 6)[0] + 1
+        unwrapped = np.unwrap(phase[:, ii], axis=0)
 
         count = 1
         for jj in range(len(inds)-1):
 
             if mask is not None:
                 # Ignore cycle if a part of it is masked out
-                if any( ~mask[inds[jj]:inds[jj+1]] ):
+                if any(~mask[inds[jj]:inds[jj+1]]):
                     continue
 
             dat = unwrapped[inds[jj]:inds[jj+1]];
 
             if return_good:
-                cycle_checks = np.zeros( (4,), dtype=bool )
+                cycle_checks = np.zeros((4,), dtype=bool)
 
                 # Check for postively increasing phase
-                if all( np.diff(dat) > 0 ):
+                if all(np.diff(dat) > 0):
                     cycle_checks[0] = True
 
                 # Check that start of cycle is close to 0
-                if ( phase[inds[jj], ii] >= 0 and
-                     phase[inds[jj], ii] <= np.pi/24 ):
+                if (phase[inds[jj], ii] >= 0 and
+                     phase[inds[jj], ii] <= np.pi/24):
                     cycle_checks[1] = True
 
                 # Check that end of cycle is close to pi
-                if ( phase[inds[jj+1]-1, ii] <= 2*np.pi and
-                     phase[inds[jj+1]-1, ii] >= 2*np.pi-np.pi/24 ):
+                if (phase[inds[jj+1]-1, ii] <= 2*np.pi and
+                     phase[inds[jj+1]-1, ii] >= 2*np.pi-np.pi/24):
                     cycle_checks[2] = True
 
                 if imf is not None:
@@ -630,9 +630,9 @@ def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
                     try:
                         cycle = imf[inds[jj]:inds[jj+1]]
                         # Should extend this to cope with multiple peaks etc
-                        ctrl = (0, find_extrema( cycle )[0][0],
-                                     np.where(np.gradient(np.sign( cycle ))==-1)[0][0],
-                                     find_extrema( -cycle )[0][0],
+                        ctrl = (0, find_extrema(cycle)[0][0],
+                                     np.where(np.gradient(np.sign(cycle))==-1)[0][0],
+                                     find_extrema(-cycle)[0][0],
                                      len(cycle))
                         if len(ctrl) == 5 and np.all(np.sign(np.diff(ctrl))):
                             cycle_checks[3] = True
@@ -645,16 +645,16 @@ def get_cycle_inds( phase, return_good=True, mask=None, imf=None ):
 
             else:
                 # Pretend eveything is ok
-                cycle_checks = np.ones( (3,), dtype=bool )
+                cycle_checks = np.ones((3,), dtype=bool)
 
             # Add cycle to list if the checks are good
-            if all( cycle_checks ):
+            if all(cycle_checks):
                 cycles[inds[jj]:inds[jj+1], ii] = count;
                 count += 1
 
     return cycles
 
-def get_cycle_vals( cycles, values, mode='compressed' ):
+def get_cycle_vals(cycles, values, mode='compressed'):
     """
     Compute the average of a set of observations for each cycle.
 
@@ -682,7 +682,7 @@ def get_cycle_vals( cycles, values, mode='compressed' ):
     vals = np.bincount(ids, values)/count
 
     if mode == 'full':
-        ret = np.zeros_like( cycles, dtype=float )
+        ret = np.zeros_like(cycles, dtype=float)
         ret.fill(np.nan)
         for ii in range(1, cycles.max()+1):
             ret[cycles==ii] = vals[ii]
@@ -690,7 +690,7 @@ def get_cycle_vals( cycles, values, mode='compressed' ):
 
     return vals
 
-def get_control_points( x, good_cycles ):
+def get_control_points(x, good_cycles):
     """
     Indentify sets of control points from identified cycles. The control points
     are the ascending zero, peak, descending zero & trough.
@@ -716,14 +716,14 @@ def get_control_points( x, good_cycles ):
 
         # Note! we're currently just taking the first peak or trough if there
         # are more than one. This is dumb.
-        ctrl.append( (0, find_extrema( cycle )[0][0],
-                         np.where(np.gradient(np.sign( cycle ))==-1)[0][0],
-                         find_extrema( -cycle )[0][0],
-                         len(cycle)) )
+        ctrl.append((0, find_extrema(cycle)[0][0],
+                         np.where(np.gradient(np.sign(cycle))==-1)[0][0],
+                         find_extrema(-cycle)[0][0],
+                         len(cycle)))
 
     return np.array(ctrl)
 
-def get_cycle_chain( cycles, min_chain=1 ):
+def get_cycle_chain(cycles, min_chain=1):
     """
     Indentify chains of valid cycles in a set of cycles.
 
