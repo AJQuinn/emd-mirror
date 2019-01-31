@@ -2,7 +2,7 @@ import emd
 import numpy as np
 
 def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi/4,
-            seconds=10, freq=1, sample_rate=1000, noise=0):
+          seconds=10, freq=1, sample_rate=1000, noise=0):
     """
 
     Parameters
@@ -23,7 +23,7 @@ def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi/4,
     Returns
     -------
 
-    
+
     """
 
     num_samples = sample_rate*seconds

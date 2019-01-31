@@ -8,7 +8,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False):
     Parameters
     ----------
     imfs :
-        
+
     time_vect :
          (Default value = None)
     scale_y :
@@ -17,7 +17,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False):
     Returns
     -------
 
-    
+
     """
 
     nplots = imfs.shape[1] + 1
@@ -38,4 +38,4 @@ def plot_imfs(imfs, time_vect=None, scale_y=False):
             ax.set_ylim(-mx*1.2, mx*1.2)
 
         if ii < nplots:
-           ax.tick_params(axis='x', labelbottom='off')
+            ax.tick_params(axis='x', labelbottom='off')

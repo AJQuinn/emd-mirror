@@ -5,8 +5,8 @@ from scipy import interpolate as interp
 from scipy import signal
 from . import spectra
 
-def amplitude_normalise( X, thresh=1e-10, clip=False, interp_method='pchip',
-                            max_iters=3 ):
+def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
+        max_iters=3):
     """
     Normalise the amplitude envelope of an IMF to be 1. Mutiple runs of
     normalisation are carried out until the desired threshold is reached.
@@ -436,7 +436,7 @@ def wrap_phase(IP, ncycles=1, mode='2pi'):
 ## Cycle Metrics
 
 def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
-                        bin_edges=None):
+                 bin_edges=None):
     """
     Compute distribution of x by phase-bins in the Instantaneous Frequency.
 
@@ -489,7 +489,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
             if inds.sum() > 0:
                 avg[ii-1, ...] = np.average(x[inds, ...], axis=0, weights=weights[inds].dot(np.ones((1, x.shape[1]))))
                 v = np.average((x[inds, ...] - np.repeat(avg[None, ii-1, ...], np.sum(inds), axis=0)**2),
-                                 weights=weights[inds].dot(np.ones((1, x.shape[1]))), axis=0)
+                               weights=weights[inds].dot(np.ones((1, x.shape[1]))), axis=0)
             else:
                 v = np.nan
 
@@ -535,7 +535,7 @@ def phase_align_cycles(ip, x, cycles=None):
         x_data = x[cycles[:, 0]==ii]
 
         f = interp.interp1d(phase_data, x_data,
-                             bounds_error=False, fill_value='extrapolate')
+                            bounds_error=False, fill_value='extrapolate')
 
         avg[:, ii-1] = f(phase_bins)
 
@@ -617,12 +617,12 @@ def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
 
                 # Check that start of cycle is close to 0
                 if (phase[inds[jj], ii] >= 0 and
-                     phase[inds[jj], ii] <= np.pi/24):
+                    phase[inds[jj], ii] <= np.pi/24):
                     cycle_checks[1] = True
 
                 # Check that end of cycle is close to pi
                 if (phase[inds[jj+1]-1, ii] <= 2*np.pi and
-                     phase[inds[jj+1]-1, ii] >= 2*np.pi-np.pi/24):
+                    phase[inds[jj+1]-1, ii] >= 2*np.pi-np.pi/24):
                     cycle_checks[2] = True
 
                 if imf is not None:
@@ -631,9 +631,9 @@ def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
                         cycle = imf[inds[jj]:inds[jj+1]]
                         # Should extend this to cope with multiple peaks etc
                         ctrl = (0, find_extrema(cycle)[0][0],
-                                     np.where(np.gradient(np.sign(cycle))==-1)[0][0],
-                                     find_extrema(-cycle)[0][0],
-                                     len(cycle))
+                                np.where(np.gradient(np.sign(cycle))==-1)[0][0],
+                                find_extrema(-cycle)[0][0],
+                                len(cycle))
                         if len(ctrl) == 5 and np.all(np.sign(np.diff(ctrl))):
                             cycle_checks[3] = True
                     except IndexError:
@@ -717,9 +717,9 @@ def get_control_points(x, good_cycles):
         # Note! we're currently just taking the first peak or trough if there
         # are more than one. This is dumb.
         ctrl.append((0, find_extrema(cycle)[0][0],
-                         np.where(np.gradient(np.sign(cycle))==-1)[0][0],
-                         find_extrema(-cycle)[0][0],
-                         len(cycle)))
+                     np.where(np.gradient(np.sign(cycle))==-1)[0][0],
+                     find_extrema(-cycle)[0][0],
+                     len(cycle)))
 
     return np.array(ctrl)
 

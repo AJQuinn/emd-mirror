@@ -4,7 +4,7 @@ from . import utils
 
 ##
 def frequency_stats(imf, sample_rate, method,
-                     smooth_phase=31):
+                    smooth_phase=31):
     """
     Compute instantaneous phase, frequency and amplitude from a set of IMFs.
     Several approaches are implemented from [1]_ and [2]_.
@@ -67,7 +67,7 @@ def frequency_stats(imf, sample_rate, method,
             for jj in range(imf.shape[2]):
                 #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
                 iamp[:, ii, jj] = utils.interp_envelope(imf[:, ii, jj],
-                                    mode='upper')
+                                                        mode='upper')
         if orig_dim == 2:
             iamp = iamp[:, :, 0]
 
@@ -85,7 +85,7 @@ def frequency_stats(imf, sample_rate, method,
             for jj in range(imf.shape[2]):
                 #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
                 iamp[:, ii, jj] = utils.interp_envelope(imf[:, ii, jj],
-                                    mode='upper')
+                                                        mode='upper')
 
         if orig_dim == 2:
             iamp = iamp[:, :, 0]
@@ -151,7 +151,7 @@ def quadrature_transform(X):
     return  nX + 1j * q
 
 def phase_from_complex_signal(complex_signal, smoothing=None,
-                                ret_phase='wrapped', phase_jump='ascending'):
+                              ret_phase='wrapped', phase_jump='ascending'):
     """
     Compute the instantaneous phase from a complex signal obtained from either
     the Hilbert Transform or by Direct Quadrature.
@@ -338,23 +338,23 @@ def holospectrum_am(infr, infr2, inam2, fbins, fbins2):
 
     for t_ind in range(infr.shape[0]):
 
-         # carrier freq inds
-         finds_carrier = np.digitize(infr[t_ind, :], fbins)
+        # carrier freq inds
+        finds_carrier = np.digitize(infr[t_ind, :], fbins)
 
-         for imf2_ind in range(infr2.shape[2]):
+        for imf2_ind in range(infr2.shape[2]):
 
-             # am freq inds
-             finds_am = np.digitize(infr2[t_ind, :, imf2_ind], fbins2)
-             tmp = inam2[t_ind, :, :]
-             tmp[tmp==np.nan] = 0
-             holo[finds_carrier, finds_am, t_ind, :] += tmp
+            # am freq inds
+            finds_am = np.digitize(infr2[t_ind, :, imf2_ind], fbins2)
+            tmp = inam2[t_ind, :, :]
+            tmp[tmp==np.nan] = 0
+            holo[finds_carrier, finds_am, t_ind, :] += tmp
 
     return holo
 
 ## Time-frequency spectra
 
 def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
-        return_time=True):
+                 return_time=True):
     """
     Compute the Holospectrum from the first and second layer frequecy
     statistics of a dataset. The Holospectrum represents the energy of a signal
@@ -418,7 +418,7 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
 
     coords =(T_inds.reshape(-1), infr_inds.reshape(-1))
     holo = sparse.coo_matrix((inam2.reshape(-1), coords),
-                                shape=(infr.shape[0], fold_dim1*fold_dim2))
+                             shape=(infr.shape[0], fold_dim1*fold_dim2))
 
     # Always returns full matrix until someone implements ND sparse in scipy
     if return_time:
