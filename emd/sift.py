@@ -638,7 +638,7 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
         x1 = proto_imf - avg
 
         # Stop sifting if we pass threshold
-        sd = sum((proto_imf-x1)**2)/sum(proto_imf**2);
+        sd = np.sum((proto_imf-x1)**2)/np.sum(proto_imf**2);
         if sd < sd_thresh:
             proto_imf = x1
             continue_imf=False
