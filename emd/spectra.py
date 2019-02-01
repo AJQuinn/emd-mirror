@@ -47,7 +47,7 @@ def frequency_stats(imf, sample_rate, method,
     # instantaneous amplitude.
     if method == 'hilbert':
 
-        analytic_signal = signal.hilbert(X, axis=0)
+        analytic_signal = signal.hilbert(imf, axis=0)
 
         # Estimate instantaneous amplitudes directly from analytic signal
         iamp = np.abs(analytic_signal)
@@ -180,8 +180,9 @@ def phase_from_complex_signal(complex_signal, smoothing=None,
     # Apply smoothing if requested
     #if smoothing is not None:
     #    iphase = signal.savgol_filter(iphase,smoothing,1,axis=0)
-    for ii in range(iphase.shape[1]):
-        iphase[:, ii] = signal.medfilt(iphase[:, ii], 5)
+    if smoothing is not None:
+        for ii in range(iphase.shape[1]):
+            iphase[:, ii] = signal.medfilt(iphase[:, ii], 5)
 
     # Set phase jump point to requested part of cycle
     if phase_jump=='ascending':
