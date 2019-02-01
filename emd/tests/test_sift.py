@@ -21,11 +21,11 @@ class test_sifts(unittest.TestCase):
         # Create core signal
         seconds = 5.1
         sample_rate = 2000
-        f1 = 5
+        f1 = 2
         f2 = 18
         time_vect = np.linspace(0,seconds,int(seconds*sample_rate))
 
-        x = abreu2010( 2, .2, 0, sample_rate, seconds )
+        x = abreu2010( f1, .2, 0, sample_rate, seconds )
         self.x = x + np.cos( 2.3*np.pi*f2*time_vect ) + np.linspace(-.5,1,len(time_vect))
         self.imf = sift( self.x, interp_method='splrep' )
 
@@ -34,7 +34,6 @@ class test_sifts(unittest.TestCase):
         """Test that IMFs are complete description of signal"""
 
         assert( np.allclose( self.x, self.imf.sum(axis=1)) is True )
-
 
     # Implement the four checks from https://doi.org/10.1016/j.ymssp.2007.11.028
     def test_sift_multiplied_by_constant( self ):
@@ -82,3 +81,22 @@ class test_sifts(unittest.TestCase):
         tst = self.check_diff( self.get_resid( self.imf[::-1,0], imf5[:,0] ),1)
 
         assert( tst )
+
+    # Test mask sifts
+    def test_get_next_imf_mask( self ):
+        from ..sift import get_next_imf_mask
+
+        # sift with mask above signal should return zeros
+        # mask has to be waaay above signal in a noiseless time-series
+        next_imf = get_next_imf_mask( self.imf[:,0,None], 0.25, 1 )
+        mask_power = np.sum( np.power(next_imf,2) )
+
+        assert( mask_power < 1 )
+
+
+        # sift with mask below signal should return original signal
+        next_imf = get_next_imf_mask( self.imf[:,0,None], 0.0001, 1 )
+        power = np.sum( np.power(self.imf[:,0],2) )
+        mask_power = np.sum( np.power(next_imf,2) )
+
+        assert( power - mask_power < 1 )
