@@ -298,7 +298,118 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
 
     return imf2
 
-def mask_sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
+def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
+              mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
+              first_mask_mode='if',interp_method='mono_pchip'):
+    """
+    Compute Intrinsic Mode Functions from a dataset using a set of masking
+    signals to reduce mixing of components between modes.
+
+    The simplest masking signal approach uses single mask for each IMF after
+    hte first is computed as normal [1]_. This has since been expanded to the
+    complete mask sift which uses a set of positive and negative sign sine and
+    cosine signals as masks for each IMF. The mean of the four is taken as the
+    IMF.
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+    mask_amp_ratio : scalar
+         Amplitude of mask signals relative to amplitude of previous IMF (Default value = 1)
+    mask_step_factor : scalar
+         Step in frequency between successive masks (Default value = 2)
+    ret_mask_freq : bool
+         Boolean flag indicating whether mask frequencies are returned (Default value = False)
+    mask_initial_freq : scalar
+         Frequency of initial mask as a proportion of the sampling frequency (Default value = None)
+    interp_method : {'mono_pchip','splrep','pchip'}
+         The interpolation method used when computing upper and lower envelopes (Default value = 'mono_pchip')
+
+    Returns
+    -------
+    imf : ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+    mask_freqs : ndarray
+        1D array of mask frequencies, if ret_mask_freq is set to True.
+
+    References
+    ----------
+    .. [1] Ryan Deering, & James F. Kaiser. (2005). The Use of a Masking Signal
+       to Improve Empirical Mode Decomposition. In Proceedings. (ICASSP ’05). IEEE
+       International Conference on Acoustics, Speech, and Signal Processing, 2005.
+       IEEE. https://doi.org/10.1109/icassp.2005.1416051
+
+    """
+
+    if X.ndim == 1:
+        # add dummy dimension
+        X = X[:, None]
+
+    continue_sift = True
+    layer = 0
+
+    # First IMF is computed normally
+    imf, _ = get_next_imf(X)
+
+    # Compute first mask frequency from first IMF
+    if first_mask_mode == 'zc':
+        num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
+        w = X.shape[0] / (num_zero_crossings/2)
+        z = num_zero_crossings / imf.shape[0] / 4
+    elif first_mask_mode == 'if':
+        _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'nht',
+                                            smooth_phase=3)
+        w = np.average(IF, weights=IA)
+        z = 2 * np.pi * w / mask_step_factor
+        z = w / 2
+    elif first_mask_mode < .5:
+        z = first_mask_mode
+
+    zs = [z]
+
+    layer = 1
+    proto_imf = X.copy() - imf
+    allmask = np.zeros_like(proto_imf)
+    while continue_sift:
+
+        sd = imf[:,-1].std()
+        amp = mask_amp_ratio*sd
+        #amp = mask_amp_ratio*X.std()
+
+        next_imf = get_next_imf_mask(proto_imf, z, amp,
+                                     sd_thresh=sd_thresh,
+                                     interp_method=interp_method,
+                                     mask_type='all')
+
+        imf = np.concatenate((imf, next_imf), axis=1)
+        #allmask = np.concatenate( (allmask, mask), axis=1)
+
+        proto_imf = X - imf.sum(axis=1)[:, None]
+
+        z = z / mask_step_factor
+        zs.append(z)
+        layer += 1
+
+        if max_imfs is not None and layer == max_imfs:
+            continue_sift=False
+
+        #if utils.is_trend( proto_imf ):
+        #    imf = np.concatenate( (imf, proto_imf), axis=1)
+        #    continue_sift=False
+
+    if ret_mask_freq:
+        return imf, np.array(zs)
+    else:
+        return imf
+
+def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
               mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
               mask_initial_freq=None, mask_freqs=None,
               interp_method='mono_pchip'):
@@ -359,36 +470,13 @@ def mask_sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     continue_sift = True
     layer = 0
 
-
-    # Compute mask frequency
-    if (mask_initial_freq is None) and (mask_freqs is None):
-
-        # First IMF is computed normally
-        imf, _ = get_next_imf(X)
-
-        # Compute first mask frequency from first IMF
-        mask_method='if'
-        if mask_method == 'zc':
-            num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
-            w = num_zero_crossings / X.shape[0]
-        elif mask_method == 'if':
-            _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'quad', smooth_phase=31)
-            w = np.average(IF, weights=IA)
-        z = 2 * np.pi * w / mask_step_factor
-
-    else:
-        # First sift
-        if mask_initial_freq is not None:
-            w = mask_initial_freq
-        else:
-            w = mask_freqs[0]
-
-        z = w
-        amp = mask_amp_ratio*X.std()
-        imf = get_next_imf_mask(X, z, amp,
-                                sd_thresh=sd_thresh,
-                                interp_method=interp_method,
-                                mask_type='all')
+    # First sift
+    z = mask_freqs[0]
+    amp = mask_amp_ratio*X.std()
+    imf = get_next_imf_mask(X, z, amp,
+                            sd_thresh=sd_thresh,
+                            interp_method=interp_method,
+                            mask_type='all')
 
     zs = [z]
 
@@ -399,6 +487,7 @@ def mask_sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
         sd = imf[:, -1].std()
         amp = mask_amp_ratio*sd
+        amp = mask_amp_ratio*X.std()
 
         next_imf = get_next_imf_mask(proto_imf, z, amp,
                                      sd_thresh=sd_thresh,
@@ -406,25 +495,16 @@ def mask_sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
                                      mask_type='all')
 
         imf = np.concatenate((imf, next_imf), axis=1)
-        #allmask = np.concatenate( (allmask, mask), axis=1)
 
         proto_imf = X - imf.sum(axis=1)[:, None]
 
-        if mask_freqs is not None:
-            w = mask_freqs[layer]
-            z = w
-        else:
-            z = z / mask_step_factor
-            #z = z / mask_step_factor
+        w = mask_freqs[layer]
+        z = w
         zs.append(z)
         layer += 1
 
         if max_imfs is not None and layer == max_imfs:
             continue_sift=False
-
-        #if utils.is_trend( proto_imf ):
-        #    imf = np.concatenate( (imf, proto_imf), axis=1)
-        #    continue_sift=False
 
     if ret_mask_freq:
         return imf, np.array(zs)
