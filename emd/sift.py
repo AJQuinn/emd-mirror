@@ -682,16 +682,20 @@ def get_next_imf_mask(X, z, amp,
 
     if mask_type is 'all' or mask_type is 'cosine':
         mask = amp*np.cos(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_c, continue_sift = get_next_imf(X+mask)
+        next_imf_up_c, continue_sift = get_next_imf(X+mask,
+                                sd_thresh=sd_thresh,interp_method=interp_method)
         next_imf_up_c -= mask
-        next_imf_down_c, continue_sift = get_next_imf(X-mask)
+        next_imf_down_c, continue_sift = get_next_imf(X-mask,
+                                sd_thresh=sd_thresh,interp_method=interp_method)
         next_imf_down_c += mask
 
     if mask_type is 'all' or mask_type is 'sine':
         mask = amp*np.sin(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_s, continue_sift = get_next_imf(X+mask)
+        next_imf_up_s, continue_sift = get_next_imf(X+mask,
+                                sd_thresh=sd_thresh,interp_method=interp_method)
         next_imf_up_s -= mask
-        next_imf_down_s, continue_sift = get_next_imf(X-mask)
+        next_imf_down_s, continue_sift = get_next_imf(X-mask,
+                                sd_thresh=sd_thresh,interp_method=interp_method)
         next_imf_down_s += mask
 
     if mask_type is 'all':
