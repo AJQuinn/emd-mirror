@@ -411,7 +411,7 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
 def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
               mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
-              mask_initial_freq=None, mask_freqs=None,
+              mask_initial_freq=None, mask_freqs=None,mask_amps=None,
               interp_method='mono_pchip'):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
@@ -472,7 +472,11 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
     # First sift
     z = mask_freqs[0]
-    amp = mask_amp_ratio*X.std()
+    if isinstance( mask_amp_ratio, int ) or isinstance( mask_amp_ratio, float):
+        amp = mask_amp_ratio*X.std()
+    else:
+        # Should be array_like if not a single number
+        amp = mask_amp_ratio[0]*X.std()
     imf = get_next_imf_mask(X, z, amp,
                             sd_thresh=sd_thresh,
                             interp_method=interp_method,
@@ -486,8 +490,11 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     while continue_sift:
 
         sd = imf[:, -1].std()
-        amp = mask_amp_ratio*sd
-        amp = mask_amp_ratio*X.std()
+        if isinstance( mask_amp_ratio, int ) or isinstance( mask_amp_ratio, float):
+            amp = mask_amp_ratio*X.std()
+        else:
+            # Should be array_like if not a single number
+            amp = mask_amp_ratio[layer]*X.std()
 
         next_imf = get_next_imf_mask(proto_imf, z, amp,
                                      sd_thresh=sd_thresh,
