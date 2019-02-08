@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
 from . import utils, spectra
+import logging
+logger = logging.getLogger(__name__)
+
 
 def sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
          interp_method='mono_pchip'):
@@ -347,6 +350,13 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
        IEEE. https://doi.org/10.1109/icassp.2005.1416051
 
     """
+    logging.info('STARTED: mask_sift_adaptive')
+    args = dict()
+    for k in ['sd_thresh','sift_thresh','max_imfs',
+                    'mask_amp_ratio','mask_step_factor','ret_mask_freq',
+                    'first_mask_mode,','interp_method']:
+        args[k] = eval(k)
+    logging.debug('mask_sift_adaptive args - {0}'.format(str(args)))
 
     if X.ndim == 1:
         # add dummy dimension
@@ -355,24 +365,35 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     continue_sift = True
     layer = 0
 
-    # First IMF is computed normally
-    imf, _ = get_next_imf(X)
+    if (first_mask_mode == 'zc') or ( first_mask_mode == 'if'):
+        logging.info('Sift IMF-{0} with no mask'.format(layer) )
+        # First IMF is computed normally
+        imf, _ = get_next_imf(X)
 
     # Compute first mask frequency from first IMF
     if first_mask_mode == 'zc':
         num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
         w = X.shape[0] / (num_zero_crossings/2)
         z = num_zero_crossings / imf.shape[0] / 4
+        zs = [z]
     elif first_mask_mode == 'if':
         _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'nht',
                                             smooth_phase=3)
         w = np.average(IF, weights=IA)
         z = 2 * np.pi * w / mask_step_factor
         z = w / 2
+        zs = [z]
     elif first_mask_mode < .5:
         z = first_mask_mode
-
-    zs = [z]
+        amp = mask_amp_ratio*X.std()
+        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format( layer,z,amp) )
+        imf = get_next_imf_mask(X, z, amp,
+                                sd_thresh=sd_thresh,
+                                interp_method=interp_method,
+                                mask_type='all')
+        zs = [z]
+        z = z / mask_step_factor
+        zs.append(z)
 
     layer = 1
     proto_imf = X.copy() - imf
@@ -382,6 +403,8 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         sd = imf[:,-1].std()
         amp = mask_amp_ratio*sd
         #amp = mask_amp_ratio*X.std()
+
+        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format( layer,z,amp) )
 
         next_imf = get_next_imf_mask(proto_imf, z, amp,
                                      sd_thresh=sd_thresh,
@@ -404,6 +427,7 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         #    imf = np.concatenate( (imf, proto_imf), axis=1)
         #    continue_sift=False
 
+    logging.info('FINISHED: mask_sift_adaptive - returning {0} imfs'.format(imf.shape[1]))
     if ret_mask_freq:
         return imf, np.array(zs)
     else:
@@ -462,6 +486,13 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
        IEEE. https://doi.org/10.1109/icassp.2005.1416051
 
     """
+    logging.info('STARTED: mask_sift_specified')
+    args = dict()
+    for k in ['sd_thresh','sift_thresh','max_imfs',
+                    'mask_amp_ratio','mask_step_factor','ret_mask_freq',
+                    'mask_initial_freq','mask_freqs','mask_amps','interp_method']:
+        args[k] = eval(k)
+    logging.debug('mask_sift_adaptive args - {0}'.format(str(args)))
 
     if X.ndim == 1:
         # add dummy dimension
@@ -472,22 +503,29 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
     # First sift
     z = mask_freqs[0]
+    zs = [z] # Store mask freqs for return later
+
     if isinstance( mask_amp_ratio, int ) or isinstance( mask_amp_ratio, float):
         amp = mask_amp_ratio*X.std()
     else:
         # Should be array_like if not a single number
         amp = mask_amp_ratio[0]*X.std()
+
+    logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format( 1,z,amp) )
+
     imf = get_next_imf_mask(X, z, amp,
                             sd_thresh=sd_thresh,
                             interp_method=interp_method,
                             mask_type='all')
 
-    zs = [z]
-
     layer = 1
     proto_imf = X.copy() - imf
     allmask = np.zeros_like(proto_imf)
     while continue_sift:
+
+        z = mask_freqs[layer]
+        zs.append(z)
+        layer += 1
 
         sd = imf[:, -1].std()
         if isinstance( mask_amp_ratio, int ) or isinstance( mask_amp_ratio, float):
@@ -495,6 +533,8 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         else:
             # Should be array_like if not a single number
             amp = mask_amp_ratio[layer]*X.std()
+
+        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format( layer,z,amp) )
 
         next_imf = get_next_imf_mask(proto_imf, z, amp,
                                      sd_thresh=sd_thresh,
@@ -505,14 +545,10 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
         proto_imf = X - imf.sum(axis=1)[:, None]
 
-        w = mask_freqs[layer]
-        z = w
-        zs.append(z)
-        layer += 1
-
         if max_imfs is not None and layer == max_imfs:
             continue_sift=False
 
+    logging.info('FINISHED: mask_sift_specified - returning {0} imfs'.format(imf.shape[1]))
     if ret_mask_freq:
         return imf, np.array(zs)
     else:
@@ -705,7 +741,9 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
 
     continue_imf = True
     continue_flag = True
+    niters = 0
     while continue_imf:
+        niters+=1
 
         upper = utils.interp_envelope(proto_imf, mode='upper',
                                       interp_method=interp_method)
@@ -716,6 +754,7 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
         if upper is None or lower is None:
             continue_flag=False
             continue_imf=False
+            logging.debug('get_next_imf completed in {0} iters with no extrema'.format(niters))
             continue
 
         # Find local mean
@@ -729,6 +768,7 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
         if sd < sd_thresh:
             proto_imf = x1
             continue_imf=False
+            logging.debug('get_next_imf completed in {0} iters with sd {1}'.format(niters,sd))
             continue
 
         proto_imf = proto_imf - avg
