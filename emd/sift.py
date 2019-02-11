@@ -3,10 +3,13 @@ import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
 from . import utils, spectra
+
+# Housekeeping for logging
 import logging
 logger = logging.getLogger(__name__)
+from .logger import sift_logger
 
-
+@sift_logger('sift')
 def sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
          interp_method='mono_pchip'):
     """
@@ -72,6 +75,7 @@ def sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
     return imf
 
+@sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles, ensemble_noise=.2,
                   sd_thresh=.1, sift_thresh=1e-8,
                   max_imfs=None, nprocesses=1,
@@ -154,6 +158,7 @@ def ensemble_sift(X, nensembles, ensemble_noise=.2,
 
     return imfs
 
+@sift_logger('complete_ensemble_sift')
 def complete_ensemble_sift(X, nensembles, ensemble_noise=.2,
                            sd_thresh=.1, sift_thresh=1e-8,
                            max_imfs=None, nprocesses=1):
@@ -256,6 +261,7 @@ def complete_ensemble_sift(X, nensembles, ensemble_noise=.2,
 
     return imf, noise
 
+@sift_logger('second_layer_sift')
 def sift_second_layer(IA, sift_func=sift, sift_args=None):
     """
     Compute second layer IMFs from the amplitude envelopes of a set of first
@@ -301,6 +307,7 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
 
     return imf2
 
+@sift_logger('mask_sift_adaptive')
 def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
               mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
               first_mask_mode='if',interp_method='mono_pchip'):
@@ -350,13 +357,6 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
        IEEE. https://doi.org/10.1109/icassp.2005.1416051
 
     """
-    logging.info('STARTED: mask_sift_adaptive')
-    args = dict()
-    for k in ['sd_thresh','sift_thresh','max_imfs',
-                    'mask_amp_ratio','mask_step_factor','ret_mask_freq',
-                    'first_mask_mode,','interp_method']:
-        args[k] = eval(k)
-    logging.debug('mask_sift_adaptive args - {0}'.format(str(args)))
 
     if X.ndim == 1:
         # add dummy dimension
@@ -427,12 +427,12 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         #    imf = np.concatenate( (imf, proto_imf), axis=1)
         #    continue_sift=False
 
-    logging.info('FINISHED: mask_sift_adaptive - returning {0} imfs'.format(imf.shape[1]))
     if ret_mask_freq:
         return imf, np.array(zs)
     else:
         return imf
 
+@sift_logger('mask_sift_specified')
 def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
               mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
               mask_initial_freq=None, mask_freqs=None,mask_amps=None,
@@ -486,13 +486,6 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
        IEEE. https://doi.org/10.1109/icassp.2005.1416051
 
     """
-    logging.info('STARTED: mask_sift_specified')
-    args = dict()
-    for k in ['sd_thresh','sift_thresh','max_imfs',
-                    'mask_amp_ratio','mask_step_factor','ret_mask_freq',
-                    'mask_initial_freq','mask_freqs','mask_amps','interp_method']:
-        args[k] = eval(k)
-    logging.debug('mask_sift_adaptive args - {0}'.format(str(args)))
 
     if X.ndim == 1:
         # add dummy dimension
@@ -548,7 +541,6 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         if max_imfs is not None and layer == max_imfs:
             continue_sift=False
 
-    logging.info('FINISHED: mask_sift_specified - returning {0} imfs'.format(imf.shape[1]))
     if ret_mask_freq:
         return imf, np.array(zs)
     else:
@@ -831,5 +823,3 @@ def get_next_imf_mask(X, z, amp,
         return (next_imf_up_s+next_imf_down_s)/2.
     elif mask_type is 'cosine':
         return (next_imf_up_c+next_imf_down_c)/2.
-
-
