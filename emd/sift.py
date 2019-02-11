@@ -143,7 +143,7 @@ def ensemble_sift(X, nensembles, ensemble_noise=.2,
     p = mp.Pool(processes=nprocesses)
 
     noise = None
-    args = [(X, noise_scaling, noise, sd_thresh, sift_thresh, max_imfs) for ii in range(nensembles)]
+    args = [(X, noise_scaling, noise, sd_thresh, sift_thresh, max_imfs,ii) for ii in range(nensembles)]
 
     res = p.starmap(sift_func, args)
 
@@ -366,7 +366,7 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     layer = 0
 
     if (first_mask_mode == 'zc') or ( first_mask_mode == 'if'):
-        logging.info('Sift IMF-{0} with no mask'.format(layer) )
+        logger.info('Sift IMF-{0} with no mask'.format(layer) )
         # First IMF is computed normally
         imf, _ = get_next_imf(X)
 
@@ -624,7 +624,8 @@ def adaptive_mask_sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None, mask_am
         return imf
 
 ## Sift Utils
-def _sift_with_noise(X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None):
+def _sift_with_noise(X, noise_scaling=None, noise=None, sd_thresh=.1,
+        sift_thresh=1e-8, max_imfs=None,job_ind=None):
     """
     Helper function for applying white noise to a signal prior to computing the
     sift.
@@ -652,6 +653,10 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thres
 
 
     """
+    if job_ind is not None:
+        from multiprocessing import current_process
+        p = current_process()
+        logger.info('Starting SIFT Ensemble: {0} on process {1}'.format(job_ind, p._identity[0]))
 
     if noise is None:
         noise = np.random.randn(*X.shape)
@@ -746,7 +751,7 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
         if upper is None or lower is None:
             continue_flag=False
             continue_imf=False
-            logging.debug('get_next_imf completed in {0} iters with no extrema'.format(niters))
+            logger.debug('Completed in {0} iters with no extrema'.format(niters))
             continue
 
         # Find local mean
@@ -760,7 +765,7 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
         if sd < sd_thresh:
             proto_imf = x1
             continue_imf=False
-            logging.debug('get_next_imf completed in {0} iters with sd {1}'.format(niters,sd))
+            logger.debug('Completed in {0} iters with sd {1}'.format(niters,sd))
             continue
 
         proto_imf = proto_imf - avg
