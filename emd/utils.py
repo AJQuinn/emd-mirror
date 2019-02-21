@@ -605,6 +605,16 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     for ii in range(phase.shape[1]):
 
         inds = np.where(np.abs(np.diff(phase[:, ii])) > phase_step)[0] + 1
+
+        # Include first and last cycles,
+        # These are likely to be bad/incomplete in real data but we should
+        # check anyway
+        if inds[0] >= 1:
+            inds = np.r_[0,inds]
+        if inds[-1] <= phase.shape[0]-1:
+            inds = np.r_[inds,phase.shape[0]-1]
+        print(inds)
+
         unwrapped = np.unwrap(phase[:, ii], axis=0)
 
         count = 1
