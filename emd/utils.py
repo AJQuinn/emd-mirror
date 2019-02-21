@@ -541,7 +541,9 @@ def phase_align_cycles(ip, x, cycles=None):
 
     return avg
 
-def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
+def get_cycle_inds(phase, return_good=True, mask=None,
+                          imf=None, phase_step=1.5*np.pi,
+                          phase_edge=np.pi/12):
     """
     Identify cycles within a instantaneous phase time-course and, optionally,
     remove 'bad' cycles by a number of criteria.
@@ -557,6 +559,13 @@ def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
     imf : ndarray
          Optional array of IMFs to used for control point identification when
          identifying good/bad cycles (Default value = None)
+    phase_step : scalar
+        Minimum value in the differential of the wrapped phase to identify a
+        cycle transition (Default value = 1.5*np.pi)
+    phase_edge : scalar
+        Maximum distance from 0 or 2pi for the first and last phase value in a
+        good cycle. Only used when return_good is True
+        (Default value = np.pi/12)
 
     Returns
     -------
@@ -567,8 +576,8 @@ def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
     -----
     Good cycles are those with
     1 : A strictly positively increasing phase
-    2 : A phase starting within pi/24 of zero
-    3 : A phase ending within pi/24 of 2pi
+    2 : A phase starting within phase_step of zero (ie 0 < x < phase_step)
+    3 : A phase ending within phase_step of 2pi (is 2pi-phase_step < x < 2pi)
     4 : A set of 4 unqiue control points
             (ascending zero, peak, descending zero & trough)
 
@@ -595,7 +604,7 @@ def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
 
     for ii in range(phase.shape[1]):
 
-        inds = np.where(np.abs(np.diff(phase[:, ii])) > 6)[0] + 1
+        inds = np.where(np.abs(np.diff(phase[:, ii])) > phase_step)[0] + 1
         unwrapped = np.unwrap(phase[:, ii], axis=0)
 
         count = 1
@@ -617,12 +626,12 @@ def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
 
                 # Check that start of cycle is close to 0
                 if (phase[inds[jj], ii] >= 0 and
-                    phase[inds[jj], ii] <= np.pi/24):
+                    phase[inds[jj], ii] <= phase_edge):
                     cycle_checks[1] = True
 
                 # Check that end of cycle is close to pi
                 if (phase[inds[jj+1]-1, ii] <= 2*np.pi and
-                    phase[inds[jj+1]-1, ii] >= 2*np.pi-np.pi/24):
+                    phase[inds[jj+1]-1, ii] >= 2*np.pi-phase_edge):
                     cycle_checks[2] = True
 
                 if imf is not None:
@@ -648,6 +657,7 @@ def get_cycle_inds(phase, return_good=True, mask=None, imf=None):
                 cycle_checks = np.ones((3,), dtype=bool)
 
             # Add cycle to list if the checks are good
+            print(cycle_checks)
             if all(cycle_checks):
                 cycles[inds[jj]:inds[jj+1], ii] = count;
                 count += 1
@@ -711,7 +721,7 @@ def get_control_points(x, good_cycles):
     """
 
     ctrl = list()
-    for ii in range(1, good_cycles.max()):
+    for ii in range(1, good_cycles.max()+1):
         cycle = x[good_cycles==ii]
 
         # Note! we're currently just taking the first peak or trough if there
