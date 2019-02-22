@@ -70,7 +70,7 @@ def test_get_cycle_vals():
 
     # Compute the average of y within bins of x
     bin_avg = get_cycle_vals( x, y )
-    assert( np.all(bin_avg == [1,1,2]) )
+    assert( np.all(bin_avg == [1,1,1]) )
 
     # Compute average of y within bins of x and return full vector
     bin_avg = get_cycle_vals( x, y, mode='full')
