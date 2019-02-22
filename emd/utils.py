@@ -674,7 +674,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
 
     return cycles
 
-def get_cycle_vals(cycles, values, mode='compressed'):
+def get_cycle_vals(cycles, values, mode='compressed',metric='mean'):
     """
     Compute the average of a set of observations for each cycle.
 
@@ -699,13 +699,19 @@ def get_cycle_vals(cycles, values, mode='compressed'):
 
     #https://stackoverflow.com/a/39598529
     unq, ids, count = np.unique(cycles, return_inverse=True, return_counts=True)
-    vals = np.bincount(ids, values)/count
+    vals = np.bincount(ids, values)
+
+    if metric is 'mean':
+        vals = vals / count
+    elif metric is not 'sum':
+        # We already have the sum so just check the argument is as expected
+        raise ValueError('Metric not recognise, please use either \'mean\' or \'sum\'')
 
     if mode == 'full':
         ret = np.zeros_like(cycles, dtype=float)
         ret.fill(np.nan)
         for ii in range(1, cycles.max()+1):
-            ret[cycles==ii] = vals[ii]
+            ret[cycles==ii] = vals[ii-1]
         vals = ret
 
     return vals
