@@ -645,28 +645,3 @@ def define_hist_bins_from_data(X, nbins=None, mode='sqrt', scale='linear'):
             raise ValueError('mode {0} not recognised, please use \'sqrt\'')
 
     return define_hist_bins(data_min, data_max, nbins, scale=scale)
-
-def mean_vector(IP, X, mask=None):
-    """
-    Compute the mean vector of a set of values wrapped around the unit circle.
-
-    Parameters
-    ----------
-    IP : ndarray
-        Instantaneous Phase values
-    X : ndarray
-        Observations corresponding to IP values
-    mask :
-         (Default value = None)
-
-    Returns
-    -------
-    mv : ndarray
-        Set of mean vectors
-
-
-    """
-
-    phi = np.sin(IP) + 1j*np.cos(IP)
-    mv = phi[:, None] * IA
-    return mv.mean(axis=0)

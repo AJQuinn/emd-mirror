@@ -15,7 +15,7 @@ class test_cycles(unittest.TestCase):
         self.signal = np.sin( 2*np.pi*10*self.time_vect )[:,None]
 
     def cycle_generator(self,f,phase=np.pi,distort=None):
-        from ..utils import get_cycle_inds
+        from ..cycles import get_cycle_inds
         from ..spectra import frequency_stats
 
         x = np.sin( 2*np.pi*f*self.time_vect + phase )[:,None]
@@ -63,23 +63,23 @@ class test_cycles(unittest.TestCase):
         assert( cycles[1100] == 0 )
 
 def test_get_cycle_vals():
-    from ..utils import get_cycle_vals
+    from ..cycles import get_cycle_stat
 
     x = np.array([1,2,2,3,3,3])
     y = np.ones_like(x)
 
     # Compute the average of y within bins of x
-    bin_avg = get_cycle_vals( x, y )
+    bin_avg = get_cycle_stat( x, y )
     assert( np.all(bin_avg == [1,1,1]) )
 
     # Compute average of y within bins of x and return full vector
-    bin_avg = get_cycle_vals( x, y, mode='full')
+    bin_avg = get_cycle_stat( x, y, mode='full')
     assert( np.all(bin_avg == y) )
 
     # Compute the sum of y within bins of x
-    bin_counts = get_cycle_vals( x, y, metric='sum' )
+    bin_counts = get_cycle_stat( x, y, metric='sum' )
     assert( np.all(bin_counts == [1,2,3]) )
 
     # Compute the sum of y within bins of x and return full vector
-    bin_counts = get_cycle_vals( x, y, mode='full', metric='sum' )
+    bin_counts = get_cycle_stat( x, y, mode='full', metric='sum' )
     assert( np.all(bin_counts == x) )
