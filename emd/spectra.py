@@ -363,7 +363,7 @@ def holospectrum_am(infr, infr2, inam2, fbins, fbins2):
 ## Time-frequency spectra
 
 def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
-                 return_time=True):
+                 squash_time='sum'):
     """
     Compute the Holospectrum from the first and second layer frequecy
     statistics of a dataset. The Holospectrum represents the energy of a signal
@@ -383,8 +383,9 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         Vector of frequency bins for amplitude-modulation frequencies
     mode : {'energy','amplitude'}
          Flag indicating whether to sum the energy or amplitudes (Default value = 'energy')
-    return_time : bool
-         Flag indicating whether to marginalise over the time dimension (Default value = True)
+    return_time : {'sum','mean',False}
+         Flag indicating whether to marginalise over the time dimension
+         (Default value = 'sum')
 
     Returns
     -------
@@ -429,16 +430,21 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     holo = sparse.coo_matrix((inam2.reshape(-1), coords),
                              shape=(infr.shape[0], fold_dim1*fold_dim2))
 
-    # Always returns full matrix until someone implements ND sparse in scipy
-    if return_time:
+    # Reduce time-dimension if specified
+    if squash_time is False:
         # Return the full matrix
         holo = holo.toarray().reshape(new_shape[0], fold_dim2, fold_dim1)
-        return holo[:, 1:-1, 1:-1]
-    else:
+    elif squash_time is 'mean':
+        # Collapse time dimension while we're still sparse
+        holo = holo.mean(axis=0)
+        holo = holo.reshape(fold_dim2, fold_dim1)
+    elif squash_time is 'sum':
         # Collapse time dimension while we're still sparse
         holo = holo.sum(axis=0)
         holo = holo.reshape(fold_dim2, fold_dim1)
-        return np.array(holo[1:-1, 1:-1]) # don't return a matrix
+
+    # Always returns full-array until someone implements ND sparse in scipy
+    return np.array(holo[1:-1, 1:-1]) # don't return a matrix
 
 def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
     """
