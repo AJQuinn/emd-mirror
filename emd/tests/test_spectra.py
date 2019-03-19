@@ -57,3 +57,26 @@ class test_spectra(unittest.TestCase):
 
         phs = phase_from_freq( np.ones((100,)), sample_rate=100)
         assert( phs.max()-np.pi < tol )
+
+    def test_hilberthunang_1d( self ):
+        from ..spectra import hilberthuang_1d
+
+        IF = np.linspace(0,12,13)[:,None]
+        IA = np.ones_like(IF)
+
+        # We should 2 bins with 5 frequencies in each bin.
+        edges = np.linspace(0,12,3)
+        spec = hilberthuang_1d(IF,IA,edges,mode='amplitude')
+        assert( np.all(spec[:,0] == [6,6]) )
+
+        # We should 4 bins with 3 frequencies in each bin.
+        edges = np.linspace(0,12,5)
+        spec = hilberthuang_1d(IF,IA,edges,mode='amplitude')
+        assert( np.all(spec[:,0] == [3,3,3,3]) )
+
+        IA = IA * 2
+        # We should 4 bins with 3 frequencies in each bin, energy should be 12
+        # per bin (3*(2**2))
+        edges = np.linspace(0,12,5)
+        spec = hilberthuang_1d(IF,IA,edges,mode='energy')
+        assert( np.all(spec[:,0] == [12,12,12,12]) )
