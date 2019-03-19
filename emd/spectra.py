@@ -551,13 +551,13 @@ def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
 
     finds = np.digitize(infr, freq_edges)
 
-    for ii in range(len(freq_edges)-1):
+    for ii in range(1,len(freq_edges)):
         for jj in range(infr.shape[1]):
 
-            if mode == 'power':
-                specs[ii, jj] = np.nansum(inam[finds[:, jj]==ii, jj])
+            if mode == 'amplitude':
+                specs[ii-1, jj] = np.nansum(inam[finds[:, jj]==ii, jj])
             elif mode == 'energy':
-                specs[ii, jj] = np.nansum(np.power(inam[finds[:, jj]==ii, jj], 2))
+                specs[ii-1, jj] = np.nansum(np.power(inam[finds[:, jj]==ii, jj], 2))
 
     return specs
 
