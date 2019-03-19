@@ -502,7 +502,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
 
     return avg, var, bin_centres
 
-def phase_align_cycles(ip, x, cycles=None):
+def phase_align_cycles(ip, x, cycles=None, npoints=48, interp_kind='linear'):
     """
     Compute phase alignment of a vector of observed values across a set of cycles.
 
@@ -514,6 +514,12 @@ def phase_align_cycles(ip, x, cycles=None):
         Input array of observed values to phase align
     cycles : ndarray (optional)
          Optional set of cycles within IP to use (Default value = None)
+    npoints : int
+        Number of points in the phase cycle to align to (Default = 48)
+    interp_kind : {'linear','nearest','zero','slinear',
+                   'quadratic','cubic','previous', 'next'}
+        Type of interpolation to perform. Argument is passed onto
+        scipy.interpolate.interp1d. (Default = 'linear')
 
     Returns
     -------
@@ -522,19 +528,19 @@ def phase_align_cycles(ip, x, cycles=None):
 
     """
 
-    phase_edges, phase_bins = spectra.define_hist_bins(0, 2*np.pi, 48)
+    phase_edges, phase_bins = spectra.define_hist_bins(0, 2*np.pi, npoints)
 
     if cycles is None:
         cycles = get_cycle_inds(ip)
 
     ncycles = cycles.max()
-    avg = np.zeros((48, ncycles))
+    avg = np.zeros((npoints, ncycles))
     for ii in range(1, ncycles+1):
 
         phase_data = ip[cycles[:, 0]==ii, 0]
         x_data = x[cycles[:, 0]==ii]
 
-        f = interp.interp1d(phase_data, x_data,
+        f = interp.interp1d(phase_data, x_data, kind=interp_kind,
                             bounds_error=False, fill_value='extrapolate')
 
         avg[:, ii-1] = f(phase_bins)
@@ -605,6 +611,10 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     for ii in range(phase.shape[1]):
 
         inds = np.where(np.abs(np.diff(phase[:, ii])) > phase_step)[0] + 1
+
+        # No Cycles to be found
+        if len(inds) == 0:
+            continue
 
         # Include first and last cycles,
         # These are likely to be bad/incomplete in real data but we should
