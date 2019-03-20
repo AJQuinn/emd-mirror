@@ -5,6 +5,10 @@ from scipy import interpolate as interp
 from scipy import signal
 from . import spectra
 
+# Housekeeping for logging
+import logging
+logger = logging.getLogger(__name__)
+
 def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
                  bin_edges=None):
     """
@@ -393,7 +397,7 @@ def mean_vector(IP, X, mask=None):
     mv = phi[:, None] * IA
     return mv.mean(axis=0)
 
-def kdt_match( x, y, N=15 ):
+def kdt_match( x, y, K=15, distance_upper_bound=np.inf ):
     """
     Find unique nearest-neighbours between two n-dimensional feature sets.
     Useful for matching two sets of cycles on one or more features (ie
@@ -402,9 +406,9 @@ def kdt_match( x, y, N=15 ):
     Rows in x are matched to rows in y. As such - it is good to have (many)
     more rows in y than x if possible.
 
-    This uses a k-dimensional tree to query for the N nearest neighbours and
+    This uses a k-dimensional tree to query for the K nearest neighbours and
     returns the closest unique neighbour. If no unique match is found - the row
-    is not returned. Increasing N will find more matches but allow matches
+    is not returned. Increasing K will find more matches but allow matches
     between more distant observations.
 
     Not advisable for use with more than a handful of features.
@@ -415,7 +419,7 @@ def kdt_match( x, y, N=15 ):
         [ num observations x num features ] array to match to
     y : ndarray
         [ num observations x num features ] array of potential matches
-    N : int
+    K : int
         number of potential nearest-neigbours to query
 
     Returns
@@ -427,17 +431,30 @@ def kdt_match( x, y, N=15 ):
 
     """
 
+    if x.ndim == 1:
+        x = x[:,None]
+    if y.ndim == 1:
+        y = y[:,None]
+
+    ##
+    logging.info('Starting KD-Tree Match' )
+    msg = 'Matching {0} features from y ({1} observations) to x ({2} observations)'
+    logging.info(msg.format(x.shape[1],y.shape[0],x.shape[0] ) )
+    logging.debug('K: {0}, distance_upper_bound: {1}'.format(K,distance_upper_bound))
+
+    ## Initialise Tree and find nearest neighbours
+    from scipy import spatial
     kdt = spatial.cKDTree(y)
-    D,inds = kdt.query(x,k=N)
-    uni,cnt = np.unique(inds,return_counts=True,axis=0)
+    D,inds = kdt.query(x,k=K,distance_upper_bound=distance_upper_bound)
 
     II = np.zeros_like(inds)
     selected = []
-    for ii in range(N):
+    for ii in range(K):
         # Find unique values in this column
         uni,cnt = np.unique(inds[:,ii],return_counts=True)
-        # Remove duplicates
-        uni = uni[cnt==1]
+        # Remove duplicates and -1s (-1 indicates distance to neighbour is
+        # above threshold)
+        uni = uni[(cnt==1)*(uni!=np.inf)]
         # Remove previously selected
         bo = np.array([u in selected for u in uni])
         uni = uni[bo==False]
@@ -449,16 +466,25 @@ def kdt_match( x, y, N=15 ):
         II[np.where(uni_matches)[0],ii] = 1
         selected.extend( inds[np.where(uni_matches)[0],ii] )
 
+        msg = '{0} Matches in layer {1}'
+        logging.debug(msg.format(np.sum(uni_matches),ii))
+
     # Find column index of left-most choice per row (ie closest unique neighbour)
     winner = np.argmax(II,axis=1)
     # Find row index of winner
-    final = np.zeros( (512,), dtype=int)
-    for ii in range(512):
-        final[ii] = inds[ii,winner[ii]]
+    final = np.zeros( (II.shape[0],), dtype=int)
+    for ii in range(II.shape[0]):
+        if np.sum(II[ii,:]) == 1:
+            final[ii] = inds[ii,winner[ii]]
+        else:
+            final[ii] = -1 # No good match
 
-    # Still have to remove duplicates
+    # Remove failed matches
     uni,cnt = np.unique(final,return_counts=True)
-    x_inds = np.where(cnt==1)[0]
-    y_inds = uni[np.where(cnt==1)[0]]
+    x_inds = np.where( final>-1 )[0]
+    y_inds = final[x_inds]
+
+    ##
+    logging.info('Returning {0} matched observations'.format(x_inds.shape[0]) )
 
     return x_inds,y_inds
