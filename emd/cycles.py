@@ -474,7 +474,7 @@ def kdt_match( x, y, K=15, distance_upper_bound=np.inf ):
     # Find row index of winner
     final = np.zeros( (II.shape[0],), dtype=int)
     for ii in range(II.shape[0]):
-        if np.sum(II[ii,:]) == 1:
+        if (np.sum(II[ii,:]) == 1) and (winner[ii]<y.shape[0]):
             final[ii] = inds[ii,winner[ii]]
         else:
             final[ii] = -1 # No good match
