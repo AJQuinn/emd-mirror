@@ -5,21 +5,43 @@ from functools import wraps
 import logging
 logger = logging.getLogger(__name__)
 
-def set_up(level='DEBUG'):
+def set_up(level='DEBUG',filename=None,mode='both'):
     """
-    LEVELS = [DEBUG, INFO, NOTIFY, WARN, ERROR, FATAL]
+    LEVELS = [DEBUG, INFO, WARN, ERROR, FATAL]
     """
     fmt = '[%(filename)s:%(lineno)s - %(funcName)20s()'
 
-    fmt = '%(asctime)s emd.%(module)s:%(lineno)s - %(funcName)15s() : %(message)s'
-    logging.basicConfig(level=getattr(logging,level),
-                        format=fmt,
-                        datefmt='%m-%d %H:%M:%S')
+    fmt = '%(asctime)s emd.%(module)s:%(lineno)s - %(funcName)20s() : %(message)s'
+
+    handlers = []
+    if (mode is 'console') or (mode is 'both'):
+        # Start logging to console
+        logging.basicConfig(level=getattr(logging,level),
+                            format=fmt,
+                            datefmt='%m-%d %H:%M:%S')
+
+    if (filename is not None) and (mode is 'both'):
+        # Add file handler to existing console logger
+        filelog = logging.FileHandler(filename)
+        filelog.setLevel(level)
+        filelog.setFormatter(logging.Formatter(fmt))
+        # add the handler to the root logger
+        logging.getLogger('').addHandler(filelog)
+
+    if (filename is not None) and (mode is 'file'):
+        # Start logging to file
+        logging.basicConfig(level=getattr(logging,level),
+                            format=fmt,filename=filename,
+                            datefmt='%m-%d %H:%M:%S')
+
     logging.info('Logging Started on {0}'.format(level))
+    logging.info('Logging mode \'{0}\''.format(mode))
+    if filename is not None and mode is 'file' or mode is 'both':
+        logging.info('Logging to file: {0}'.format(filename))
 
 def set_level(level='INFO'):
     """
-    LEVELS = [DEBUG, INFO, NOTIFY, WARN, ERROR, FATAL]
+    LEVELS = [DEBUG, INFO, WARN, ERROR, FATAL]
     """
     logging.getLogger().setLevel(getattr(logging,level))
     logging.info('Logging Level changed to {0}'.format(level))
