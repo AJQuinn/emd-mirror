@@ -152,7 +152,7 @@ def ensemble_sift(X, nensembles, ensemble_noise=.2,
         raise ValueError(
             'noise_mode: {0} not recognised, please use \'single\' or \'flip\''.format(noise_mode))
 
-    if noise_mode is 'single':
+    if noise_mode == 'single':
         sift_func = _sift_with_noise
     else:
         sift_func = _sift_with_noise_flip
@@ -422,12 +422,10 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
     layer = 1
     proto_imf = X.copy() - imf
-    allmask = np.zeros_like(proto_imf)
     while continue_sift:
 
         sd = imf[:, -1].std()
         amp = mask_amp_ratio * sd
-        #amp = mask_amp_ratio*X.std()
 
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
@@ -437,7 +435,6 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
                                      mask_type='all')
 
         imf = np.concatenate((imf, next_imf), axis=1)
-        #allmask = np.concatenate( (allmask, mask), axis=1)
 
         proto_imf = X - imf.sum(axis=1)[:, None]
 
@@ -447,10 +444,6 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
         if max_imfs is not None and layer == max_imfs:
             continue_sift = False
-
-        # if utils.is_trend( proto_imf ):
-        #    imf = np.concatenate( (imf, proto_imf), axis=1)
-        #    continue_sift=False
 
     if ret_mask_freq:
         return imf, np.array(zs)
@@ -539,7 +532,6 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
     layer = 1
     proto_imf = X.copy() - imf
-    allmask = np.zeros_like(proto_imf)
     while continue_sift:
 
         z = mask_freqs[layer]
@@ -620,7 +612,8 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, sd_thresh=.1,
     return sift(ensX, sd_thresh=sd_thresh, sift_thresh=sift_thresh, max_imfs=max_imfs)
 
 
-def _sift_with_noise_flip(X, noise_scaling=None, noise=None, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None):
+def _sift_with_noise_flip(X, noise_scaling=None, noise=None,
+                          sd_thresh=.1, sift_thresh=1e-8, max_imfs=None):
     """
     Helper function for applying white noise to a signal prior to computing the
     sift.
@@ -758,7 +751,7 @@ def get_next_imf_mask(X, z, amp,
     """
     z = z * 2 * np.pi
 
-    if mask_type is 'all' or mask_type is 'cosine':
+    if mask_type == 'all' or mask_type == 'cosine':
         mask = amp * np.cos(z * np.arange(X.shape[0]))[:, None]
         next_imf_up_c, continue_sift = get_next_imf(X + mask,
                                                     sd_thresh=sd_thresh, interp_method=interp_method)
@@ -767,7 +760,7 @@ def get_next_imf_mask(X, z, amp,
                                                       sd_thresh=sd_thresh, interp_method=interp_method)
         next_imf_down_c += mask
 
-    if mask_type is 'all' or mask_type is 'sine':
+    if mask_type == 'all' or mask_type == 'sine':
         mask = amp * np.sin(z * np.arange(X.shape[0]))[:, None]
         next_imf_up_s, continue_sift = get_next_imf(X + mask,
                                                     sd_thresh=sd_thresh, interp_method=interp_method)
@@ -776,9 +769,9 @@ def get_next_imf_mask(X, z, amp,
                                                       sd_thresh=sd_thresh, interp_method=interp_method)
         next_imf_down_s += mask
 
-    if mask_type is 'all':
+    if mask_type == 'all':
         return (next_imf_up_c + next_imf_down_c + next_imf_up_s + next_imf_down_s) / 4.
-    elif mask_type is 'sine':
+    elif mask_type == 'sine':
         return (next_imf_up_s + next_imf_down_s) / 2.
-    elif mask_type is 'cosine':
+    elif mask_type == 'cosine':
         return (next_imf_up_c + next_imf_down_c) / 2.

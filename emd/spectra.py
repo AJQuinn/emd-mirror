@@ -93,7 +93,6 @@ def frequency_stats(imf, sample_rate, method,
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
             for jj in range(imf.shape[2]):
-                #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
                 iamp[:, ii, jj] = utils.interp_envelope(imf[:, ii, jj],
                                                         mode='upper')
         if orig_dim == 2:
@@ -111,7 +110,6 @@ def frequency_stats(imf, sample_rate, method,
         iamp = np.zeros_like(imf)
         for ii in range(imf.shape[1]):
             for jj in range(imf.shape[2]):
-                #iamp[:,ii,jj] = utils.interp_envelope( imf[:,ii,jj], mode='combined' )
                 iamp[:, ii, jj] = utils.interp_envelope(imf[:, ii, jj],
                                                         mode='upper')
 
@@ -430,11 +428,11 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     if squash_time is False:
         # Return the full matrix
         holo = holo.toarray().reshape(new_shape[0], fold_dim2, fold_dim1)
-    elif squash_time is 'mean':
+    elif squash_time == 'mean':
         # Collapse time dimension while we're still sparse
         holo = holo.mean(axis=0)
         holo = holo.reshape(fold_dim2, fold_dim1)
-    elif squash_time is 'sum':
+    elif squash_time == 'sum':
         # Collapse time dimension while we're still sparse
         holo = holo.sum(axis=0)
         holo = holo.reshape(fold_dim2, fold_dim1)

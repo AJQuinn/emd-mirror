@@ -2,7 +2,6 @@
 
 # vim: set expandtab ts=4 sw=4:
 
-import logging
 import numpy as np
 from functools import wraps
 
@@ -18,14 +17,13 @@ def set_up(level='DEBUG', filename=None, mode='both'):
 
     fmt = '%(asctime)s emd.%(module)s:%(lineno)s - %(funcName)20s() : %(message)s'
 
-    handlers = []
-    if (mode is 'console') or (mode is 'both'):
+    if (mode == 'console') or (mode == 'both'):
         # Start logging to console
         logging.basicConfig(level=getattr(logging, level),
                             format=fmt,
                             datefmt='%m-%d %H:%M:%S')
 
-    if (filename is not None) and (mode is 'both'):
+    if (filename is not None) and (mode == 'both'):
         # Add file handler to existing console logger
         filelog = logging.FileHandler(filename)
         filelog.setLevel(level)
@@ -33,7 +31,7 @@ def set_up(level='DEBUG', filename=None, mode='both'):
         # add the handler to the root logger
         logging.getLogger('').addHandler(filelog)
 
-    if (filename is not None) and (mode is 'file'):
+    if (filename is not None) and (mode == 'file'):
         # Start logging to file
         logging.basicConfig(level=getattr(logging, level),
                             format=fmt, filename=filename,
@@ -41,7 +39,7 @@ def set_up(level='DEBUG', filename=None, mode='both'):
 
     logging.info('Logging Started on {0}'.format(level))
     logging.info('Logging mode \'{0}\''.format(mode))
-    if filename is not None and mode is 'file' or mode is 'both':
+    if (filename is not None) and (mode == 'file') or (mode == 'both'):
         logging.info('Logging to file: {0}'.format(filename))
 
 
@@ -66,8 +64,8 @@ def sift_logger(sift_name):
         def wrapper(*args, **kwargs):
             logger.info('STARTED: {0}'.format(sift_name))
 
-            if (sift_name is 'ensemble_sift') or \
-               (sift_name is 'complete_ensemble_sift'):
+            if (sift_name == 'ensemble_sift') or \
+               (sift_name == 'complete_ensemble_sift'):
                 # Print number of ensembles if ensemble sift - this is a
                 # positional arg not a kwarg
                 logger.debug('Input data size: {0}'.format(args[0].shape))

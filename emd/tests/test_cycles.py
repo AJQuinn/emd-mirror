@@ -4,8 +4,6 @@ import unittest
 import numpy as np
 from scipy import signal
 
-from ..sift import sift
-
 
 class test_cycles(unittest.TestCase):
 
@@ -17,7 +15,6 @@ class test_cycles(unittest.TestCase):
 
     def cycle_generator(self, f, phase=np.pi, distort=None):
         from ..cycles import get_cycle_inds
-        from ..spectra import frequency_stats
 
         x = np.sin(2 * np.pi * f * self.time_vect + phase)[:, None]
 

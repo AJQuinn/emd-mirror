@@ -64,8 +64,6 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
     if X.ndim == 2:
         X = X[:, :, None]
 
-    container_dim = (X.shape[0], 1, 1)
-
     for iimf in range(X.shape[1]):
         for jimf in range(X.shape[2]):
 
@@ -75,7 +73,6 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
                 continue_norm = False
             else:
                 continue_norm = True
-                #env = env.reshape(*container_dim)
 
             iters = 0
             while continue_norm and (iters < max_iters):
@@ -89,7 +86,6 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
                     continue_norm = False
                 else:
                     continue_norm = True
-                    #env = env.reshape(*container_dim)
 
                     if np.abs(env.sum() - env.shape[0]) < thresh:
                         continue_norm = False
@@ -240,10 +236,8 @@ def find_extrema(X, ret_min=False):
     """
 
     if ret_min:
-        #ind = signal.argrelextrema( X, np.less)[0]
         ind = signal.argrelmin(X, order=1)[0]
     else:
-        #ind = signal.argrelextrema( X, np.greater)[0]
         ind = signal.argrelmax(X, order=1)[0]
 
     # Only keep peaks with magnitude above machine precision
@@ -353,8 +347,8 @@ def est_orthogonality(imf):
 
     for ii in range(imf.shape[1]):
         for jj in range(imf.shape[1]):
-            ortho[ii, jj] = np.abs(np.sum(imf[:, ii] * imf[:, jj])) / \
-                (np.sqrt(np.sum(imf[:, jj] * imf[:, jj])) * np.sqrt(np.sum(imf[:, ii] * imf[:, ii])))
+            ortho[ii, jj] = np.abs(np.sum(imf[:, ii] * imf[:, jj])) \
+                / (np.sqrt(np.sum(imf[:, jj] * imf[:, jj])) * np.sqrt(np.sum(imf[:, ii] * imf[:, ii])))
 
     return ortho
 
@@ -398,11 +392,11 @@ def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
 
     # Reject trials which start before 0
     inds = trls[:, 0] < 0
-    trls = trls[inds == False, :]
+    trls = trls[inds is False, :]
 
     # Reject trials which end after X.shape[0]
     inds = trls[:, 1] > X.shape[0]
-    trls = trls[inds == False, :]
+    trls = trls[inds is False, :]
 
     return trls
 

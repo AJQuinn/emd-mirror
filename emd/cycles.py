@@ -82,7 +82,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
         else:
             if inds.sum() > 0:
                 avg[ii - 1, ...] = np.average(x[inds, ...], axis=0,
-                                            weights=weights[inds].dot(np.ones((1, x.shape[1]))))
+                                              weights=weights[inds].dot(np.ones((1, x.shape[1]))))
                 v = np.average((x[inds, ...] - np.repeat(avg[None, ii - 1, ...], np.sum(inds), axis=0)**2),
                                weights=weights[inds].dot(np.ones((1, x.shape[1]))), axis=0)
             else:
@@ -94,7 +94,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
             var[ii - 1, ...] = np.sqrt(v)
         elif variance_metric == 'sem':
             var[ii - 1, ...] = np.sqrt(v) / np.repeat(np.sqrt(inds.sum()
-                                                            [None, ...]), x.shape[0], axis=0)
+                                                              [None, ...]), x.shape[0], axis=0)
 
     return avg, var, bin_centres
 
@@ -243,13 +243,12 @@ def get_cycle_inds(phase, return_good=True, mask=None,
                     cycle_checks[0] = True
 
                 # Check that start of cycle is close to 0
-                if (phase[inds[jj], ii] >= 0 and
-                        phase[inds[jj], ii] <= phase_edge):
+                if (phase[inds[jj], ii] >= 0 and phase[inds[jj], ii] <= phase_edge):
                     cycle_checks[1] = True
 
                 # Check that end of cycle is close to pi
-                if (phase[inds[jj + 1] - 1, ii] <= 2 * np.pi and
-                        phase[inds[jj + 1] - 1, ii] >= 2 * np.pi - phase_edge):
+                if (phase[inds[jj + 1] - 1, ii] <= 2 * np.pi) and \
+                        (phase[inds[jj + 1] - 1, ii] >= 2 * np.pi - phase_edge):
                     cycle_checks[2] = True
 
                 if imf is not None:
@@ -309,9 +308,9 @@ def get_cycle_stat(cycles, values, mode='compressed', metric='mean'):
     unq, ids, count = np.unique(cycles, return_inverse=True, return_counts=True)
     vals = np.bincount(ids, values)
 
-    if metric is 'mean':
+    if metric == 'mean':
         vals = vals / count
-    elif metric is not 'sum':
+    elif metric != 'sum':
         # We already have the sum so just check the argument is as expected
         raise ValueError('Metric not recognise, please use either \'mean\' or \'sum\'')
 
@@ -351,9 +350,9 @@ def get_control_points(x, good_cycles):
 
         # Note! we're currently just taking the first peak or trough if there
         # are more than one. This is dumb.
-        ctrl.append((0, find_extrema(cycle)[0][0],
+        ctrl.append((0, utils.find_extrema(cycle)[0][0],
                      np.where(np.gradient(np.sign(cycle)) == -1)[0][0],
-                     find_extrema(-cycle)[0][0],
+                     utils.find_extrema(-cycle)[0][0],
                      len(cycle)))
 
     return np.array(ctrl)
@@ -379,12 +378,11 @@ def get_cycle_chain(cycles, min_chain=1):
     """
 
     chains = list()
-    new_chain = True
     chn = None
     # get diff to next cycle for each cycle
     for ii in range(1, cycles.max() + 1):
 
-        di = theta_cycles[np.where(theta_cycles == ii)[0][-1] + 1][0] - ii
+        di = cycles[np.where(cycles == ii)[0][-1] + 1][0] - ii
 
         if di < 1 or ii == 1:
             if chn is not None:
@@ -485,7 +483,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         uni = uni[(cnt == 1) * (uni != np.inf)]
         # Remove previously selected
         bo = np.array([u in selected for u in uni])
-        uni = uni[bo == False]
+        uni = uni[bo is False]
         # Find indices of matches between uniques and values in col
         uni_matches = np.sum(inds[:, ii, None] == uni, axis=1)
         # Remove matches which are selected in previous columns
