@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
-from . import spectra
+from . import spectra,utils
 
 # Housekeeping for logging
 import logging
@@ -178,7 +178,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
 
     if phase.max() > 2*np.pi:
         print('Wrapping phase')
-        phase = wrap_phase(phase)
+        phase = utils.wrap_phase(phase)
 
     cycles = np.zeros_like(phase, dtype=int)
 
@@ -233,9 +233,9 @@ def get_cycle_inds(phase, return_good=True, mask=None,
                     try:
                         cycle = imf[inds[jj]:inds[jj+1]]
                         # Should extend this to cope with multiple peaks etc
-                        ctrl = (0, find_extrema(cycle)[0][0],
+                        ctrl = (0, utils.find_extrema(cycle)[0][0],
                                 np.where(np.gradient(np.sign(cycle))==-1)[0][0],
-                                find_extrema(-cycle)[0][0],
+                                utils.find_extrema(-cycle)[0][0],
                                 len(cycle))
                         if len(ctrl) == 5 and np.all(np.sign(np.diff(ctrl))):
                             cycle_checks[3] = True
@@ -251,7 +251,6 @@ def get_cycle_inds(phase, return_good=True, mask=None,
                 cycle_checks = np.ones((3,), dtype=bool)
 
             # Add cycle to list if the checks are good
-            print(cycle_checks)
             if all(cycle_checks):
                 cycles[inds[jj]:inds[jj+1], ii] = count;
                 count += 1
