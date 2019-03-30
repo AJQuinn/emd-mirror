@@ -29,6 +29,8 @@ from scipy import signal, sparse
 from . import utils
 
 ##
+
+
 def frequency_stats(imf, sample_rate, method,
                     smooth_phase=31):
     """
@@ -130,7 +132,8 @@ def frequency_stats(imf, sample_rate, method,
         print('Method not recognised')
 
     # Compute unwrapped phase for frequency estimation
-    iphase = phase_from_complex_signal(analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped')
+    iphase = phase_from_complex_signal(
+        analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped')
     ifreq = freq_from_phase(iphase, sample_rate)
 
     # Return wrapped phase
@@ -139,6 +142,7 @@ def frequency_stats(imf, sample_rate, method,
     return iphase, ifreq, iamp
 
 # Frequency stat utils
+
 
 def quadrature_transform(X):
     """
@@ -166,15 +170,16 @@ def quadrature_transform(X):
 
     nX = utils.amplitude_normalise(X.copy(), clip=True)
 
-    imagX = np.lib.scimath.sqrt(1-np.power(nX, 2)).real
+    imagX = np.lib.scimath.sqrt(1 - np.power(nX, 2)).real
 
-    mask = ((np.diff(nX, axis=0)>0) * -2) + 1
-    mask[mask==0] = -1
+    mask = ((np.diff(nX, axis=0) > 0) * -2) + 1
+    mask[mask == 0] = -1
     mask = np.r_[mask, mask[-1, None, :]]
 
     q = imagX * mask
 
-    return  nX + 1j * q
+    return nX + 1j * q
+
 
 def phase_from_complex_signal(complex_signal, smoothing=None,
                               ret_phase='wrapped', phase_jump='ascending'):
@@ -208,30 +213,31 @@ def phase_from_complex_signal(complex_signal, smoothing=None,
         iphase = iphase[:, :, None]
 
     # Apply smoothing if requested
-    #if smoothing is not None:
+    # if smoothing is not None:
     #    iphase = signal.savgol_filter(iphase,smoothing,1,axis=0)
     if smoothing is not None:
         for ii in range(iphase.shape[1]):
             for jj in range(iphase.shape[2]):
-                iphase[:,ii,jj] = signal.medfilt(iphase[:,ii,jj], 5)
+                iphase[:, ii, jj] = signal.medfilt(iphase[:, ii, jj], 5)
 
     if orig_dim == 2:
         iphase = iphase[:, :, 0]
 
     # Set phase jump point to requested part of cycle
-    if phase_jump=='ascending':
-        iphase = iphase + np.pi/2
-    elif phase_jump=='peak':
-        pass # do nothing
-    elif phase_jump=='descending':
-        iphase = iphase - np.pi/2
-    elif phase_jump=='trough':
+    if phase_jump == 'ascending':
+        iphase = iphase + np.pi / 2
+    elif phase_jump == 'peak':
+        pass  # do nothing
+    elif phase_jump == 'descending':
+        iphase = iphase - np.pi / 2
+    elif phase_jump == 'trough':
         iphase = iphase + np.pi
 
-    if ret_phase=='wrapped':
+    if ret_phase == 'wrapped':
         return utils.wrap_phase(iphase)
-    elif ret_phase=='unwrapped':
+    elif ret_phase == 'unwrapped':
         return iphase
+
 
 def freq_from_phase(iphase, sample_rate):
     """
@@ -256,9 +262,10 @@ def freq_from_phase(iphase, sample_rate):
     iphase = np.gradient(iphase, axis=0)
 
     # Convert to freq
-    ifrequency = iphase / (2.0*np.pi) * sample_rate
+    ifrequency = iphase / (2.0 * np.pi) * sample_rate
 
     return ifrequency
+
 
 def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
     """
@@ -280,11 +287,12 @@ def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
 
     """
 
-    iphase_diff = (ifrequency/sample_rate) * (2*np.pi)
+    iphase_diff = (ifrequency / sample_rate) * (2 * np.pi)
 
     iphase = phase_start + np.cumsum(iphase_diff, axis=0)
 
     return iphase
+
 
 def direct_quadrature(fm):
     """Section 3.2 of 'on instantaneous frequency'
@@ -313,10 +321,11 @@ def direct_quadrature(fm):
     # We'll have occasional nans where fm==1 or -1
     inds = np.argwhere(np.isnan(ph))
 
-    vals = (ph[inds[:, 0]-1, :] + ph[inds[:, 0]+1, :]) / 2
+    vals = (ph[inds[:, 0] - 1, :] + ph[inds[:, 0] + 1, :]) / 2
     ph[inds[:, 0]] = vals
 
     return ph
+
 
 def phase_angle(fm):
     """
@@ -346,7 +355,8 @@ def phase_angle(fm):
 
     return np.arctan(fm / np.lib.scimath.sqrt(1 - np.power(fm, 2)))
 
-## Time-frequency spectra
+# Time-frequency spectra
+
 
 def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
                  squash_time='sum'):
@@ -404,17 +414,17 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     new_shape = (infr_inds.shape[0], infr_inds.shape[1], infr2.shape[2])
     infr_inds = np.broadcast_to(infr_inds[:, :, None], new_shape)
 
-    fold_dim1 = len(freq_edges)+1
-    fold_dim2 = len(freq_edges2)+1
+    fold_dim1 = len(freq_edges) + 1
+    fold_dim2 = len(freq_edges2) + 1
 
-    infr_inds = infr_inds + IA_inds *  fold_dim1
+    infr_inds = infr_inds + IA_inds * fold_dim1
 
     T_inds = np.arange(infr.shape[0])[:, None, None]
     T_inds = np.broadcast_to(T_inds, new_shape)
 
-    coords =(T_inds.reshape(-1), infr_inds.reshape(-1))
+    coords = (T_inds.reshape(-1), infr_inds.reshape(-1))
     holo = sparse.coo_matrix((inam2.reshape(-1), coords),
-                             shape=(infr.shape[0], fold_dim1*fold_dim2))
+                             shape=(infr.shape[0], fold_dim1 * fold_dim2))
 
     # Reduce time-dimension if specified
     if squash_time is False:
@@ -430,7 +440,8 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         holo = holo.reshape(fold_dim2, fold_dim1)
 
     # Always returns full-array until someone implements ND sparse in scipy
-    return np.array(holo[1:-1, 1:-1]) # don't return a matrix
+    return np.array(holo[1:-1, 1:-1])  # don't return a matrix
+
 
 def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
     """
@@ -484,16 +495,17 @@ def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
     coo_data = (inam.reshape(-1), (yinds.reshape(-1), xinds.reshape(-1)))
 
     # Remove values outside our bins
-    goods = np.any(np.c_[coo_data[1][0]<len(freq_edges)-1, (coo_data[1][0]==0)], axis=1)
+    goods = np.any(np.c_[coo_data[1][0] < len(freq_edges) - 1, (coo_data[1][0] == 0)], axis=1)
     coo_data = (coo_data[0][goods], (coo_data[1][0][goods], coo_data[1][1][goods]))
 
     # Create sparse matrix
-    hht = sparse.coo_matrix(coo_data, shape=(len(freq_edges)-1, xinds.shape[0]))
+    hht = sparse.coo_matrix(coo_data, shape=(len(freq_edges) - 1, xinds.shape[0]))
 
     if return_sparse:
         return hht
     else:
         return hht.toarray()
+
 
 def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
     """
@@ -528,22 +540,22 @@ def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
 
     """
 
-    specs = np.zeros((len(freq_edges)-1, infr.shape[1]))
+    specs = np.zeros((len(freq_edges) - 1, infr.shape[1]))
 
     # Remove values outside the bin range
     infr = infr.copy()
-    infr[infr<freq_edges[0]] = np.nan
-    infr[infr>freq_edges[-1]] = np.nan
+    infr[infr < freq_edges[0]] = np.nan
+    infr[infr > freq_edges[-1]] = np.nan
 
     finds = np.digitize(infr, freq_edges)
 
-    for ii in range(1,len(freq_edges)):
+    for ii in range(1, len(freq_edges)):
         for jj in range(infr.shape[1]):
 
             if mode == 'amplitude':
-                specs[ii-1, jj] = np.nansum(inam[finds[:, jj]==ii, jj])
+                specs[ii - 1, jj] = np.nansum(inam[finds[:, jj] == ii, jj])
             elif mode == 'energy':
-                specs[ii-1, jj] = np.nansum(np.power(inam[finds[:, jj]==ii, jj], 2))
+                specs[ii - 1, jj] = np.nansum(np.power(inam[finds[:, jj] == ii, jj], 2))
 
     return specs
 
@@ -584,17 +596,18 @@ def define_hist_bins(data_min, data_max, nbins, scale='linear'):
 
     if scale == 'log':
         p = np.log([data_min, data_max])
-        edges = np.linspace(p[0], p[1], nbins+1)
+        edges = np.linspace(p[0], p[1], nbins + 1)
         edges = np.exp(edges)
     elif scale == 'linear':
-        edges = np.linspace(data_min, data_max, nbins+1)
+        edges = np.linspace(data_min, data_max, nbins + 1)
     else:
         raise ValueError('scale \'{0}\' not recognised. please use \'log\' or \'linear\'.')
 
     # Get centre frequecy for the bins
-    centres = np.array([(edges[ii]+edges[ii+1])/2 for ii in range(len(edges)-1)])
+    centres = np.array([(edges[ii] + edges[ii + 1]) / 2 for ii in range(len(edges) - 1)])
 
     return edges, centres
+
 
 def define_hist_bins_from_data(X, nbins=None, mode='sqrt', scale='linear'):
     """Find the bin edges and centre frequencies for use in a histogram

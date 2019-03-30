@@ -21,11 +21,9 @@ wrap_phase
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
 
-from . import spectra
 
 def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
         max_iters=3):
@@ -80,11 +78,12 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
                 #env = env.reshape(*container_dim)
 
             iters = 0
-            while continue_norm and (iters<max_iters):
+            while continue_norm and (iters < max_iters):
                 iters += 1
 
                 X[:, iimf, jimf] = X[:, iimf, jimf] / env
-                env = interp_envelope(X[:, iimf, jimf], mode='combined', interp_method=interp_method)
+                env = interp_envelope(X[:, iimf, jimf], mode='combined',
+                                      interp_method=interp_method)
 
                 if env is None:
                     continue_norm = False
@@ -92,7 +91,7 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
                     continue_norm = True
                     #env = env.reshape(*container_dim)
 
-                    if np.abs(env.sum()-env.shape[0]) < thresh:
+                    if np.abs(env.sum() - env.shape[0]) < thresh:
                         continue_norm = False
 
     if clip:
@@ -103,6 +102,7 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
         X = X[:, :, 0]
 
     return X
+
 
 def get_padded_extrema(X, combined_upper_lower=False):
     """
@@ -140,7 +140,7 @@ def get_padded_extrema(X, combined_upper_lower=False):
         return None, None
 
     # Determine how much padding to use
-    N = 2 # should make this analytic somehow
+    N = 2  # should make this analytic somehow
     if max_locs.size < N:
         N = max_locs.size
 
@@ -155,6 +155,7 @@ def get_padded_extrema(X, combined_upper_lower=False):
         ret_max_pks = np.pad(ret_max_pks, N, 'median', stat_length=1)
 
     return ret_max_locs, ret_max_pks
+
 
 def interp_envelope(X, mode='upper', interp_method='splrep'):
     """
@@ -207,12 +208,14 @@ def interp_envelope(X, mode='upper', interp_method='splrep'):
     env = np.array(env[tinds])
 
     if env.shape[0] != X.shape[0]:
-        raise ValueError('Envelope length does not match input data {0} {1}'.format(env.shape[0], X.shape[0]))
+        raise ValueError('Envelope length does not match input data {0} {1}'.format(
+            env.shape[0], X.shape[0]))
 
     if mode == 'lower':
         return -env
     else:
         return env
+
 
 def find_extrema(X, ret_min=False):
     """
@@ -245,16 +248,17 @@ def find_extrema(X, ret_min=False):
 
     # Only keep peaks with magnitude above machine precision
     if len(ind) / X.shape[0] > 1e-3:
-        good_inds = ~(np.isclose(X[ind], X[ind-1]) * np.isclose(X[ind], X[ind+1]))
+        good_inds = ~(np.isclose(X[ind], X[ind - 1]) * np.isclose(X[ind], X[ind + 1]))
         ind = ind[good_inds]
 
-    #if ind[0] == 0:
+    # if ind[0] == 0:
     #    ind = ind[1:]
 
-    #if ind[-1] == X.shape[0]:
+    # if ind[-1] == X.shape[0]:
     #    ind = ind[:-2]
 
     return ind, X[ind]
+
 
 def zero_crossing_count(X):
     """
@@ -309,15 +313,16 @@ def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
 
     """
 
-    time_vect = np.linspace(0, seconds, seconds*sample_rate)
+    time_vect = np.linspace(0, seconds, seconds * sample_rate)
 
-    factor = np.sqrt(1- nonlin_deg**2)
-    num = nonlin_deg*np.sin(nonlin_phi) / 1+np.sqrt(1-nonlin_deg**2)
-    num = num + np.sin(2*np.pi*f*time_vect)
+    factor = np.sqrt(1 - nonlin_deg**2)
+    num = nonlin_deg * np.sin(nonlin_phi) / 1 + np.sqrt(1 - nonlin_deg**2)
+    num = num + np.sin(2 * np.pi * f * time_vect)
 
-    denom = 1 - nonlin_deg * np.cos(2*np.pi*f*time_vect + nonlin_phi)
+    denom = 1 - nonlin_deg * np.cos(2 * np.pi * f * time_vect + nonlin_phi)
 
     return factor * (num / denom)
+
 
 def est_orthogonality(imf):
     """
@@ -344,15 +349,15 @@ def est_orthogonality(imf):
 
     """
 
-
     ortho = np.ones((imf.shape[1], imf.shape[1])) * np.nan
 
     for ii in range(imf.shape[1]):
         for jj in range(imf.shape[1]):
-            ortho[ii, jj] = np.abs(np.sum(imf[:, ii]*imf[:, jj])) / \
-                        (np.sqrt(np.sum(imf[:, jj]*imf[:, jj])) * np.sqrt(np.sum(imf[:, ii]*imf[:, ii])));
+            ortho[ii, jj] = np.abs(np.sum(imf[:, ii] * imf[:, jj])) / \
+                (np.sqrt(np.sum(imf[:, jj] * imf[:, jj])) * np.sqrt(np.sum(imf[:, ii] * imf[:, ii])))
 
     return ortho
+
 
 def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
     """
@@ -377,29 +382,30 @@ def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
 
     """
 
-    if lock_to=='max':
+    if lock_to == 'max':
         locs, pks = find_extrema(X, ret_min=False)
     else:
         locs, pks = find_extrema(X, ret_min=True)
 
     if percentile is not None:
         thresh = np.percentile(pks[:, 0], percentile)
-        locs = locs[pks[:, 0]>thresh]
-        pks = pks[pks>thresh]
+        locs = locs[pks[:, 0] > thresh]
+        pks = pks[pks > thresh]
 
-    winstep = int(winsize/2)
+    winstep = int(winsize / 2)
 
-    trls = np.r_[np.atleast_2d(locs-winstep), np.atleast_2d(locs+winstep)].T
+    trls = np.r_[np.atleast_2d(locs - winstep), np.atleast_2d(locs + winstep)].T
 
     # Reject trials which start before 0
     inds = trls[:, 0] < 0
-    trls = trls[inds==False, :]
+    trls = trls[inds == False, :]
 
     # Reject trials which end after X.shape[0]
     inds = trls[:, 1] > X.shape[0]
-    trls = trls[inds==False, :]
+    trls = trls[inds == False, :]
 
     return trls
+
 
 def apply_epochs(X, trls):
     """
@@ -420,12 +426,13 @@ def apply_epochs(X, trls):
 
     """
 
-    Y = np.zeros((trls[0, 1]-trls[0, 0], X.shape[1], trls.shape[0]))
+    Y = np.zeros((trls[0, 1] - trls[0, 0], X.shape[1], trls.shape[0]))
     for ii in np.arange(trls.shape[0]):
 
         Y[:, :, ii] = X[trls[ii, 0]:trls[ii, 1], :]
 
     return Y
+
 
 def wrap_phase(IP, ncycles=1, mode='2pi'):
     """
@@ -450,6 +457,6 @@ def wrap_phase(IP, ncycles=1, mode='2pi'):
     if mode == '2pi':
         phases = (IP) % (ncycles * 2 * np.pi)
     elif mode == '-pi2pi':
-        phases = (IP + (np.pi*ncycles)) % (ncycles * 2 * np.pi) - (np.pi*ncycles)
+        phases = (IP + (np.pi * ncycles)) % (ncycles * 2 * np.pi) - (np.pi * ncycles)
 
     return phases

@@ -9,7 +9,8 @@ from functools import wraps
 import logging
 logger = logging.getLogger(__name__)
 
-def set_up(level='DEBUG',filename=None,mode='both'):
+
+def set_up(level='DEBUG', filename=None, mode='both'):
     """
     LEVELS = [DEBUG, INFO, WARN, ERROR, FATAL]
     """
@@ -20,7 +21,7 @@ def set_up(level='DEBUG',filename=None,mode='both'):
     handlers = []
     if (mode is 'console') or (mode is 'both'):
         # Start logging to console
-        logging.basicConfig(level=getattr(logging,level),
+        logging.basicConfig(level=getattr(logging, level),
                             format=fmt,
                             datefmt='%m-%d %H:%M:%S')
 
@@ -34,8 +35,8 @@ def set_up(level='DEBUG',filename=None,mode='both'):
 
     if (filename is not None) and (mode is 'file'):
         # Start logging to file
-        logging.basicConfig(level=getattr(logging,level),
-                            format=fmt,filename=filename,
+        logging.basicConfig(level=getattr(logging, level),
+                            format=fmt, filename=filename,
                             datefmt='%m-%d %H:%M:%S')
 
     logging.info('Logging Started on {0}'.format(level))
@@ -43,17 +44,18 @@ def set_up(level='DEBUG',filename=None,mode='both'):
     if filename is not None and mode is 'file' or mode is 'both':
         logging.info('Logging to file: {0}'.format(filename))
 
+
 def set_level(level='INFO'):
     """
     LEVELS = [DEBUG, INFO, WARN, ERROR, FATAL]
     """
-    logging.getLogger().setLevel(getattr(logging,level))
+    logging.getLogger().setLevel(getattr(logging, level))
     logging.info('Logging Level changed to {0}'.format(level))
 
 
-##------------------------------------
+# ------------------------------------
 
-## Decorator for logging sift function
+# Decorator for logging sift function
 def sift_logger(sift_name):
     # This first layer is a wrapper func to allow an argument to be passed in.
     # If we don't do this then we can't easily tell which function is being
@@ -61,7 +63,7 @@ def sift_logger(sift_name):
     def add_logger(func):
         # This is the actual decorator
         @wraps(func)
-        def wrapper(*args,**kwargs):
+        def wrapper(*args, **kwargs):
             logger.info('STARTED: {0}'.format(sift_name))
 
             if (sift_name is 'ensemble_sift') or \
@@ -77,11 +79,11 @@ def sift_logger(sift_name):
             logger.debug('Input Sift Args: {0}'.format(kwargs))
 
             # Call function itself
-            func_output = func(*args,**kwargs)
+            func_output = func(*args, **kwargs)
 
             # Print number of IMFs, catching other outputs if they're returned
             # as well
-            if isinstance(func_output,np.ndarray):
+            if isinstance(func_output, np.ndarray):
                 logger.debug('Returning {0} imfs'.format(func_output.shape[1]))
             else:
                 logger.debug('Returning {0} imfs'.format(func_output[0].shape[1]))

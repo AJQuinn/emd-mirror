@@ -2,12 +2,12 @@
 
 # vim: set expandtab ts=4 sw=4:
 
-import emd
 import numpy as np
 
 from . import utils, sift, spectra
 
-def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi/4,
+
+def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi / 4,
           seconds=10, freq=1, sample_rate=1000, noise=0):
     """
 
@@ -32,12 +32,12 @@ def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi/4,
 
     """
 
-    num_samples = sample_rate*seconds
+    num_samples = sample_rate * seconds
 
     time_vect = np.linspace(0, seconds, num_samples)
 
     x = utils.abreu2010(freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds)
-    x = x + np.random.randn(*x.shape)*noise
+    x = x + np.random.randn(*x.shape) * noise
 
     imf = sift.sift(x)
 
