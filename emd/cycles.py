@@ -393,7 +393,7 @@ def mean_vector(IP, X, mask=None):
     """
 
     phi = np.sin(IP) + 1j*np.cos(IP)
-    mv = phi[:, None] * IA
+    mv = phi[:, None] * X
     return mv.mean(axis=0)
 
 def kdt_match( x, y, K=15, distance_upper_bound=np.inf ):
