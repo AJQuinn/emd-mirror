@@ -3,10 +3,11 @@
 # vim: set expandtab ts=4 sw=4:
 
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy import interpolate as interp
 from scipy import signal
-from . import utils, spectra
+from scipy import interpolate as interp
+import matplotlib.pyplot as plt
+
+from . import spectra,utils
 
 # Housekeeping for logging
 import logging

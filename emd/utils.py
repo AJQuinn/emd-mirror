@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate as interp
 from scipy import signal
+
 from . import spectra
 
 def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
