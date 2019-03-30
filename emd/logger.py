@@ -1,3 +1,7 @@
+#!/usr/bin/python
+
+# vim: set expandtab ts=4 sw=4:
+
 import logging
 import numpy as np
 from functools import wraps
