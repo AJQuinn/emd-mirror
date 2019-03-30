@@ -2,6 +2,27 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Compute instantanous spectral metrics (Phase,Amplitude and Frequency) and
+compute frequency or time frequency spectra.
+
+Routines:
+
+frequency_stats
+quadrature_transform
+phase_from_complex_signal
+freq_from_phase
+phase_from_freq
+direct_quadrature
+phase_angle
+holospectrum
+hilberthuang
+hilberthuang_1d
+define_hist_bins
+define_hist_bins_from_data
+
+"""
+
 import numpy as np
 from scipy import signal, sparse
 

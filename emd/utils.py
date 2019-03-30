@@ -2,6 +2,24 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Support functions.
+
+Routines:
+
+amplitude_normalise
+get_padded_extrema
+interp_envelope
+find_extrema
+zero_crossing_count
+abreu2010
+est_orthogonality
+find_extrema_locked_epochs
+apply_epochs
+wrap_phase
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate as interp

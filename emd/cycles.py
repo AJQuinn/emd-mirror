@@ -2,6 +2,22 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Indentification and analysis of cycles in an oscillatory signal.
+
+Routines:
+
+bin_by_phase
+phase_align
+get_cycle_inds
+get_cycle_stat
+get_control_points
+get_cycle_chain
+mean_vector
+kdt_match
+
+"""
+
 import numpy as np
 from scipy import signal
 from scipy import interpolate as interp

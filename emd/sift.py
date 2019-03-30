@@ -2,6 +2,22 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Implimentations of the SIFT algorithm for Empirical Mode Decomposition.
+
+Routines:
+
+sift
+ensemble_sift
+complete_ensemble_sift
+sift_second_layer
+mask_sift_adaptive
+mask_sift_specified
+get_next_imf
+get_next_imf_mask
+
+"""
+
 import numpy as np
 from scipy import signal
 from scipy import interpolate as interp
