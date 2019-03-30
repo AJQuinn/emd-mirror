@@ -346,46 +346,6 @@ def phase_angle(fm):
 
     return np.arctan(fm / np.lib.scimath.sqrt(1 - np.power(fm, 2)))
 
-
-def holospectrum_am(infr, infr2, inam2, fbins, fbins2):
-    """Not so sure where to start
-
-    Parameters
-    ----------
-    infr :
-
-    infr2 :
-
-    inam2 :
-
-    fbins :
-
-    fbins2 :
-
-
-    Returns
-    -------
-
-    """
-
-    # carrier x am x time
-    holo = np.zeros((len(fbins)+1, len(fbins2)+1, infr.shape[0], infr.shape[1]))
-
-    for t_ind in range(infr.shape[0]):
-
-        # carrier freq inds
-        finds_carrier = np.digitize(infr[t_ind, :], fbins)
-
-        for imf2_ind in range(infr2.shape[2]):
-
-            # am freq inds
-            finds_am = np.digitize(infr2[t_ind, :, imf2_ind], fbins2)
-            tmp = inam2[t_ind, :, :]
-            tmp[tmp==np.nan] = 0
-            holo[finds_carrier, finds_am, t_ind, :] += tmp
-
-    return holo
-
 ## Time-frequency spectra
 
 def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
