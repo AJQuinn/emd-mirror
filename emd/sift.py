@@ -2,7 +2,6 @@
 
 # vim: set expandtab ts=4 sw=4:
 
-from .logger import sift_logger
 """
 Implimentations of the SIFT algorithm for Empirical Mode Decomposition.
 
@@ -19,12 +18,13 @@ get_next_imf_mask
 
 """
 
+import logging
 import numpy as np
 
 from . import spectra, utils
+from .logger import sift_logger
 
 # Housekeeping for logging
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -334,7 +334,8 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
 
 @sift_logger('mask_sift_adaptive')
 def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
-                       mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
+                       mask_amp=1, mask_amp_mode='ratio_imf',
+                       mask_step_factor=2, ret_mask_freq=False,
                        first_mask_mode='if', interp_method='mono_pchip'):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
@@ -356,8 +357,14 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
-    mask_amp_ratio : scalar
-         Amplitude of mask signals relative to amplitude of previous IMF (Default value = 1)
+    mask_amp : scalar or array_like
+         Amplitude of mask signals as specified by mask_amp_mode. If scalar the
+         same value is applied to all IMFs, if an array is passed each value is
+         applied to each IMF in turn (Default value = 1)
+    mask_amp_mode : {'abs','imf_ratio','sig_ratio'}
+         Method for computing mask amplitude. Either in absolute units ('abs'), or as a
+         ratio of the amplitude of the input signal ('ratio_signal') or previous imf
+         ('ratio_imf') (Default value = 'ratio_imf')
     mask_step_factor : scalar
          Step in frequency between successive masks (Default value = 2)
     ret_mask_freq : bool
@@ -390,6 +397,20 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     continue_sift = True
     layer = 0
 
+    # Initialise mask amplitudes
+    if mask_amp_mode == 'ratio_imf':
+        sd = X.std()  # Take ratio of input signal for first IMF
+    elif mask_amp_mode == 'ratio_sig':
+        sd = X.std()
+    elif mask_amp_mode == 'abs':
+        sd = 1
+
+    if isinstance(mask_amp, int) or isinstance(mask_amp, float):
+        amp = mask_amp * sd
+    else:
+        # Should be array_like if not a single number
+        amp = mask_amp[layer] * sd
+
     if (first_mask_mode == 'zc') or (first_mask_mode == 'if'):
         logger.info('Sift IMF-{0} with no mask'.format(layer))
         # First IMF is computed normally
@@ -410,7 +431,7 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         zs = [z]
     elif first_mask_mode < .5:
         z = first_mask_mode
-        amp = mask_amp_ratio * X.std()
+        amp = amp * X.std()
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
         imf = get_next_imf_mask(X, z, amp,
                                 sd_thresh=sd_thresh,
@@ -424,8 +445,15 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     proto_imf = X.copy() - imf
     while continue_sift:
 
-        sd = imf[:, -1].std()
-        amp = mask_amp_ratio * sd
+        # Update mask amplitude if needed
+        if mask_amp_mode == 'ratio_imf':
+            sd = imf[:, -1].std()
+
+        if isinstance(mask_amp, int) or isinstance(mask_amp, float):
+            amp = mask_amp * sd
+        else:
+            # Should be array_like if not a single number
+            amp = mask_amp[layer] * sd
 
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
@@ -453,9 +481,10 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
 @sift_logger('mask_sift_specified')
 def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
-                        mask_amp_ratio=1, mask_step_factor=2, ret_mask_freq=False,
-                        mask_initial_freq=None, mask_freqs=None, mask_amps=None,
-                        interp_method='mono_pchip'):
+                        mask_amp=1, mask_amp_mode='ratio_imf',
+                        mask_step_factor=2, ret_mask_freq=False,
+                        mask_initial_freq=None, mask_freqs=None,
+                        mask_amps=None, interp_method='mono_pchip'):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes.
@@ -476,8 +505,14 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
-    mask_amp_ratio : scalar
-         Amplitude of mask signals relative to amplitude of previous IMF (Default value = 1)
+    mask_amp : scalar or array_like
+         Amplitude of mask signals as specified by mask_amp_mode. If scalar the
+         same value is applied to all IMFs, if an array is passed each value is
+         applied to each IMF in turn (Default value = 1)
+    mask_amp_mode : {'abs','imf_ratio','sig_ratio'}
+         Method for computing mask amplitude. Either in absolute units ('abs'), or as a
+         ratio of the amplitude of the input signal ('ratio_signal') or previous imf
+         ('ratio_imf') (Default value = 'ratio_imf')
     mask_step_factor : scalar
          Step in frequency between successive masks (Default value = 2)
     ret_mask_freq : bool
@@ -517,11 +552,19 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     z = mask_freqs[0]
     zs = [z]  # Store mask freqs for return later
 
-    if isinstance(mask_amp_ratio, int) or isinstance(mask_amp_ratio, float):
-        amp = mask_amp_ratio * X.std()
+    # Initialise mask amplitudes
+    if mask_amp_mode == 'ratio_imf':
+        sd = X.std()  # Take ratio of input signal for first IMF
+    elif mask_amp_mode == 'ratio_sig':
+        sd = X.std()
+    elif mask_amp_mode == 'abs':
+        sd = 1
+
+    if isinstance(mask_amp, int) or isinstance(mask_amp, float):
+        amp = mask_amp * sd
     else:
         # Should be array_like if not a single number
-        amp = mask_amp_ratio[0] * X.std()
+        amp = mask_amp[layer] * sd
 
     logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(1, z, amp))
 
@@ -538,12 +581,15 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
         zs.append(z)
         layer += 1
 
-        sd = imf[:, -1].std()
-        if isinstance(mask_amp_ratio, int) or isinstance(mask_amp_ratio, float):
-            amp = mask_amp_ratio * X.std()
+        # Update mask amplitudes if needed
+        if mask_amp_mode == 'ratio_imf':
+            sd = imf[:, -1].std()
+
+        if isinstance(mask_amp, int) or isinstance(mask_amp, float):
+            amp = mask_amp * sd
         else:
             # Should be array_like if not a single number
-            amp = mask_amp_ratio[layer] * X.std()
+            amp = mask_amp[layer] * sd
 
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
