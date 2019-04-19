@@ -221,7 +221,6 @@ def get_cycle_inds(phase, return_good=True, mask=None,
             inds = np.r_[0, inds]
         if inds[-1] <= phase.shape[0] - 1:
             inds = np.r_[inds, phase.shape[0] - 1]
-        print(inds)
 
         unwrapped = np.unwrap(phase[:, ii], axis=0)
 
