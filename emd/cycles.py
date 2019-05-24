@@ -482,7 +482,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         uni = uni[(cnt == 1) * (uni != np.inf)]
         # Remove previously selected
         bo = np.array([u in selected for u in uni])
-        uni = uni[bo is False]
+        uni = uni[bo == False]
         # Find indices of matches between uniques and values in col
         uni_matches = np.sum(inds[:, ii, None] == uni, axis=1)
         # Remove matches which are selected in previous columns
