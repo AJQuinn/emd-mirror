@@ -417,7 +417,7 @@ def mean_vector(IP, X, mask=None):
 
     """
 
-    phi = np.sin(IP) + 1j * np.cos(IP)
+    phi = np.cos(IP) + 1j * np.sin(IP)
     mv = phi[:, None] * X
     return mv.mean(axis=0)
 
