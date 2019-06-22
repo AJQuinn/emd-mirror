@@ -357,7 +357,7 @@ def get_control_points(x, good_cycles):
     return np.array(ctrl)
 
 
-def get_cycle_chain(cycles, min_chain=1):
+def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     """
     Indentify chains of valid cycles in a set of cycles.
 
@@ -366,15 +366,25 @@ def get_cycle_chain(cycles, min_chain=1):
     cycles : ndarray
         array whose content index cycle locations
     min_chain : integer
-         Minumum length of chain to return (Default value = 1)
+        Minumum length of chain to return (Default value = 1)
+    drop_first : {bool, integer}
+        Number of cycles to remove from start of chain (default is False)
+    drop_last : {bool, integer}
+        Number of cycles to remove from end of chain (default is False)
 
     Returns
     -------
     list
-        nested  list of cycle numbers within each chain
+        nested list of cycle numbers within each chain
 
 
     """
+
+    if drop_first is True:
+        drop_first = 1
+
+    if drop_last is True:
+        drop_last = 1
 
     chains = list()
     chn = None
@@ -386,6 +396,11 @@ def get_cycle_chain(cycles, min_chain=1):
         if di < 1 or ii == 1:
             if chn is not None:
                 if len(chn) >= min_chain:
+                    if drop_first > 0:
+                        chn = chn[drop_first:]
+                    if drop_last > 0:
+                        chn = chn[:-drop_last]
+
                     chains.append(chn)
             # Start New chain
             chn = [ii]
