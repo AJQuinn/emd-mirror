@@ -8,7 +8,6 @@ py_build:
     - apt update
     - apt upgrade -q -y
     - pip install -r requirements.txt
-    - pip install -r requirements-dev.txt
     - make flake
     - make all-clean
     - make test
