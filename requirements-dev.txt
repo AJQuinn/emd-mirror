@@ -1,0 +1,4 @@
+setuptools==41.0.1
+flake8
+sphinx_rtd_theme
+numpydoc

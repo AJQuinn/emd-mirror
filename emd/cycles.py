@@ -492,16 +492,16 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     for ii in range(K):
         # Find unique values in this column
         uni, uni_inds, uni_cnt = np.unique(inds[:, ii],
-                                 return_counts=True,
-                                 return_index=True)
+                                           return_counts=True,
+                                           return_index=True)
         # Remove duplicates and -1s (-1 indicates distance to neighbour is
         # above threshold)
         uni = uni[(uni != np.inf)]
         # Remove previously selected
         bo = np.array([u in selected for u in uni])
-        uni = uni[bo == False]
+        uni = uni[bo == False]  # noqa: E712
         # Find indices of matches between uniques and values in col
-        uni_matches = np.zeros( (inds.shape[0],) )
+        uni_matches = np.zeros((inds.shape[0],))
         uni_matches[uni_inds] = np.sum(inds[uni_inds, ii, None] == uni, axis=1)
         # Remove matches which are selected in previous columns
         uni_matches[II[:, :ii].sum(axis=1) > 0] = 0
@@ -518,7 +518,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     final = np.zeros((II.shape[0],), dtype=int)
     for ii in range(II.shape[0]):
         if (np.sum(II[ii, :]) == 1) and (winner[ii] < y.shape[0]) and \
-           (inds[ii,winner[ii]] < y.shape[0]):
+           (inds[ii, winner[ii]] < y.shape[0]):
             final[ii] = inds[ii, winner[ii]]
         else:
             final[ii] = -1  #  No good match

@@ -1,4 +1,4 @@
-# Minimal makefile for Sphinx documentation
+# vim: set noexpandtab ts=4 sw=4:
 #
 
 # You can set these variables from the command line.
@@ -12,9 +12,33 @@ BUILDDIR      = doc/build
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
+all: install
+	python3 setup.py build
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+install:
+	python3 setup.py install
+
+clean:
+	python3 setup.py clean
+	rm -fr build
+	rm -fr doc/build
+	rm -fr emd.egg-info
+
+all-clean: install-clean
+	python3 setup.py build
+
+install-clean: clean
+	python3 setup.py install
+
+test:
+	python3 setup.py test
+
+doc: doc-html
+
+doc-html:
+	python setup.py build_sphinx
+
+flake:
+	flake8 --ignore=E501 --exclude build/*
+
+.PHONY: help Makefile

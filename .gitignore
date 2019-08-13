@@ -1,4 +1,7 @@
 *.pyc
-doc/build
 *.swo
 *.swp
+build
+doc/build
+sails.egg-info
+
