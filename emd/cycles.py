@@ -437,6 +437,45 @@ def mean_vector(IP, X, mask=None):
     return mv.mean(axis=0)
 
 
+def basis_project(X, ncomps=1, ret_basis=False):
+    """
+    Express a set of signals in a simple sine-cosine basis set
+
+    Parameters
+    ----------
+    IP : ndarray
+        Instantaneous Phase values
+    X : ndarray
+        Observations corresponding to IP values
+    ncomps : int
+        Number of sine-cosine pairs to express signal in (default=1)
+    ret_basis : bool
+        Flag indicating whether to return basis set (default=False)
+
+    Returns
+    -------
+    basis : ndarray
+        Set of values in basis dimensions
+
+
+    """
+    nsamples = X.shape[0]
+    basis = np.c_[ np.cos(np.linspace(0,2*np.pi,nsamples)),
+                   np.sin(np.linspace(0,2*np.pi,nsamples)) ]
+
+    if ncomps > 1:
+        for ii in range(1,ncomps+1):
+            basis  = np.c_[ basis,
+                            np.cos(np.linspace(0,2*(ii+1)*np.pi,nsamples)),
+                            np.sin(np.linspace(0,2*(ii+1)*np.pi,nsamples)) ]
+    basis = basis.T
+
+    if ret_basis:
+        return basis.dot(X), basis
+    else:
+        return basis.dot(X)
+
+
 def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     """
     Find unique nearest-neighbours between two n-dimensional feature sets.
