@@ -174,6 +174,9 @@ def interp_envelope(X, mode='upper', interp_method='splrep'):
 
     """
 
+    if interp_method not in ['splrep', 'mono_pchip', 'pchip']:
+        raise ValueError("Invalid interp_method value")
+
     if mode == 'upper':
         locs, pks = get_padded_extrema(X, combined_upper_lower=False)
     elif mode == 'lower':
@@ -307,7 +310,7 @@ def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
 
     """
 
-    time_vect = np.linspace(0, seconds, seconds * sample_rate)
+    time_vect = np.linspace(0, seconds, int(seconds * sample_rate))
 
     factor = np.sqrt(1 - nonlin_deg**2)
     num = nonlin_deg * np.sin(nonlin_phi) / 1 + np.sqrt(1 - nonlin_deg**2)
@@ -375,6 +378,8 @@ def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
         Array of start and end indices for epochs around extrema.
 
     """
+    if lock_to not in ['max', 'min']:
+        raise ValueError("Invalid lock_to value")
 
     if lock_to == 'max':
         locs, pks = find_extrema(X, ret_min=False)
@@ -447,6 +452,8 @@ def wrap_phase(IP, ncycles=1, mode='2pi'):
         Wrapped phase time-course
 
     """
+    if mode not in ['2pi', '-pi2pi']:
+        raise ValueError("Invalid mode value")
 
     if mode == '2pi':
         phases = (IP) % (ncycles * 2 * np.pi)

@@ -10,6 +10,7 @@ Welcome to emd's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   tutorials.rst
    reference.rst
 
 Indices and tables

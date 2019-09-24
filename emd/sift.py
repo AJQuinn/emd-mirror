@@ -795,6 +795,9 @@ def get_next_imf_mask(X, z, amp,
         1D vector containing the next IMF extracted from X
 
     """
+    if mask_type not in ['all', 'sine', 'cosine']:
+        raise ValueError("Invalid mask type")
+
     z = z * 2 * np.pi
 
     if mask_type == 'all' or mask_type == 'cosine':

@@ -36,7 +36,7 @@ test:
 doc: doc-html
 
 doc-html:
-	python setup.py build_sphinx
+	python3 setup.py build_sphinx
 
 flake:
 	flake8 --ignore=E501 --exclude build/*

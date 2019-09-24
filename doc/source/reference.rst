@@ -7,7 +7,8 @@ SIFT Functions
 .. autofunction:: emd.sift.sift
 .. autofunction:: emd.sift.ensemble_sift
 .. autofunction:: emd.sift.complete_ensemble_sift
-.. autofunction:: emd.sift.mask_sift
+.. autofunction:: emd.sift.mask_sift_adaptive
+.. autofunction:: emd.sift.mask_sift_specified
 
 .. autofunction:: emd.sift.get_next_imf
 .. autofunction:: emd.sift.get_next_imf_mask
