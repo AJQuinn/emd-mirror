@@ -460,14 +460,14 @@ def basis_project(X, ncomps=1, ret_basis=False):
 
     """
     nsamples = X.shape[0]
-    basis = np.c_[ np.cos(np.linspace(0,2*np.pi,nsamples)),
-                   np.sin(np.linspace(0,2*np.pi,nsamples)) ]
+    basis = np.c_[np.cos(np.linspace(0, 2 * np.pi, nsamples)),
+                  np.sin(np.linspace(0, 2 * np.pi, nsamples))]
 
     if ncomps > 1:
-        for ii in range(1,ncomps+1):
-            basis  = np.c_[ basis,
-                            np.cos(np.linspace(0,2*(ii+1)*np.pi,nsamples)),
-                            np.sin(np.linspace(0,2*(ii+1)*np.pi,nsamples)) ]
+        for ii in range(1, ncomps + 1):
+            basis = np.c_[basis,
+                          np.cos(np.linspace(0, 2 * (ii + 1) * np.pi, nsamples)),
+                          np.sin(np.linspace(0, 2 * (ii + 1) * np.pi, nsamples))]
     basis = basis.T
 
     if ret_basis:
