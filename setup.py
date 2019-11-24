@@ -21,7 +21,7 @@ setup(
 
     version=release,
 
-    description='Empirical Mode Decomposition',
+    description='Empirical Mode Decompositions',
 
     # Author details
     author='Andrew Quinn <andrew.quinn@psych.ox.ac.uk>',
