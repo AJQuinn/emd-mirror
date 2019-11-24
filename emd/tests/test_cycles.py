@@ -99,7 +99,7 @@ class test_kdt_match(unittest.TestCase):
 
         assert(all(y_inds == np.arange(10)))
 
-        xx = np.array([0,  5, 11, 16, 22, 27, 33, 38, 44, 49])
+        xx = np.array([0, 5, 11, 16, 22, 27, 33, 38, 44, 49])
         assert(all(x_inds == xx))
 
 
