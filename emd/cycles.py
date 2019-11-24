@@ -578,7 +578,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     return x_inds, y_inds
 
 
-def _unique_inds(ar):
+def _unique_inds( ar ):
     """
     Find the unique elements of an array, ignoring shape.
     Adapted from numpy.lib.arraysetops._unique1d
@@ -593,6 +593,6 @@ def _unique_inds(ar):
     mask[:1] = True
     mask[1:] = aux[1:] != aux[:-1]
 
-    ar_inds = [np.where(ar == ii)[0] for ii in ar[mask]]
+    ar_inds = [ np.where( ar==ii)[0] for ii in ar[mask] ]
 
-    return ar[mask], ar_inds
+    return ar[mask],ar_inds
