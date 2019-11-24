@@ -380,6 +380,9 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
 
     """
 
+    if cycles.ndim == 1:
+        cycles = cycles[:, None]
+
     if drop_first is True:
         drop_first = 1
 
@@ -529,10 +532,12 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     II = np.zeros_like(inds)
     selected = []
     for ii in range(K):
-        # Find unique values in this column
-        uni, uni_inds, uni_cnt = np.unique(inds[:, ii],
-                                           return_counts=True,
-                                           return_index=True)
+        # Find unique values and their indices in this column
+        uni, uni_inds = _unique_inds(inds[:, ii])
+        # Get index of lowest distance match amongst occurances of each unique value
+        ix = [np.argmin(D[uni_inds[jj], ii]) for jj in range(len(uni))]
+        # Map closest match index to full column index
+        closest_uni_inds = [uni_inds[jj][ix[jj]] for jj in range(len(uni))]
         # Remove duplicates and -1s (-1 indicates distance to neighbour is
         # above threshold)
         uni = uni[(uni != np.inf)]
@@ -541,7 +546,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         uni = uni[bo == False]  # noqa: E712
         # Find indices of matches between uniques and values in col
         uni_matches = np.zeros((inds.shape[0],))
-        uni_matches[uni_inds] = np.sum(inds[uni_inds, ii, None] == uni, axis=1)
+        uni_matches[closest_uni_inds] = np.sum(inds[closest_uni_inds, ii, None] == uni, axis=1)
         # Remove matches which are selected in previous columns
         uni_matches[II[:, :ii].sum(axis=1) > 0] = 0
         # Mark remaining matches with 1s in this col
@@ -571,3 +576,23 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     logging.info('Returning {0} matched observations'.format(x_inds.shape[0]))
 
     return x_inds, y_inds
+
+
+def _unique_inds(ar):
+    """
+    Find the unique elements of an array, ignoring shape.
+    Adapted from numpy.lib.arraysetops._unique1d
+        Original function only returns index of first occurance of unique value
+
+    """
+    ar = np.asanyarray(ar).flatten()
+    ar.sort()
+    aux = ar
+
+    mask = np.empty(aux.shape, dtype=np.bool_)
+    mask[:1] = True
+    mask[1:] = aux[1:] != aux[:-1]
+
+    ar_inds = [np.where(ar == ii)[0] for ii in ar[mask]]
+
+    return ar[mask], ar_inds

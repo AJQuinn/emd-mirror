@@ -60,6 +60,48 @@ class test_cycles(unittest.TestCase):
         assert(np.all(uni_cycles == np.arange(8)))
         assert(cycles[1100] == 0)
 
+    def test_cycle_chain(self):
+        from ..cycles import get_cycle_chain
+
+        cycles = self.cycle_generator(4, phase=1.5 * np.pi)
+        chain = get_cycle_chain(cycles)
+        assert(np.all(chain == np.array([1, 2, 3, 4, 5, 6, 7])))
+
+        cycles = self.cycle_generator(4, phase=1.5 * np.pi, distort=1100)
+        chain = get_cycle_chain(cycles)
+        assert(np.all(chain == np.array([[1, 2, 3], [4, 5, 6]])))
+
+        chain = get_cycle_chain(cycles, drop_first=True)
+        assert(np.all(chain == np.array([[2, 3], [5, 6]])))
+
+        chain = get_cycle_chain(cycles, drop_last=True)
+        assert(np.all(chain == np.array([[1, 2], [4, 5]])))
+
+        chain = get_cycle_chain(cycles, drop_first=True, drop_last=True)
+        assert(np.all(chain == np.array([[2], [5]])))
+
+        cycles = self.cycle_generator(4, phase=1.5 * np.pi, distort=800)
+        chain = get_cycle_chain(cycles)
+        assert(np.all(chain == np.array([[1, 2], [3, 4, 5, 6]])))
+
+        chain = get_cycle_chain(cycles, min_chain=3)
+        assert(np.all(chain == np.array([3, 4, 5, 6])))
+
+
+class test_kdt_match(unittest.TestCase):
+
+    def test_kdt(self):
+        x = np.linspace(0, 1)
+        y = np.linspace(0, 1, 10)
+
+        from ..cycles import kdt_match
+        x_inds, y_inds = kdt_match(x, y, K=2)
+
+        assert(all(y_inds == np.arange(10)))
+
+        xx = np.array([0, 5, 11, 16, 22, 27, 33, 38, 44, 49])
+        assert(all(x_inds == xx))
+
 
 def test_get_cycle_vals():
     from ..cycles import get_cycle_stat

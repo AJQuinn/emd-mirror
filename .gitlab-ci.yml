@@ -12,3 +12,7 @@ py_build:
     - make flake
     - make all-clean
     - make test
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week

@@ -437,8 +437,11 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         holo = holo.sum(axis=0)
         holo = holo.reshape(fold_dim2, fold_dim1)
 
-    # Always returns full-array until someone implements ND sparse in scipy
-    return np.array(holo[1:-1, 1:-1])  # don't return a matrix
+    if squash_time is False:
+        return np.array(holo[:, 1:-1, 1:-1])
+    else:
+        # Alays returns full-array until someone implements ND sparse in scipy
+        return np.array(holo[1:-1, 1:-1])  # don't return a matrix
 
 
 def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):

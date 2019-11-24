@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import pathlib
 from setuptools import setup
 
 # Scripts
@@ -9,16 +10,25 @@ name = 'emd'
 version = '0.1'
 release = '0.1.0'
 
+# The directory containing this file
+HERE = pathlib.Path(__file__).parent
+
+# The text of the README file
+README = (HERE / "README.md").read_text()
+
 setup(
     name=name,
 
     version=release,
 
-    description='Spectral Analysis In Linear Systems',
+    description='Empirical Mode Decomposition',
 
     # Author details
     author='Andrew Quinn <andrew.quinn@psych.ox.ac.uk>',
     author_email='andrew.quinn@psych.ox.ac.uk',
+
+    long_description=README,
+    long_description_content_type="text/markdown",
 
     # Choose your license
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -41,7 +51,7 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
 
-    keywords='multivariate autoregressive models spectral',
+    keywords='EMD Spectrum Frequency Non-Linear Holospectrum Hilbert-Huang',
 
     packages=['emd'],
 

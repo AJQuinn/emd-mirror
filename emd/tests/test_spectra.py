@@ -79,3 +79,43 @@ class test_spectra(unittest.TestCase):
         edges = np.linspace(0, 12, 5)
         spec = hilberthuang_1d(IF, IA, edges, mode='energy')
         assert(np.all(spec[:, 0] == [12, 12, 12, 12]))
+
+
+class test_hists(unittest.TestCase):
+
+    def test_hist_bins_from_data(self):
+        from ..spectra import define_hist_bins_from_data
+
+        data = np.linspace(0, 1, 16)
+        edges, bins = define_hist_bins_from_data(data)
+
+        assert(np.all(edges == np.array([0., .25, .5, .75, 1.])))
+        assert(np.all(bins == np.array([0.125, 0.375, 0.625, 0.875])))
+
+    def test_hist_bins(self):
+        from ..spectra import define_hist_bins
+
+        edges, bins = define_hist_bins(0, 1, 5)
+
+        edges = np.round(edges, 6)  # Sometimes returns float errors 0.30000000000000004
+        bins = np.round(bins, 6)  # Sometimes returns float errors 0.30000000000000004
+
+        assert(np.all(edges == np.array([0., 0.2, 0.4, 0.6, 0.8, 1.])))
+        assert(np.all(bins == np.array([0.1, 0.3, 0.5, 0.7, 0.9])))
+
+
+class test_holo(unittest.TestCase):
+
+    def test_holo(self):
+        from ..spectra import holospectrum, define_hist_bins
+
+        f_edges1, f_bins1 = define_hist_bins(0, 10, 5)
+        f_edges2, f_bins2 = define_hist_bins(0, 1, 5)
+
+        if1 = np.array([2, 6])[:, None]
+        if2 = np.array([.2, .3])[:, None, None]
+        ia2 = np.array([1, 2])[:, None, None]
+
+        holo = holospectrum(if1, if2, ia2, f_edges1, f_edges2, squash_time=False)
+
+        assert(np.all(holo.shape == (2, 5, 5)))

@@ -31,7 +31,8 @@ install-clean: clean
 	python3 setup.py install
 
 test:
-	python3 setup.py test
+	coverage run --source emd -m py.test
+	coverage report
 
 doc: doc-html
 
