@@ -58,6 +58,7 @@ setup(
     install_requires=['numpy',
                       'scipy',
                       'matplotlib',
+                      'numpydoc',
                       'sphinx_rtd_theme'],
 
     extras_require={
