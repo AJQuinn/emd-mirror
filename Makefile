@@ -32,7 +32,7 @@ install-clean: clean
 
 test:
 	coverage run --source emd -m py.test
-	coverage report
+	coverage report -m
 
 doc: doc-html
 
