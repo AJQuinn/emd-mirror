@@ -14,7 +14,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../emd'))
+sys.path.insert(0, os.path.abspath('../../../emd'))
+print(sys.path)
 
 
 # -- Project information -----------------------------------------------------
