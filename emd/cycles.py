@@ -3,7 +3,7 @@
 # vim: set expandtab ts=4 sw=4:
 
 """
-Indentification and analysis of cycles in an oscillatory signal.
+Identification and analysis of cycles in an oscillatory signal.
 
 Routines:
 
@@ -157,7 +157,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     phase : ndarray
         Input vector of Instantaneous Phase values
     return_good : bool
-         Boolen indicating whether 'bad' cycles should be removed (Default value = True)
+         Boolean indicating whether 'bad' cycles should be removed (Default value = True)
     mask : ndarray
          Vector of mask values that should be ignored (Default value = None)
     imf : ndarray
@@ -182,7 +182,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     1 : A strictly positively increasing phase
     2 : A phase starting within phase_step of zero (ie 0 < x < phase_step)
     3 : A phase ending within phase_step of 2pi (is 2pi-phase_step < x < 2pi)
-    4 : A set of 4 unqiue control points
+    4 : A set of 4 unique control points
             (ascending zero, peak, descending zero & trough)
 
     Good cycles can be idenfied with:
@@ -325,7 +325,7 @@ def get_cycle_stat(cycles, values, mode='compressed', metric='mean'):
 
 def get_control_points(x, good_cycles):
     """
-    Indentify sets of control points from identified cycles. The control points
+    Identify sets of control points from identified cycles. The control points
     are the ascending zero, peak, descending zero & trough.
 
     Parameters
@@ -359,14 +359,14 @@ def get_control_points(x, good_cycles):
 
 def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     """
-    Indentify chains of valid cycles in a set of cycles.
+    Identify chains of valid cycles in a set of cycles.
 
     Parameters
     ----------
     cycles : ndarray
         array whose content index cycle locations
     min_chain : integer
-        Minumum length of chain to return (Default value = 1)
+        Minimum length of chain to return (Default value = 1)
     drop_first : {bool, integer}
         Number of cycles to remove from start of chain (default is False)
     drop_last : {bool, integer}
@@ -534,7 +534,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     for ii in range(K):
         # Find unique values and their indices in this column
         uni, uni_inds = _unique_inds(inds[:, ii])
-        # Get index of lowest distance match amongst occurances of each unique value
+        # Get index of lowest distance match amongst occurrences of each unique value
         ix = [np.argmin(D[uni_inds[jj], ii]) for jj in range(len(uni))]
         # Map closest match index to full column index
         closest_uni_inds = [uni_inds[jj][ix[jj]] for jj in range(len(uni))]
@@ -582,7 +582,7 @@ def _unique_inds(ar):
     """
     Find the unique elements of an array, ignoring shape.
     Adapted from numpy.lib.arraysetops._unique1d
-        Original function only returns index of first occurance of unique value
+        Original function only returns index of first occurrence of unique value
 
     """
     ar = np.asanyarray(ar).flatten()

@@ -3,7 +3,7 @@
 # vim: set expandtab ts=4 sw=4:
 
 """
-Implimentations of the SIFT algorithm for Empirical Mode Decomposition.
+Implementations of the SIFT algorithm for Empirical Mode Decomposition.
 
 Routines:
 
@@ -342,7 +342,7 @@ def mask_sift_adaptive(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     signals to reduce mixing of components between modes.
 
     The simplest masking signal approach uses single mask for each IMF after
-    hte first is computed as normal [1]_. This has since been expanded to the
+    the first is computed as normal [1]_. This has since been expanded to the
     complete mask sift which uses a set of positive and negative sign sine and
     cosine signals as masks for each IMF. The mean of the four is taken as the
     IMF.
@@ -490,7 +490,7 @@ def mask_sift_specified(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
     signals to reduce mixing of components between modes.
 
     The simplest masking signal approach uses single mask for each IMF after
-    hte first is computed as normal [1]_. This has since been expanded to the
+    the first is computed as normal [1]_. This has since been expanded to the
     complete mask sift which uses a set of positive and negative sign sine and
     cosine signals as masks for each IMF. The mean of the four is taken as the
     IMF.
@@ -739,7 +739,7 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
         lower = utils.interp_envelope(proto_imf, mode='lower',
                                       interp_method=interp_method)
 
-        # If upper or lower are None we should stop sifting alltogether
+        # If upper or lower are None we should stop sifting altogether
         if upper is None or lower is None:
             continue_flag = False
             continue_imf = False

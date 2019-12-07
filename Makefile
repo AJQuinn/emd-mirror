@@ -42,4 +42,7 @@ doc-html:
 flake:
 	flake8 --ignore=E501 --exclude build/*
 
+spell:
+	codespell -s --ignore-words=ignore_words.txt `find . -type f -name \*.py`
+
 .PHONY: help Makefile

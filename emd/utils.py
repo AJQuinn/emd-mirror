@@ -28,7 +28,7 @@ from scipy import signal
 def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
         max_iters=3):
     """
-    Normalise the amplitude envelope of an IMF to be 1. Mutiple runs of
+    Normalise the amplitude envelope of an IMF to be 1. Multiple runs of
     normalisation are carried out until the desired threshold is reached.
 
     This uses the method described as part of the AM-FM transform [1]_

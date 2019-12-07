@@ -440,7 +440,7 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     if squash_time is False:
         return np.array(holo[:, 1:-1, 1:-1])
     else:
-        # Alays returns full-array until someone implements ND sparse in scipy
+        # Alays returns full-array until someone implements N-D sparse in scipy
         return np.array(holo[1:-1, 1:-1])  # don't return a matrix
 
 def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
@@ -583,9 +583,6 @@ def define_hist_bins(data_min, data_max, nbins, scale='linear'):
         1D array of bin centres
 
     Notes
-    -----
-    an example function call creating a vector of 4 bin edges and 3 bin centre
-    values.
     >> edges,centres = emd.spectra.define_hist_bins( 1, 5, 3 )
     >> print(edges)
     [1. 2. 3. 4. 5.]
