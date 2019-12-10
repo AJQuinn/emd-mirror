@@ -1,29 +1,24 @@
-# emd
+ emd
 Empirical Mode Decomposition
 
 # Installation
 
-To copy emd into chosen directory /path/to/directory in the unix shell:
-
-```shell
-cd /path/to/directory
-git clone https://github.com/AJQuinn/emd.git
-```
-and add /path/to/directory to your $PYTHONPATH
-
-```shell
-export PYTHONPATH=/path/to/directory/emd:$PYTHONPATH
-```
-
-# Requirements
-
-Requirements are detailed in requirements.txt
+You can install the latest stable release from the PyPI repository
 
 ```
-matplotlib==2.0.2
-numpy==1.13.1
-scipy==0.19.1
+pip install emd
 ```
+
+or clone and install the source code.
+
+```
+git clone https://gitlab.com/ajquinn/emd.git
+cd emd
+pip install .
+```
+
+Requirements are specified in requirements.txt. Main functionality only depends
+on numpy and scipy for computation and matplotlib for visualisation.
 
 # Quick Start
 
