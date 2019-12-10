@@ -27,6 +27,8 @@ scipy==0.19.1
 
 # Quick Start
 
+Full documentation can be found at https://emd.readthedocs.org
+
 Import emd
 
 ```python

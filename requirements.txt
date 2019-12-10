@@ -9,4 +9,4 @@ sphinx_rtd_theme
 numpydoc
 coverage
 pytest
-
+pytest-cov
