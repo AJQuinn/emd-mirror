@@ -443,6 +443,7 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         # Alays returns full-array until someone implements N-D sparse in scipy
         return np.array(holo[1:-1, 1:-1])  # don't return a matrix
 
+
 def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
     """
     Compute the Hilbert-Huang transform from the instataneous frequency

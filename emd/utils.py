@@ -26,7 +26,7 @@ from scipy import signal
 
 
 def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
-        max_iters=3):
+                        max_iters=3):
     """
     Normalise the amplitude envelope of an IMF to be 1. Multiple runs of
     normalisation are carried out until the desired threshold is reached.
@@ -43,6 +43,8 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
          Whether to clip the output between -1 and 1 (Default value = False)
     interp_method : {'pchip','mono_pchip','splrep'}
          Method used to interpolate envelopes (Default value = 'pchip')
+    max_iters : int
+        Maximum number of iterations of normalisation to perform
 
     Returns
     -------

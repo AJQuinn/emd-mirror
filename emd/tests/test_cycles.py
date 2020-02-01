@@ -60,7 +60,7 @@ class test_cycles(unittest.TestCase):
         assert(np.all(uni_cycles == np.arange(8)))
         assert(cycles[1100] == 0)
 
-   def test_cycle_chain(self):
+    def test_cycle_chain(self):
         from ..cycles import get_cycle_chain
 
         cycles = self.cycle_generator(4, phase=1.5 * np.pi)
