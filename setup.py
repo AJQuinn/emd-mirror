@@ -47,13 +47,14 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
 
     keywords='EMD Spectrum Frequency Non-Linear Holospectrum Hilbert-Huang',
 
     packages=['emd'],
+
+    python_requires='>3.4',
 
     install_requires=['numpy',
                       'scipy',
