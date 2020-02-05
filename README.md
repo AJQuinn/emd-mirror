@@ -1,5 +1,6 @@
- emd
-Empirical Mode Decomposition
+[![Build Status](https://travis-ci.com/OHBA-analysis/emd.svg?branch=master)](https://travis-ci.com/OHBA-analysis/emd)
+
+A python package for Empirical Mode Decomposition and related spectral analyses.
 
 # Installation
 
