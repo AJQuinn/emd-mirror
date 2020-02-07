@@ -9,6 +9,8 @@ EMD: Empirical Mode Decomposition
 EMD is a python package implementing the Empirical Mode Decomposition and
 functionality for ananlysis of instantaneous frequency.
 
+THIS PAGE IS UNDER ACTIVE DEVELOPEMENT! - PLEASE WATCH THIS SPACE FOR MORE EXAMPLES AND TUTORIALS
+
 
 Features
 ========
