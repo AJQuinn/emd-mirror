@@ -96,7 +96,7 @@ def sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
 
 @sift_logger('ensemble_sift')
-def ensemble_sift(X, nensembles, ensemble_noise=.2,
+def ensemble_sift(X, nensembles=1, ensemble_noise=.2,
                   sd_thresh=.1, sift_thresh=1e-8,
                   max_imfs=None, nprocesses=1,
                   noise_mode='single'):
