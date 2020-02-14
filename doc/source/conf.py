@@ -16,6 +16,9 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import matplotlib
+matplotlib.use('agg')
+
 
 # -- Project information -----------------------------------------------------
 
@@ -40,12 +43,14 @@ release = '0.0.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'sphinx_gallery.gen_gallery',
     'numpydoc'
 ]
 
@@ -185,6 +190,12 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+sphinx_gallery_conf = {
+     'examples_dirs': 'tutorials',   # path to your example scripts
+     'gallery_dirs': 'auto_tutorials',  # path to where to save gallery generated output
+     'capture_repr': ('_repr_html_', '__repr__', '__str__'),
+}
 
 # -- Options for todo extension ----------------------------------------------
 

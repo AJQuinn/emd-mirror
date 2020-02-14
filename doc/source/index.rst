@@ -73,7 +73,8 @@ and used to decompose and describe non-linear timeseries.::
    :maxdepth: 2
    :caption: Contents:
 
-   tutorials.rst
+   auto_tutorials/index.rst
+
    reference.rst
 
 Indices and tables
