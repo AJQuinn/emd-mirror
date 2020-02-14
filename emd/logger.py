@@ -61,7 +61,7 @@ def sift_logger(sift_name):
     def add_logger(func):
         # This is the actual decorator
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def sift_logger(*args, **kwargs):
             logger.info('STARTED: {0}'.format(sift_name))
 
             if (sift_name == 'ensemble_sift') or \
@@ -69,9 +69,9 @@ def sift_logger(sift_name):
                 # Print number of ensembles if ensemble sift - this is a
                 # positional arg not a kwarg
                 logger.debug('Input data size: {0}'.format(args[0].shape))
-                logger.debug('Computing {0} ensembles'.format(args[1]))
+                logger.debug('Computing {0} ensembles'.format(kwargs['nensembles']))
             else:
-                logger.debug('Input data size: {0}'.format(args[0].shape))
+                logger.debug('Input data size: {0}'.format(args[0].shape[0]))
 
             # Print main keyword arguments
             logger.debug('Input Sift Args: {0}'.format(kwargs))
@@ -89,5 +89,5 @@ def sift_logger(sift_name):
             # Close function
             logger.info('COMPLETED: {0}'.format(sift_name))
             return func_output
-        return wrapper
+        return sift_logger
     return add_logger
