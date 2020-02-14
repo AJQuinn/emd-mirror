@@ -38,9 +38,6 @@ doc: doc-html
 doc-html:
 	python3 setup.py build_sphinx
 
-flake:
-	flake8 --ignore=E501 --exclude build/*
-
 spell:
 	codespell -s --ignore-words=ignore_words.txt `find . -type f -name \*.py`
 

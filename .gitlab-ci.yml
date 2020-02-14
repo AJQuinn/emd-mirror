@@ -8,7 +8,7 @@ py_build:
     - apt update
     - apt upgrade -q -y
     - pip install -r requirements.txt
-    - make flake
+    - flake8
     - make all-clean
     - make test
   artifacts:
