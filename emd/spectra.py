@@ -23,10 +23,14 @@ define_hist_bins_from_data
 
 """
 
+import logging
 import numpy as np
 from scipy import signal, sparse
 
 from . import utils
+
+# Housekeeping for logging
+logger = logging.getLogger(__name__)
 
 ##
 
@@ -70,10 +74,15 @@ def frequency_stats(imf, sample_rate, method,
        1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
     """
+    logger.info('STARTED: compute frequency stats')
+    logger.debug('computing on {0} samples over {1} imfs at sample rate {2}'.format(imf.shape[0],
+                                                                                    imf.shape[1],
+                                                                                    sample_rate))
 
     # Each case here should compute the analytic form of the imfs and the
     # instantaneous amplitude.
     if method == 'hilbert':
+        logger.info('Using Hilbert transform')
 
         analytic_signal = signal.hilbert(imf, axis=0)
 
@@ -81,6 +90,7 @@ def frequency_stats(imf, sample_rate, method,
         iamp = np.abs(analytic_signal)
 
     elif method == 'nht':
+        logger.info('Using Amplitude-Normalised Hilbert transform')
 
         n_imf = utils.amplitude_normalise(imf)
         analytic_signal = signal.hilbert(n_imf, axis=0)
@@ -99,6 +109,7 @@ def frequency_stats(imf, sample_rate, method,
             iamp = iamp[:, :, 0]
 
     elif method == 'quad':
+        logger.info('Using Quadrature transform')
 
         analytic_signal = quadrature_transform(imf)
 
@@ -117,6 +128,7 @@ def frequency_stats(imf, sample_rate, method,
             iamp = iamp[:, :, 0]
 
     elif method == 'direct_quad':
+        logger.info('Using Direct-Quadrature transform')
         raise ValueError('direct_quad method is broken!')
 
         n_imf = utils.amplitude_normalise(imf.copy())
@@ -127,7 +139,8 @@ def frequency_stats(imf, sample_rate, method,
             iamp[:, ii] = utils.interp_envelope(imf[:, ii, None], mode='combined')
 
     else:
-        print('Method not recognised')
+        logger.error("Method '{0}' not recognised".format(method))
+        raise ValueError("Method '{0}' not recognised\nPlease use one of 'hilbert','nht' or 'quad'".format(method))
 
     # Compute unwrapped phase for frequency estimation
     iphase = phase_from_complex_signal(
@@ -137,6 +150,7 @@ def frequency_stats(imf, sample_rate, method,
     # Return wrapped phase
     iphase = utils.wrap_phase(iphase)
 
+    logger.info('COMPLETED: compute frequency stats. Returning {0} imfs'.format(iphase.shape[1]))
     return iphase, ifreq, iamp
 
 # Frequency stat utils
