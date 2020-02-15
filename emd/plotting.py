@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Colormap
 
 
-def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None):
+def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=None):
     """
     Create a quick summary plot for a set of IMFs.
 
@@ -35,8 +35,10 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None):
 
     mx = np.abs(imfs).max()
 
-    plt.figure()
-    ax = plt.subplot(nplots, 1, 1)
+    if fig is None:
+        fig = plt.figure()
+
+    ax = fig.add_subplot(nplots, 1, 1)
     for tag in ['top', 'right', 'bottom']:
         ax.spines[tag].set_visible(False)
     ax.plot((time_vect[0], time_vect[-1]), (0, 0), color=[.5, .5, .5])
@@ -57,7 +59,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None):
         cols = np.array([[0, 0, 0] for ii in range(imfs.shape[1] + 1)])
 
     for ii in range(1, nplots):
-        ax = plt.subplot(nplots, 1, ii + 1)
+        ax = fig.add_subplot(nplots, 1, ii + 1)
         for tag in ['top', 'right', 'bottom']:
             ax.spines[tag].set_visible(False)
         ax.plot((time_vect[0], time_vect[-1]), (0, 0), color=[.5, .5, .5])
@@ -72,4 +74,4 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None):
         if freqs is not None:
             ax.set_title(freqs[ii - 1], fontsize=8)
 
-    plt.subplots_adjust(top=.95, bottom=.05, right=.95)
+    fig.subplots_adjust(top=.95, bottom=.05, right=.95)
