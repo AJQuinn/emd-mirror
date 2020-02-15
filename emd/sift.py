@@ -240,7 +240,7 @@ def complete_ensemble_sift(X, nensembles, ensemble_noise=.2,
     layer = 0
 
     # Compute the noise processes - large matrix here...
-    noise = np.random.random_sample((X.shape[0], nensembles)) * ensemble_noise
+    noise = np.random.random_sample((X.shape[0], nensembles)) * noise_scaling
 
     # Do a normal ensemble sift to obtain the first IMF
     args = [(X, noise_scaling, noise[:, ii, None], sd_thresh, sift_thresh, 1)
