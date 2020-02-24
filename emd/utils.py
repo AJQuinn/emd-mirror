@@ -166,7 +166,8 @@ def get_padded_extrema(X, pad_width=2, combined_upper_lower=False, loc_pad_kwarg
     return ret_max_locs, ret_max_pks
 
 
-def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2, loc_pad_kwargs={}, mag_pad_kwargs={}, ret_extrema=False):
+def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2,
+                    loc_pad_kwargs={}, mag_pad_kwargs={}, ret_extrema=False):
     """
     Interpolate the amplitude envelope of a signal.
 
@@ -231,7 +232,7 @@ def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2, loc_pa
         pks = -pks
 
     if ret_extrema:
-        return env, (locs,pks)
+        return env, (locs, pks)
     else:
         return env
 
