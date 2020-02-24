@@ -703,7 +703,7 @@ def _sift_with_noise_flip(X, noise_scaling=None, noise=None,
     return imf / 2
 
 
-def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
+def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip', envelope_kwargs={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -726,6 +726,12 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
 
     """
 
+    if not envelope_kwargs:
+        envelope_kwargs = {'interp_method': interp_method,  # hack until we thread this through sift-funcs properly
+                           'pad_width': 2,
+                           'loc_pad_kwargs': {},
+                           'mag_pad_kwargs': {}}
+
     proto_imf = X.copy()
 
     continue_imf = True
@@ -735,9 +741,9 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip'):
         niters += 1
 
         upper = utils.interp_envelope(proto_imf, mode='upper',
-                                      interp_method=interp_method)
+                                      **envelope_kwargs)
         lower = utils.interp_envelope(proto_imf, mode='lower',
-                                      interp_method=interp_method)
+                                      **envelope_kwargs)
 
         # If upper or lower are None we should stop sifting altogether
         if upper is None or lower is None:
