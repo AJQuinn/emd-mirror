@@ -102,7 +102,7 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
     return X
 
 
-def get_padded_extrema(X, combined_upper_lower=False):
+def get_padded_extrema(X, pad_width=2, combined_upper_lower=False, loc_pad_kwargs={}, mag_pad_kwargs={}):
     """
     Return a set of extrema from a signal including padded extrema at the edges
     of the signal.
@@ -125,6 +125,14 @@ def get_padded_extrema(X, combined_upper_lower=False):
 
     """
 
+    if not loc_pad_kwargs:  # Empty dict evaluates to False
+        loc_pad_kwargs = {'mode': 'reflect', 'reflect_type': 'odd'}
+    loc_pad_mode = loc_pad_kwargs.pop('mode')
+
+    if not mag_pad_kwargs:  # Empty dict evaluates to False
+        mag_pad_kwargs = {'mode': 'median', 'stat_length': 1}
+    mag_pad_mode = mag_pad_kwargs.pop('mode')
+
     if X.ndim == 2:
         X = X[:, 0]
 
@@ -138,24 +146,23 @@ def get_padded_extrema(X, combined_upper_lower=False):
         return None, None
 
     # Determine how much padding to use
-    N = 2  # should make this analytic somehow
-    if max_locs.size < N:
-        N = max_locs.size
+    if max_locs.size < pad_width:
+        pad_width = max_locs.size
 
     # Pad peak locations
-    ret_max_locs = np.pad(max_locs, N, 'reflect', reflect_type='odd')
+    ret_max_locs = np.pad(max_locs, pad_width, loc_pad_mode, **loc_pad_kwargs)
 
     # Pad peak magnitudes
-    ret_max_pks = np.pad(max_pks, N, 'median', stat_length=1)
+    ret_max_pks = np.pad(max_pks, pad_width, mag_pad_mode, **mag_pad_kwargs)
 
     while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
-        ret_max_locs = np.pad(ret_max_locs, N, 'reflect', reflect_type='odd')
-        ret_max_pks = np.pad(ret_max_pks, N, 'median', stat_length=1)
+        ret_max_locs = np.pad(ret_max_locs, pad_width, loc_pad_mode, **loc_pad_kwargs)
+        ret_max_pks = np.pad(ret_max_pks, pad_width, mag_pad_mode, **mag_pad_kwargs)
 
     return ret_max_locs, ret_max_pks
 
 
-def interp_envelope(X, mode='upper', interp_method='splrep'):
+def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2, loc_pad_kwargs={}, mag_pad_kwargs={}):
     """
     Interpolate the amplitude envelope of a signal.
 
@@ -180,11 +187,14 @@ def interp_envelope(X, mode='upper', interp_method='splrep'):
         raise ValueError("Invalid interp_method value")
 
     if mode == 'upper':
-        locs, pks = get_padded_extrema(X, combined_upper_lower=False)
+        locs, pks = get_padded_extrema(X, pad_width=pad_width, combined_upper_lower=False,
+                                       loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
     elif mode == 'lower':
-        locs, pks = get_padded_extrema(-X, combined_upper_lower=False)
+        locs, pks = get_padded_extrema(-X, pad_width=pad_width, combined_upper_lower=False,
+                                       loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
     elif mode == 'combined':
-        locs, pks = get_padded_extrema(X, combined_upper_lower=True)
+        locs, pks = get_padded_extrema(X, pad_width=pad_width, combined_upper_lower=True,
+                                       loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
     else:
         raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')
 
