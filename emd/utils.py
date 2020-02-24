@@ -102,7 +102,8 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
     return X
 
 
-def get_padded_extrema(X, pad_width=2, combined_upper_lower=False, loc_pad_kwargs={}, mag_pad_kwargs={}):
+def get_padded_extrema(X, pad_width=2, combined_upper_lower=False,
+                       loc_pad_kwargs={}, mag_pad_kwargs={}, parabolic_extrema=False):
     """
     Return a set of extrema from a signal including padded extrema at the edges
     of the signal.
@@ -145,6 +146,10 @@ def get_padded_extrema(X, pad_width=2, combined_upper_lower=False, loc_pad_kwarg
     else:
         max_locs, max_pks = find_extrema(X)
 
+    if parabolic_extrema:
+        y = np.c_[X[max_locs-1], X[max_locs], X[max_locs+1]].T
+        max_locs, max_pks = compute_parabolic_extrema(y, max_locs)
+
     # Return nothing we don't have enough extrema
     if max_locs.size <= 1:
         return None, None
@@ -166,7 +171,24 @@ def get_padded_extrema(X, pad_width=2, combined_upper_lower=False, loc_pad_kwarg
     return ret_max_locs, ret_max_pks
 
 
-def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2,
+def compute_parabolic_extrema(y, locs):
+    """
+    Section 3.2.1 from Rato 2008
+
+    """
+
+    w = np.array([[1, 1, 1], [4, 2, 1], [9, 3, 1]])
+    w = np.array([[.5, -1, .5], [-5/2, 4, -3/2], [3, -3, 1]])
+    abc = w.dot(y)
+
+    tp = - abc[1, :] / (2*abc[0, :])
+    t = tp - 2 + locs
+    y_hat = tp*abc[1, :]/2 + abc[2, :]
+
+    return t, y_hat
+
+
+def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2, parabolic_extrema=False,
                     loc_pad_kwargs={}, mag_pad_kwargs={}, ret_extrema=False):
     """
     Interpolate the amplitude envelope of a signal.
@@ -193,12 +215,15 @@ def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2,
 
     if mode == 'upper':
         locs, pks = get_padded_extrema(X, pad_width=pad_width, combined_upper_lower=False,
+                                       parabolic_extrema=parabolic_extrema,
                                        loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
     elif mode == 'lower':
         locs, pks = get_padded_extrema(-X, pad_width=pad_width, combined_upper_lower=False,
+                                       parabolic_extrema=parabolic_extrema,
                                        loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
     elif mode == 'combined':
         locs, pks = get_padded_extrema(X, pad_width=pad_width, combined_upper_lower=True,
+                                       parabolic_extrema=parabolic_extrema,
                                        loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
     else:
         raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')

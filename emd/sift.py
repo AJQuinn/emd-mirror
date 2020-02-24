@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 @sift_logger('sift')
 def sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
-         env_step_size=1, interp_method='mono_pchip'):
+         parabolic_extrema=False, env_step_size=1, interp_method='mono_pchip'):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     original sift algorithm [1]_.
@@ -77,6 +77,7 @@ def sift(X, sd_thresh=.1, sift_thresh=1e-8, max_imfs=None,
 
         next_imf, continue_sift = get_next_imf(proto_imf, sd_thresh=sd_thresh,
                                                env_step_size=env_step_size,
+                                               parabolic_extrema=parabolic_extrema,
                                                interp_method=interp_method)
 
         if layer == 0:
@@ -704,7 +705,8 @@ def _sift_with_noise_flip(X, noise_scaling=None, noise=None,
     return imf / 2
 
 
-def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip', envelope_kwargs={}, env_step_size=1):
+def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip',
+                 envelope_kwargs={}, env_step_size=1, parabolic_extrema=True):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -729,6 +731,7 @@ def get_next_imf(X, sd_thresh=.1, interp_method='mono_pchip', envelope_kwargs={}
 
     if not envelope_kwargs:
         envelope_kwargs = {'interp_method': interp_method,  # hack until we thread this through sift-funcs properly
+                           'parabolic_extrema': parabolic_extrema,
                            'pad_width': 2,
                            'loc_pad_kwargs': {},
                            'mag_pad_kwargs': {}}
