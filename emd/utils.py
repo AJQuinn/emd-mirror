@@ -127,10 +127,14 @@ def get_padded_extrema(X, pad_width=2, combined_upper_lower=False, loc_pad_kwarg
 
     if not loc_pad_kwargs:  # Empty dict evaluates to False
         loc_pad_kwargs = {'mode': 'reflect', 'reflect_type': 'odd'}
+    else:
+        loc_pad_kwargs = loc_pad_kwargs.copy()  # Don't work in place...
     loc_pad_mode = loc_pad_kwargs.pop('mode')
 
     if not mag_pad_kwargs:  # Empty dict evaluates to False
         mag_pad_kwargs = {'mode': 'median', 'stat_length': 1}
+    else:
+        mag_pad_kwargs = mag_pad_kwargs.copy()  # Don't work in place...
     mag_pad_mode = mag_pad_kwargs.pop('mode')
 
     if X.ndim == 2:
