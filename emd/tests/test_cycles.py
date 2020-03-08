@@ -12,7 +12,7 @@ class test_cycles(unittest.TestCase):
         self.pad_time = .1
         self.time_vect = np.linspace(-self.pad_time,
                                      self.seconds+self.pad_time,
-                                     (self.sample_rate * self.seconds) + 2*self.pad_time)
+                                     (self.sample_rate * self.seconds) + (2*self.pad_time*self.sample_rate))
         self.signal = np.sin(2 * np.pi * 10 * self.time_vect)[:, None]
 
     def cycle_generator(self, f, phase=0, distort=None):
@@ -48,13 +48,13 @@ class test_cycles(unittest.TestCase):
         uni_cycles = np.unique(cycles)
         assert(np.all(uni_cycles == np.arange(9)))
         assert(cycles[50] == 0)
-        assert(cycles[1950] == 0)
+        assert(cycles[2150] == 0)
 
         cycles = self.cycle_generator(5, phase=0)
         uni_cycles = np.unique(cycles)
         assert(np.all(uni_cycles == np.arange(11)))
         assert(cycles[50] == 0)
-        assert(cycles[1950] == 0)
+        assert(cycles[2150] == 0)
 
     def test_cycle_count_with_bad_in_middle(self):
 
@@ -70,7 +70,7 @@ class test_cycles(unittest.TestCase):
         chain = get_cycle_chain(cycles)
         assert(np.all(chain[0] == np.array([1, 2, 3, 4, 5, 6, 7, 8])))
 
-        cycles = self.cycle_generator(4, phase=0, distort=1100)
+        cycles = self.cycle_generator(4, phase=0, distort=1200)
         chain = get_cycle_chain(cycles)
         assert(np.all(chain == [[1, 2, 3, 4], [5, 6, 7]]))
 
@@ -85,10 +85,10 @@ class test_cycles(unittest.TestCase):
 
         cycles = self.cycle_generator(4, phase=0, distort=800)
         chain = get_cycle_chain(cycles)
-        assert(np.all(chain == np.array([[1, 2], [3, 4, 5, 6]])))
+        assert(np.all(chain == np.array([[1, 2], [3, 4, 5, 6, 7]])))
 
         chain = get_cycle_chain(cycles, min_chain=3)
-        assert(np.all(chain == np.array([3, 4, 5, 6])))
+        assert(np.all(chain == np.array([3, 4, 5, 6, 7])))
 
 
 class test_kdt_match(unittest.TestCase):
