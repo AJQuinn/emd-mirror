@@ -2,7 +2,6 @@
 import unittest
 
 import numpy as np
-from scipy import signal
 
 
 class test_cycles(unittest.TestCase):
@@ -27,8 +26,7 @@ class test_cycles(unittest.TestCase):
             x[distort - 25:distort + 25, 0] += np.linspace(-.1, .1, 50)
 
         # This is a perfect sin so we can use normal hilbert
-        #IP = np.angle(signal.hilbert(x, axis=0))# + np.pi
-        IP,IF,IA = frequency_stats(x, self.sample_rate, 'hilbert')# + np.pi
+        IP, IF, IA = frequency_stats(x, self.sample_rate, 'hilbert')
         # Find good cycles
         cycles = get_cycle_inds(IP, return_good=True)[:, 0]
 
@@ -37,8 +35,7 @@ class test_cycles(unittest.TestCase):
     def test_simple_cycle_counting(self):
 
         # Test basic cycle detection
-        uni_cycles = np.unique(self.cycle_generator(4))#1, phase=1.5 * np.pi))
-        print(uni_cycles)
+        uni_cycles = np.unique(self.cycle_generator(4))
         assert(np.all(uni_cycles == np.arange(9)))
 
         uni_cycles = np.unique(self.cycle_generator(5, phase=1.5 * np.pi))
