@@ -10,9 +10,10 @@ class test_cycles(unittest.TestCase):
         self.sample_rate = 1000
         self.seconds = 2
         self.pad_time = .1
+        nsamples = int((self.sample_rate * self.seconds) + (2*self.pad_time*self.sample_rate))
         self.time_vect = np.linspace(-self.pad_time,
                                      self.seconds+self.pad_time,
-                                     (self.sample_rate * self.seconds) + (2*self.pad_time*self.sample_rate))
+                                     nsamples)
         self.signal = np.sin(2 * np.pi * 10 * self.time_vect)[:, None]
 
     def cycle_generator(self, f, phase=0, distort=None):
