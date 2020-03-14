@@ -1,13 +1,51 @@
-stages:
-  - py_build
+before_script:
+  - apt update
+  - apt upgrade -q -y
+  - pip install -r requirements.txt
 
-py_build:
-  stage: py_build
+stages:
+  - build
+
+build35:
+  stage: build
   image: python:3.6
   script:
-    - apt update
-    - apt upgrade -q -y
-    - pip install -r requirements.txt
+    - flake8
+    - make all-clean
+    - make test
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+build36:
+  stage: build
+  image: python:3.6
+  script:
+    - flake8
+    - make all-clean
+    - make test
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+build37:
+  stage: build
+  image: python:3.7
+  script:
+    - flake8
+    - make all-clean
+    - make test
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+build38:
+  stage: build
+  image: python:3.8
+  script:
     - flake8
     - make all-clean
     - make test
