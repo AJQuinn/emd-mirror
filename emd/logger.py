@@ -69,7 +69,10 @@ def sift_logger(sift_name):
                 # Print number of ensembles if ensemble sift - this is a
                 # positional arg not a kwarg
                 logger.debug('Input data size: {0}'.format(args[0].shape))
-                logger.debug('Computing {0} ensembles'.format(kwargs['nensembles']))
+                if 'nensembles' in kwargs:
+                    logger.debug('Computing {0} ensembles'.format(kwargs['nensembles']))
+                else:
+                    logger.debug('Computing 4 ensembles (default)')
             else:
                 logger.debug('Input data size: {0}'.format(args[0].shape[0]))
 
