@@ -86,7 +86,7 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
         if upper is None or lower is None:
             continue_flag = False
             continue_imf = False
-            logger.debug('Completed in {0} iters with no extrema'.format(niters))
+            logger.debug('Finishing sift: IMF has no extrema'.format(niters))
             continue
 
         # Find local mean
@@ -179,9 +179,11 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
         layer += 1
 
         if max_imfs is not None and layer == max_imfs:
+            logger.info('Finishing sift: reached max number of imfs ({0})'.format(layer))
             continue_sift = False
 
         if np.abs(next_imf).sum() < sift_thresh:
+            logger.info('Finishing sift: reached threshold {0}'.format(np.abs(next_imf).sum()))
             continue_sift = False
 
     return imf
@@ -524,11 +526,105 @@ def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
         return (next_imf_up_c + next_imf_down_c) / 2.
 
 
+def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
+
+    if (first_mask_mode == 'zc') or (first_mask_mode == 'if'):
+        logger.info('Computing first mask frequency with method {0}'.format(first_mask_mode))
+        logger.info('Getting first IMF with no mask')
+        # First IMF is computed normally
+        imf, _ = get_next_imf(X, **imf_opts)
+
+    # Compute first mask frequency from first IMF
+    if first_mask_mode == 'zc':
+        num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
+        z = num_zero_crossings / imf.shape[0] / 4
+        logger.info('Found first mask frequency of {0}'.format(z))
+    elif first_mask_mode == 'if':
+        _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'nht',
+                                            smooth_phase=3)
+        z = np.average(IF, weights=IA)
+        logger.info('Found first mask frequency of {0}'.format(z))
+    elif first_mask_mode < .5:
+        if first_mask_mode <= 0 or first_mask_mode >= .5:
+            raise ValueError("The frequency of the first mask must be 0<x<.5")
+        logger.info('Using specified first mask frequency of {0}'.format(first_mask_mode))
+        z = first_mask_mode
+
+    return z
+
 # Implementation
 
+
 @sift_logger('mask_sift')
-def mask_sift():
+def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
+              mask_freqs='zc', mask_step_factor=2,
+              ret_mask_freq=False,
+              max_imfs=9, sift_thresh=1e-8,
+              imf_opts={}):
+
+    # initialise
+    if X.ndim == 1:
+        # add dummy dimension
+        X = X[:, None]
+
+    # if first mask is if or zc - compute first imf as normal and get freq
+    print(type(mask_freqs))
+    if isinstance(mask_freqs, (list, tuple, np.ndarray)):
+        logger.info('Using user specified masks')
+    elif mask_freqs in ['zc', 'if'] or isinstance(mask_freqs, float):
+        z = get_mask_freqs(X, mask_freqs, imf_opts=imf_opts)
+        mask_freqs = np.array([z/mask_step_factor**ii for ii in range(max_imfs)])
+
+    # Initialise mask amplitudes
+    if mask_amp_mode == 'ratio_imf':
+        sd = X.std()  # Take ratio of input signal for first IMF
+    elif mask_amp_mode == 'ratio_sig':
+        sd = X.std()
+    elif mask_amp_mode == 'abs':
+        sd = 1
+
+    continue_sift = True
+    imf_layer = 0
+    proto_imf = X.copy()
+    imf = []
+    while continue_sift:
+
+        # Update mask amplitudes if needed
+        if mask_amp_mode == 'ratio_imf' and imf_layer > 0:
+            sd = imf[:, -1].std()
+
+        if isinstance(mask_amp, int) or isinstance(mask_amp, float):
+            amp = mask_amp * sd
+        else:
+            # Should be array_like if not a single number
+            amp = mask_amp[imf_layer] * sd
+
+        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
+
+        next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type='all', imf_opts=imf_opts)
+
+        if imf_layer == 0:
+            imf = next_imf
+        else:
+            imf = np.concatenate((imf, next_imf), axis=1)
+
+        proto_imf = X - imf.sum(axis=1)[:, None]
+
+        if max_imfs is not None and imf_layer == max_imfs-1:
+            continue_sift = False
+
+        if np.abs(next_imf).sum() < sift_thresh:
+            continue_sift = False
+
+        imf_layer += 1
+
+    if ret_mask_freq:
+        return imf, mask_freqs
+    else:
+        return imf
+
     return
+
 
 @sift_logger('mask_sift_adaptive')
 def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
