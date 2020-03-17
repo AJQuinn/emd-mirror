@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from ..sift import sift, ensemble_sift, complete_ensemble_sift, mask_sift_adaptive, mask_sift_specified
+from ..sift import sift, ensemble_sift, complete_ensemble_sift, mask_sift, mask_sift_adaptive, mask_sift_specified
 from ..utils import abreu2010
 
 
@@ -36,7 +36,12 @@ class test_sift_defaults(unittest.TestCase):
         imf = complete_ensemble_sift(self.x[:200])
         assert(imf[0].shape[0] == self.x[:200].shape[0])  # just checking that it ran
 
-    def test_complete_mask_sift_adaptive_default(self):
+    def test_mask_sift_default(self):
+        """Check adaptive mask sift runs with some simple settings"""
+        imf = mask_sift(self.x[:200], max_imfs=5, mask_freqs='zc')
+        assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
+
+    def test_mask_sift_adaptive_default(self):
         """Check adaptive mask sift runs with some simple settings"""
         imf = mask_sift_adaptive(self.x[:200], max_imfs=5)
         assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
