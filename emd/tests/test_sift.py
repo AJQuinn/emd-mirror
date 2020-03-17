@@ -28,8 +28,8 @@ class test_sift_defaults(unittest.TestCase):
 
     def test_ensemble_sift_default(self):
         """Check ensemble sift runs with some simple settings"""
-        imf = ensemble_sift(self.x[:200])
-        assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
+        imf = ensemble_sift(self.x[:500])
+        assert(imf.shape[0] == self.x[:500].shape[0])  # just checking that it ran
 
     def test_complete_ensemble_sift_default(self):
         """Check complete ensemble sift runs with some simple settings"""
