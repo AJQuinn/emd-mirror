@@ -103,7 +103,7 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
 
 
 def get_padded_extrema(X, pad_width=2, combined_upper_lower=False,
-                       loc_pad_kwargs={}, mag_pad_kwargs={}, parabolic_extrema=False):
+                       loc_pad_opts={}, mag_pad_opts={}, parabolic_extrema=False):
     """
     Return a set of extrema from a signal including padded extrema at the edges
     of the signal.
@@ -126,17 +126,17 @@ def get_padded_extrema(X, pad_width=2, combined_upper_lower=False,
 
     """
 
-    if not loc_pad_kwargs:  # Empty dict evaluates to False
-        loc_pad_kwargs = {'mode': 'reflect', 'reflect_type': 'odd'}
+    if not loc_pad_opts:  # Empty dict evaluates to False
+        loc_pad_opts = {'mode': 'reflect', 'reflect_type': 'odd'}
     else:
-        loc_pad_kwargs = loc_pad_kwargs.copy()  # Don't work in place...
-    loc_pad_mode = loc_pad_kwargs.pop('mode')
+        loc_pad_opts = loc_pad_opts.copy()  # Don't work in place...
+    loc_pad_mode = loc_pad_opts.pop('mode')
 
-    if not mag_pad_kwargs:  # Empty dict evaluates to False
-        mag_pad_kwargs = {'mode': 'median', 'stat_length': 1}
+    if not mag_pad_opts:  # Empty dict evaluates to False
+        mag_pad_opts = {'mode': 'median', 'stat_length': 1}
     else:
-        mag_pad_kwargs = mag_pad_kwargs.copy()  # Don't work in place...
-    mag_pad_mode = mag_pad_kwargs.pop('mode')
+        mag_pad_opts = mag_pad_opts.copy()  # Don't work in place...
+    mag_pad_mode = mag_pad_opts.pop('mode')
 
     if X.ndim == 2:
         X = X[:, 0]
@@ -159,14 +159,14 @@ def get_padded_extrema(X, pad_width=2, combined_upper_lower=False,
         pad_width = max_locs.size
 
     # Pad peak locations
-    ret_max_locs = np.pad(max_locs, pad_width, loc_pad_mode, **loc_pad_kwargs)
+    ret_max_locs = np.pad(max_locs, pad_width, loc_pad_mode, **loc_pad_opts)
 
     # Pad peak magnitudes
-    ret_max_pks = np.pad(max_pks, pad_width, mag_pad_mode, **mag_pad_kwargs)
+    ret_max_pks = np.pad(max_pks, pad_width, mag_pad_mode, **mag_pad_opts)
 
     while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
-        ret_max_locs = np.pad(ret_max_locs, pad_width, loc_pad_mode, **loc_pad_kwargs)
-        ret_max_pks = np.pad(ret_max_pks, pad_width, mag_pad_mode, **mag_pad_kwargs)
+        ret_max_locs = np.pad(ret_max_locs, pad_width, loc_pad_mode, **loc_pad_opts)
+        ret_max_pks = np.pad(ret_max_pks, pad_width, mag_pad_mode, **mag_pad_opts)
 
     return ret_max_locs, ret_max_pks
 
@@ -188,8 +188,8 @@ def compute_parabolic_extrema(y, locs):
     return t, y_hat
 
 
-def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2, parabolic_extrema=False,
-                    loc_pad_kwargs={}, mag_pad_kwargs={}, ret_extrema=False):
+def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
+                    ret_extrema=False):
     """
     Interpolate the amplitude envelope of a signal.
 
@@ -210,21 +210,22 @@ def interp_envelope(X, mode='upper', interp_method='splrep', pad_width=2, parabo
 
     """
 
+    if not extrema_opts:  # Empty dict evaluates to False
+        extrema_opts = {'pad_width': 2,
+                        'loc_pad_opts': {},
+                        'mag_pad_opts': {}}
+    else:
+        extrema_opts = extrema_opts.copy()  # Don't work in place...
+
     if interp_method not in ['splrep', 'mono_pchip', 'pchip']:
         raise ValueError("Invalid interp_method value")
 
     if mode == 'upper':
-        locs, pks = get_padded_extrema(X, pad_width=pad_width, combined_upper_lower=False,
-                                       parabolic_extrema=parabolic_extrema,
-                                       loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
+        locs, pks = get_padded_extrema(X, combined_upper_lower=False, **extrema_opts)
     elif mode == 'lower':
-        locs, pks = get_padded_extrema(-X, pad_width=pad_width, combined_upper_lower=False,
-                                       parabolic_extrema=parabolic_extrema,
-                                       loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
+        locs, pks = get_padded_extrema(-X, combined_upper_lower=False, **extrema_opts)
     elif mode == 'combined':
-        locs, pks = get_padded_extrema(X, pad_width=pad_width, combined_upper_lower=True,
-                                       parabolic_extrema=parabolic_extrema,
-                                       loc_pad_kwargs=loc_pad_kwargs, mag_pad_kwargs=mag_pad_kwargs)
+        locs, pks = get_padded_extrema(X, combined_upper_lower=True, **extrema_opts)
     else:
         raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')
 
