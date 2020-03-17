@@ -3,11 +3,52 @@ import unittest
 
 import numpy as np
 
-from ..sift import sift
+from ..sift import sift, ensemble_sift, complete_ensemble_sift, mask_sift_adaptive, mask_sift_specified
 from ..utils import abreu2010
 
 
-class test_sifts(unittest.TestCase):
+class test_sift_defaults(unittest.TestCase):
+
+    def setUp(self):
+
+        # Create core signal
+        seconds = 5.1
+        sample_rate = 2000
+        f1 = 2
+        f2 = 18
+        time_vect = np.linspace(0, seconds, int(seconds * sample_rate))
+
+        x = abreu2010(f1, .2, 0, sample_rate, seconds)
+        self.x = x + np.cos(2.3 * np.pi * f2 * time_vect) + np.linspace(-.5, 1, len(time_vect))
+
+    def test_sift_default(self):
+        """Check basic sift runs with some simple settings"""
+        imf = sift(self.x)
+        assert(imf.shape[0] == self.x.shape[0])  # just checking that it ran
+
+    def test_ensemble_sift_default(self):
+        """Check ensemble sift runs with some simple settings"""
+        imf = ensemble_sift(self.x[:200])
+        assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
+
+    def test_complete_ensemble_sift_default(self):
+        """Check complete ensemble sift runs with some simple settings"""
+        imf = complete_ensemble_sift(self.x[:200])
+        assert(imf[0].shape[0] == self.x[:200].shape[0])  # just checking that it ran
+
+    def test_complete_mask_sift_adaptive_default(self):
+        """Check adaptive mask sift runs with some simple settings"""
+        imf = mask_sift_adaptive(self.x[:200], max_imfs=5)
+        assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
+
+    def test_complete_mask_sift_specified_default(self):
+        """Check specified mask sift runs with some simple settings"""
+        mask_freqs = np.array([.25/2**ii for ii in range(1, 7)])
+        imf = mask_sift_specified(self.x[:200], max_imfs=5, mask_freqs=mask_freqs)
+        assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
+
+
+class test_sift_behaviour(unittest.TestCase):
 
     def get_resid(self, x, x_bar):
         ss_orig = np.power(x, 2).sum()
@@ -28,7 +69,9 @@ class test_sifts(unittest.TestCase):
 
         x = abreu2010(f1, .2, 0, sample_rate, seconds)
         self.x = x + np.cos(2.3 * np.pi * f2 * time_vect) + np.linspace(-.5, 1, len(time_vect))
-        self.imf = sift(self.x, interp_method='splrep')
+
+        self.imf_kwargs = {'envelope_opts': {'interp_method': 'splrep'}}
+        self.imf = sift(self.x, imf_args=self.imf_kwargs)
 
     def test_complete_decomposition(self):
         """Test that IMFs are complete description of signal"""
@@ -39,7 +82,7 @@ class test_sifts(unittest.TestCase):
     def test_sift_multiplied_by_constant(self):
         """Test that sifting a scaled signal only changes the scaling of the IMFs"""
         x2 = self.imf[:, 0] * 3
-        imf2 = sift(x2, sd_thresh=1e-3, interp_method='splrep')
+        imf2 = sift(x2, imf_args=self.imf_kwargs)
 
         tst = self.check_diff(self.get_resid(self.imf[:, 0] * 3, imf2[:, 0]), 1)
         assert(tst)
@@ -47,7 +90,7 @@ class test_sifts(unittest.TestCase):
     def test_sift_plus_constant(self):
         """Test that sifting a signal plus a constant only changes the last IMF"""
         x3 = self.x + 2
-        imf3 = sift(x3, interp_method='splrep')
+        imf3 = sift(x3, imf_args=self.imf_kwargs)
 
         tst = list()
         for ii in range(imf3.shape[1]):
@@ -61,7 +104,7 @@ class test_sifts(unittest.TestCase):
     def test_sift_of_imf(self):
         """Test that sifting an IMF returns the IMF"""
         x4 = self.imf[:, 0].copy()
-        imf4 = sift(x4, interp_method='splrep')
+        imf4 = sift(x4, imf_args=self.imf_kwargs)
 
         tst = list()
         for ii in range(imf4.shape[1]):
@@ -76,7 +119,7 @@ class test_sifts(unittest.TestCase):
     def test_sift_of_reversed_signal(self):
         """Test that sifting a reversed signal only reverses the IMFs"""
         x5 = self.x[::-1]
-        imf5 = sift(x5, interp_method='splrep')
+        imf5 = sift(x5, imf_args=self.imf_kwargs)
 
         tst = self.check_diff(self.get_resid(self.imf[::-1, 0], imf5[:, 0]), 1)
 
