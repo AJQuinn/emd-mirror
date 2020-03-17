@@ -28,6 +28,91 @@ from .logger import sift_logger
 logger = logging.getLogger(__name__)
 
 
+##################################################################
+# Basic SIFT
+
+# Utilities
+
+def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
+    """
+    Compute the next IMF from a data set. This is a helper function used within
+    the more general sifting functions.
+
+    Parameters
+    ----------
+    X : ndarray [nsamples x 1]
+        1D input array containing the time-series data to be decomposed
+    sd_thresh : scalar
+        The threshold at which the sift of each IMF will be stopped. (Default value = .1)
+    env_step_size : float
+        Scaling of envelope prior to removal at each iteration of sift. The
+        average of the upper and lower envelope is muliplied by this value
+        before being subtracted from the data. Values should be between
+        0 > x >= 1 (Default value = 1)
+
+    Returns
+    -------
+    proto_imf : ndarray
+        1D vector containing the next IMF extracted from X
+    continue_flag : bool
+        Boolean indicating whether the sift can be continued beyond this IMF
+
+    Other Parameters
+    ----------------
+    envelope_opts : dict
+        Optional dictionary of keyword arguments to be passed to emd.utils.interp_envelope
+
+    See Also
+    --------
+    emd.sift.sift - calls get_next_imf to extract IMFs
+    emd.utils.interp_envelope - called by get_next_imf to estimate upper and lower amplitude envelopes
+
+    """
+
+    proto_imf = X.copy()
+
+    continue_imf = True
+    continue_flag = True
+    niters = 0
+    while continue_imf:
+        niters += 1
+
+        upper = utils.interp_envelope(proto_imf, mode='upper',
+                                      **envelope_opts)
+        lower = utils.interp_envelope(proto_imf, mode='lower',
+                                      **envelope_opts)
+
+        # If upper or lower are None we should stop sifting altogether
+        if upper is None or lower is None:
+            continue_flag = False
+            continue_imf = False
+            logger.debug('Completed in {0} iters with no extrema'.format(niters))
+            continue
+
+        # Find local mean
+        avg = np.mean([upper, lower], axis=0)[:, None]
+
+        # Remove local mean estimate from proto imf
+        x1 = proto_imf - avg
+
+        # Stop sifting if we pass threshold
+        sd = np.sum((proto_imf - x1)**2) / np.sum(proto_imf**2)
+        if sd < sd_thresh:
+            proto_imf = x1
+            continue_imf = False
+            logger.debug('Completed in {0} iters with sd {1}'.format(niters, sd))
+            continue
+
+        proto_imf = proto_imf - (env_step_size*avg)
+
+    if proto_imf.ndim == 1:
+        proto_imf = proto_imf[:, None]
+
+    return proto_imf, continue_flag
+
+
+# SIFT implementation
+
 @sift_logger('sift')
 def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
     """
@@ -102,6 +187,78 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
     return imf
 
 
+##################################################################
+# Ensemble SIFT variants
+
+# Utilities
+
+def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
+                     sift_thresh=1e-8, max_imfs=None, job_ind=1, imf_args={}):
+    """
+    Helper function for applying white noise to a signal prior to computing the
+    sift.
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    noise_scaling : scalar
+         Standard deviation of noise to add to each ensemble (Default value =
+         None)
+    noise : ndarray
+         array of noise values the same size as X to add prior to sift (Default value = None)
+    noise_mode : {'single','flip'}
+         Flag indicating whether to compute each ensemble with noise once or
+         twice with the noise and sign-flipped noise (Default value = 'single')
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+    job_ind : 1
+        Optional job index value for display in logger (Default value = 1)
+
+    Returns
+    -------
+    imf: ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+
+    Other Parameters
+    ----------------
+    imf_args : dict
+        Optional dictionary of arguments to be passed to emd.sift.get_next_imf
+
+    See Also
+    --------
+    emd.sift.ensemble_sift - makes internal use of _sift_with_noise
+    emd.sift.complete_ensemble_sift - makes internal use of _sift_with_noise
+    emd.sift.get_next_imf - called by _sift_with_noise to extract IMFs
+
+
+    """
+    if job_ind is not None:
+        from multiprocessing import current_process
+        p = current_process()
+        logger.info('Starting SIFT Ensemble: {0} on process {1}'.format(job_ind, p._identity[0]))
+
+    if noise is None:
+        noise = np.random.randn(*X.shape)
+
+    if noise_scaling is not None:
+        noise = noise * noise_scaling
+
+    ensX = X.copy() + noise
+    imf = sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_args=imf_args)
+
+    if noise_mode == 'single':
+        return imf
+    elif noise_mode == 'flip':
+        ensX = X.copy() - noise
+        imf += sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_args=imf_args)
+        return imf / 2
+
+
+# Implementation
+
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
                   nprocesses=1, sift_thresh=1e-8, max_imfs=None, imf_args={}):
@@ -171,7 +328,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     p = mp.Pool(processes=nprocesses)
 
     noise = None
-    args = [(X, noise_scaling, noise, noise_mode, sift_thresh, max_imfs, imf_args, ii)
+    args = [(X, noise_scaling, noise, noise_mode, sift_thresh, max_imfs, ii, imf_args)
             for ii in range(nensembles)]
 
     res = p.starmap(_sift_with_noise, args)
@@ -260,7 +417,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     noise = np.random.random_sample((X.shape[0], nensembles)) * noise_scaling
 
     # Do a normal ensemble sift to obtain the first IMF
-    args = [(X, noise_scaling, noise[:, ii, None], noise_mode, sift_thresh, 1, imf_args, ii)
+    args = [(X, noise_scaling, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_args)
             for ii in range(nensembles)]
     res = p.starmap(_sift_with_noise, args)
     imf = np.array([r for r in res]).mean(axis=0)
@@ -273,7 +430,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
         proto_imf = X - imf.sum(axis=1)[:, None]
 
-        args = [(proto_imf, None, noise[:, ii, None], noise_mode, sift_thresh, 1, imf_args, ii)
+        args = [(proto_imf, None, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_args)
                 for ii in range(nensembles)]
         res = p.starmap(_sift_with_noise, args)
         next_imf = np.array([r for r in res]).mean(axis=0)
@@ -302,52 +459,76 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     return imf, noise
 
 
-@sift_logger('second_layer_sift')
-def sift_second_layer(IA, sift_func=sift, sift_args=None):
+##################################################################
+# Mask SIFT implementations
+
+# Utilities
+
+def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
     """
-    Compute second layer IMFs from the amplitude envelopes of a set of first
-    layer IMFs [1]_.
+    Compute the next IMF from a data set using the mask sift appraoch. This is
+    a helper function used within the more general sifting functions.
 
     Parameters
     ----------
-    IA : ndarray
-        Input array containing a set of first layer IMFs
-    sd_thresh : scalar
-         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
-    sift_thresh : scalar
-         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
-    max_imfs : int
-         The maximum number of IMFs to compute. (Default value = None)
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    z : scalar
+        Mask frequency as a proportion of the sampling rate, values between 0->z->.5
+    amp : scalar
+        Mask amplitude
+    mask_type : {'all','sine','cosine'}
+         Flag indicating whether to apply sine, cosine or all masks (Default value = 'all')
 
     Returns
     -------
-    imf2 : ndarray
-        3D array [samples x first layer imfs x second layer imfs ] containing
-        the second layer IMFs
+    proto_imf : ndarray
+        1D vector containing the next IMF extracted from X
 
-    References
-    ----------
-    .. [1] Huang, N. E., Hu, K., Yang, A. C. C., Chang, H.-C., Jia, D., Liang,
-       W.-K., … Wu, Z. (2016). On Holo-Hilbert spectral analysis: a full
-       informational spectral representation for nonlinear and non-stationary
-       data. Philosophical Transactions of the Royal Society A: Mathematical,
-       Physical and Engineering Sciences, 374(2065), 20150206.
-       https://doi.org/10.1098/rsta.2015.0206
+    Other Parameters
+    ----------------
+    imf_opts : dict
+        Optional dictionary of keyword arguments to be passed to emd.sift.get_next_imf
+
+    See Also
+    --------
+    emd.sift.mask_sift_adaptive - calls get_next_imf_mask internally
+    emd.sift.mask_sift_specified - calls get_next_imf_mask internally
+    emd.sift.get_next_imf - called by get_next_imf_mask to extract imfs
 
     """
-    if (sift_args is None) or ('max_imfs' not in sift_args):
-        max_imfs = IA.shape[1]
-    elif 'max_imfs' in sift_args:
-        max_imfs = sift_args['max_imfs']
+    if mask_type not in ['all', 'sine', 'cosine']:
+        raise ValueError("Invalid mask type")
 
-    imf2 = np.zeros((IA.shape[0], IA.shape[1], max_imfs))
+    z = z * 2 * np.pi
 
-    for ii in range(max_imfs):
-        tmp = sift_func(IA[:, ii], **sift_args)
-        imf2[:, ii, :tmp.shape[1]] = tmp
+    if mask_type == 'all' or mask_type == 'cosine':
+        mask = amp * np.cos(z * np.arange(X.shape[0]))[:, None]
+        next_imf_up_c, continue_sift = get_next_imf(X + mask, **imf_opts)
+        next_imf_up_c -= mask
+        next_imf_down_c, continue_sift = get_next_imf(X - mask, **imf_opts)
+        next_imf_down_c += mask
 
-    return imf2
+    if mask_type == 'all' or mask_type == 'sine':
+        mask = amp * np.sin(z * np.arange(X.shape[0]))[:, None]
+        next_imf_up_s, continue_sift = get_next_imf(X + mask, **imf_opts)
+        next_imf_up_s -= mask
+        next_imf_down_s, continue_sift = get_next_imf(X - mask, **imf_opts)
+        next_imf_down_s += mask
 
+    if mask_type == 'all':
+        return (next_imf_up_c + next_imf_down_c + next_imf_up_s + next_imf_down_s) / 4.
+    elif mask_type == 'sine':
+        return (next_imf_up_s + next_imf_down_s) / 2.
+    elif mask_type == 'cosine':
+        return (next_imf_up_c + next_imf_down_c) / 2.
+
+
+# Implementation
+
+@sift_logger('mask_sift')
+def mask_sift():
+    return
 
 @sift_logger('mask_sift_adaptive')
 def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
@@ -616,208 +797,52 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
     else:
         return imf
 
-# Sift Utils
 
+##################################################################
+# Second Layer SIFT
 
-def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
-                     sift_thresh=1e-8, max_imfs=None, job_ind=1, imf_args={}):
+@sift_logger('second_layer_sift')
+def sift_second_layer(IA, sift_func=sift, sift_args=None):
     """
-    Helper function for applying white noise to a signal prior to computing the
-    sift.
+    Compute second layer IMFs from the amplitude envelopes of a set of first
+    layer IMFs [1]_.
 
     Parameters
     ----------
-    X : ndarray
-        1D input array containing the time-series data to be decomposed
-    noise_scaling : scalar
-         Standard deviation of noise to add to each ensemble (Default value =
-         None)
-    noise : ndarray
-         array of noise values the same size as X to add prior to sift (Default value = None)
-    noise_mode : {'single','flip'}
-         Flag indicating whether to compute each ensemble with noise once or
-         twice with the noise and sign-flipped noise (Default value = 'single')
+    IA : ndarray
+        Input array containing a set of first layer IMFs
+    sd_thresh : scalar
+         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
     sift_thresh : scalar
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
-    job_ind : 1
-        Optional job index value for display in logger (Default value = 1)
 
     Returns
     -------
-    imf: ndarray
-        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+    imf2 : ndarray
+        3D array [samples x first layer imfs x second layer imfs ] containing
+        the second layer IMFs
 
-    Other Parameters
-    ----------------
-    imf_args : dict
-        Optional dictionary of arguments to be passed to emd.sift.get_next_imf
-
-    See Also
-    --------
-    emd.sift.ensemble_sift - makes internal use of _sift_with_noise
-    emd.sift.complete_ensemble_sift - makes internal use of _sift_with_noise
-    emd.sift.get_next_imf - called by _sift_with_noise to extract IMFs
-
-
-    """
-    if job_ind is not None:
-        from multiprocessing import current_process
-        p = current_process()
-        logger.info('Starting SIFT Ensemble: {0} on process {1}'.format(job_ind, p._identity[0]))
-
-    if noise is None:
-        noise = np.random.randn(*X.shape)
-
-    if noise_scaling is not None:
-        noise = noise * noise_scaling
-
-    ensX = X.copy() + noise
-    imf = sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_args=imf_args)
-
-    if noise_mode == 'single':
-        return imf
-    elif noise_mode == 'flip':
-        ensX = X.copy() - noise
-        imf += sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_args=imf_args)
-        return imf / 2
-
-
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
-
-    """
-    Compute the next IMF from a data set. This is a helper function used within
-    the more general sifting functions.
-
-    Parameters
+    References
     ----------
-    X : ndarray [nsamples x 1]
-        1D input array containing the time-series data to be decomposed
-    sd_thresh : scalar
-        The threshold at which the sift of each IMF will be stopped. (Default value = .1)
-    env_step_size : float
-        Scaling of envelope prior to removal at each iteration of sift. The
-        average of the upper and lower envelope is muliplied by this value
-        before being subtracted from the data. Values should be between
-        0 > x >= 1 (Default value = 1)
-
-    Returns
-    -------
-    proto_imf : ndarray
-        1D vector containing the next IMF extracted from X
-    continue_flag : bool
-        Boolean indicating whether the sift can be continued beyond this IMF
-
-    Other Parameters
-    ----------------
-    envelope_opts : dict
-        Optional dictionary of keyword arguments to be passed to emd.utils.interp_envelope
-
-    See Also
-    --------
-    emd.sift.sift - calls get_next_imf to extract IMFs
-    emd.utils.interp_envelope - called by get_next_imf to estimate upper and lower amplitude envelopes
+    .. [1] Huang, N. E., Hu, K., Yang, A. C. C., Chang, H.-C., Jia, D., Liang,
+       W.-K., … Wu, Z. (2016). On Holo-Hilbert spectral analysis: a full
+       informational spectral representation for nonlinear and non-stationary
+       data. Philosophical Transactions of the Royal Society A: Mathematical,
+       Physical and Engineering Sciences, 374(2065), 20150206.
+       https://doi.org/10.1098/rsta.2015.0206
 
     """
+    if (sift_args is None) or ('max_imfs' not in sift_args):
+        max_imfs = IA.shape[1]
+    elif 'max_imfs' in sift_args:
+        max_imfs = sift_args['max_imfs']
 
-    proto_imf = X.copy()
+    imf2 = np.zeros((IA.shape[0], IA.shape[1], max_imfs))
 
-    continue_imf = True
-    continue_flag = True
-    niters = 0
-    while continue_imf:
-        niters += 1
+    for ii in range(max_imfs):
+        tmp = sift_func(IA[:, ii], **sift_args)
+        imf2[:, ii, :tmp.shape[1]] = tmp
 
-        upper = utils.interp_envelope(proto_imf, mode='upper',
-                                      **envelope_opts)
-        lower = utils.interp_envelope(proto_imf, mode='lower',
-                                      **envelope_opts)
-
-        # If upper or lower are None we should stop sifting altogether
-        if upper is None or lower is None:
-            continue_flag = False
-            continue_imf = False
-            logger.debug('Completed in {0} iters with no extrema'.format(niters))
-            continue
-
-        # Find local mean
-        avg = np.mean([upper, lower], axis=0)[:, None]
-
-        # Remove local mean estimate from proto imf
-        x1 = proto_imf - avg
-
-        # Stop sifting if we pass threshold
-        sd = np.sum((proto_imf - x1)**2) / np.sum(proto_imf**2)
-        if sd < sd_thresh:
-            proto_imf = x1
-            continue_imf = False
-            logger.debug('Completed in {0} iters with sd {1}'.format(niters, sd))
-            continue
-
-        proto_imf = proto_imf - (env_step_size*avg)
-
-    if proto_imf.ndim == 1:
-        proto_imf = proto_imf[:, None]
-
-    return proto_imf, continue_flag
-
-
-def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
-    """
-    Compute the next IMF from a data set using the mask sift appraoch. This is
-    a helper function used within the more general sifting functions.
-
-    Parameters
-    ----------
-    X : ndarray
-        1D input array containing the time-series data to be decomposed
-    z : scalar
-        Mask frequency as a proportion of the sampling rate, values between 0->z->.5
-    amp : scalar
-        Mask amplitude
-    mask_type : {'all','sine','cosine'}
-         Flag indicating whether to apply sine, cosine or all masks (Default value = 'all')
-
-    Returns
-    -------
-    proto_imf : ndarray
-        1D vector containing the next IMF extracted from X
-
-    Other Parameters
-    ----------------
-    imf_opts : dict
-        Optional dictionary of keyword arguments to be passed to emd.sift.get_next_imf
-
-    See Also
-    --------
-    emd.sift.mask_sift_adaptive - calls get_next_imf_mask internally
-    emd.sift.mask_sift_specified - calls get_next_imf_mask internally
-    emd.sift.get_next_imf - called by get_next_imf_mask to extract imfs
-
-    """
-    if mask_type not in ['all', 'sine', 'cosine']:
-        raise ValueError("Invalid mask type")
-
-    z = z * 2 * np.pi
-
-    if mask_type == 'all' or mask_type == 'cosine':
-        mask = amp * np.cos(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_c, continue_sift = get_next_imf(X + mask, **imf_opts)
-        next_imf_up_c -= mask
-        next_imf_down_c, continue_sift = get_next_imf(X - mask, **imf_opts)
-        next_imf_down_c += mask
-
-    if mask_type == 'all' or mask_type == 'sine':
-        mask = amp * np.sin(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_s, continue_sift = get_next_imf(X + mask, **imf_opts)
-        next_imf_up_s -= mask
-        next_imf_down_s, continue_sift = get_next_imf(X - mask, **imf_opts)
-        next_imf_down_s += mask
-
-    if mask_type == 'all':
-        return (next_imf_up_c + next_imf_down_c + next_imf_up_s + next_imf_down_s) / 4.
-    elif mask_type == 'sine':
-        return (next_imf_up_s + next_imf_down_s) / 2.
-    elif mask_type == 'cosine':
-        return (next_imf_up_c + next_imf_down_c) / 2.
+    return imf2
