@@ -558,9 +558,9 @@ def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
     specs = np.zeros((len(freq_edges) - 1, infr.shape[1]))
 
     # Remove values outside the bin range
-    infr = infr.copy()
-    infr[infr < freq_edges[0]] = np.nan
-    infr[infr > freq_edges[-1]] = np.nan
+    infr = infr.copy()  # Don't work in place on input freqs
+    outside_inds = (infr < freq_edges[0]) + (infr > freq_edges[-1])
+    infr[outside_inds] = np.nan
 
     finds = np.digitize(infr, freq_edges)
 
