@@ -118,7 +118,7 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
 # SIFT implementation
 
 @sift_logger('sift')
-def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
+def sift(X, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     original sift algorithm [1]_.
@@ -139,7 +139,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
 
     Other Parameters
     ----------------
-    imf_args : dict
+    imf_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_next_imf.
 
     See Also
@@ -157,8 +157,8 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
 
     """
 
-    if not imf_args:
-        imf_args = {'env_step_size': 1,
+    if not imf_opts:
+        imf_opts = {'env_step_size': 1,
                     'sd_thresh': .1}
 
     if X.ndim == 1:
@@ -172,7 +172,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
 
     while continue_sift:
 
-        next_imf, continue_sift = get_next_imf(proto_imf, **imf_args)
+        next_imf, continue_sift = get_next_imf(proto_imf, **imf_opts)
 
         if layer == 0:
             imf = next_imf
@@ -199,7 +199,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
 # Utilities
 
 def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
-                     sift_thresh=1e-8, max_imfs=None, job_ind=1, imf_args={}):
+                     sift_thresh=1e-8, max_imfs=None, job_ind=1, imf_opts={}):
     """
     Helper function for applying white noise to a signal prior to computing the
     sift.
@@ -230,7 +230,7 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 
     Other Parameters
     ----------------
-    imf_args : dict
+    imf_opts : dict
         Optional dictionary of arguments to be passed to emd.get_next_imf
 
     See Also
@@ -253,13 +253,13 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
         noise = noise * noise_scaling
 
     ensX = X.copy() + noise
-    imf = sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_args=imf_args)
+    imf = sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_opts=imf_opts)
 
     if noise_mode == 'single':
         return imf
     elif noise_mode == 'flip':
         ensX = X.copy() - noise
-        imf += sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_args=imf_args)
+        imf += sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_opts=imf_opts)
         return imf / 2
 
 
@@ -267,7 +267,7 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
-                  nprocesses=1, sift_thresh=1e-8, max_imfs=None, imf_args={}):
+                  nprocesses=1, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -302,7 +302,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 
     Other Parameters
     ----------------
-    imf_args : dict
+    imf_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_next_imf.
 
     See Also
@@ -334,7 +334,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     p = mp.Pool(processes=nprocesses)
 
     noise = None
-    args = [(X, noise_scaling, noise, noise_mode, sift_thresh, max_imfs, ii, imf_args)
+    args = [(X, noise_scaling, noise, noise_mode, sift_thresh, max_imfs, ii, imf_opts)
             for ii in range(nensembles)]
 
     res = p.starmap(_sift_with_noise, args)
@@ -354,7 +354,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 @sift_logger('complete_ensemble_sift')
 def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
-                           sift_thresh=1e-8, max_imfs=None, imf_args={}):
+                           sift_thresh=1e-8, max_imfs=None, imf_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -389,7 +389,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
     Other Parameters
     ----------------
-    imf_args : dict
+    imf_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_next_imf.
 
     See Also
@@ -423,12 +423,12 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     noise = np.random.random_sample((X.shape[0], nensembles)) * noise_scaling
 
     # Do a normal ensemble sift to obtain the first IMF
-    args = [(X, noise_scaling, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_args)
+    args = [(X, noise_scaling, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_opts)
             for ii in range(nensembles)]
     res = p.starmap(_sift_with_noise, args)
     imf = np.array([r for r in res]).mean(axis=0)
 
-    args = [(noise[:, ii, None], sift_thresh, 1, imf_args) for ii in range(nensembles)]
+    args = [(noise[:, ii, None], sift_thresh, 1, imf_opts) for ii in range(nensembles)]
     res = p.starmap(sift, args)
     noise = noise - np.array([r[:, 0] for r in res]).T
 
@@ -436,14 +436,14 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
         proto_imf = X - imf.sum(axis=1)[:, None]
 
-        args = [(proto_imf, None, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_args)
+        args = [(proto_imf, None, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_opts)
                 for ii in range(nensembles)]
         res = p.starmap(_sift_with_noise, args)
         next_imf = np.array([r for r in res]).mean(axis=0)
 
         imf = np.concatenate((imf, next_imf), axis=1)
 
-        args = [(noise[:, ii, None], sift_thresh, 1, imf_args)
+        args = [(noise[:, ii, None], sift_thresh, 1, imf_opts)
                 for ii in range(nensembles)]
         res = p.starmap(sift, args)
         noise = noise - np.array([r[:, 0] for r in res]).T
@@ -708,8 +708,6 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         return imf, mask_freqs
     else:
         return imf
-
-    return
 
 
 @sift_logger('mask_sift_adaptive')
@@ -1427,8 +1425,6 @@ def get_config(siftname='sift'):
         sift_opts = _get_function_opts(getattr(mod, siftname), ignore=['X', 'imf_opts'])
     else:
         raise AttributeError('Sift siftname not recognised: please use one of {0}'.format(sift_types))
-
-    sift_opts.update({'max_imfs': 5, 'sift_thresh': 1e-8})
 
     out = SiftConfig(siftname)
     out['sift'] = sift_opts

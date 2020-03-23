@@ -3,7 +3,9 @@ import unittest
 
 import numpy as np
 
-from ..sift import sift, ensemble_sift, complete_ensemble_sift, mask_sift, mask_sift_adaptive, mask_sift_specified
+from ..sift import sift, ensemble_sift, complete_ensemble_sift, \
+                   mask_sift, mask_sift_adaptive, mask_sift_specified, \
+                   get_config, SiftConfig
 from ..utils import abreu2010
 
 
@@ -28,7 +30,7 @@ class test_sift_defaults(unittest.TestCase):
 
     def test_ensemble_sift_default(self):
         """Check ensemble sift runs with some simple settings"""
-        imf = ensemble_sift(self.x[:500])
+        imf = ensemble_sift(self.x[:500], max_imfs=3)
         assert(imf.shape[0] == self.x[:500].shape[0])  # just checking that it ran
 
     def test_complete_ensemble_sift_default(self):
@@ -76,7 +78,7 @@ class test_sift_behaviour(unittest.TestCase):
         self.x = x + np.cos(2.3 * np.pi * f2 * time_vect) + np.linspace(-.5, 1, len(time_vect))
 
         self.imf_kwargs = {'envelope_opts': {'interp_method': 'splrep'}}
-        self.imf = sift(self.x, imf_args=self.imf_kwargs)
+        self.imf = sift(self.x, imf_opts=self.imf_kwargs)
 
     def test_complete_decomposition(self):
         """Test that IMFs are complete description of signal"""
@@ -87,7 +89,7 @@ class test_sift_behaviour(unittest.TestCase):
     def test_sift_multiplied_by_constant(self):
         """Test that sifting a scaled signal only changes the scaling of the IMFs"""
         x2 = self.imf[:, 0] * 3
-        imf2 = sift(x2, imf_args=self.imf_kwargs)
+        imf2 = sift(x2, imf_opts=self.imf_kwargs)
 
         tst = self.check_diff(self.get_resid(self.imf[:, 0] * 3, imf2[:, 0]), 1)
         assert(tst)
@@ -95,7 +97,7 @@ class test_sift_behaviour(unittest.TestCase):
     def test_sift_plus_constant(self):
         """Test that sifting a signal plus a constant only changes the last IMF"""
         x3 = self.x + 2
-        imf3 = sift(x3, imf_args=self.imf_kwargs)
+        imf3 = sift(x3, imf_opts=self.imf_kwargs)
 
         tst = list()
         for ii in range(imf3.shape[1]):
@@ -109,7 +111,7 @@ class test_sift_behaviour(unittest.TestCase):
     def test_sift_of_imf(self):
         """Test that sifting an IMF returns the IMF"""
         x4 = self.imf[:, 0].copy()
-        imf4 = sift(x4, imf_args=self.imf_kwargs)
+        imf4 = sift(x4, imf_opts=self.imf_kwargs)
 
         tst = list()
         for ii in range(imf4.shape[1]):
@@ -124,7 +126,7 @@ class test_sift_behaviour(unittest.TestCase):
     def test_sift_of_reversed_signal(self):
         """Test that sifting a reversed signal only reverses the IMFs"""
         x5 = self.x[::-1]
-        imf5 = sift(x5, imf_args=self.imf_kwargs)
+        imf5 = sift(x5, imf_opts=self.imf_kwargs)
 
         tst = self.check_diff(self.get_resid(self.imf[::-1, 0], imf5[:, 0]), 1)
 
@@ -147,3 +149,30 @@ class test_sift_behaviour(unittest.TestCase):
         mask_power = np.sum(np.power(next_imf, 2))
 
         assert(power - mask_power < 1)
+
+
+class test_sift_config(unittest.TestCase):
+
+    def test_config(self):
+
+        # Get sift config
+        conf = get_config('sift')
+        # Check a couple of options
+        assert( conf['sift/max_imfs'] == None )
+        assert( conf['extrema/pad_width'] == 2 )
+        assert( conf['loc_pad/mode'] == 'reflect' )
+
+        # Get ensemble sift config
+        conf = get_config('ensemble_sift')
+        # Check a couple of options
+        assert( conf['sift/max_imfs'] == None )
+        assert( conf['extrema/pad_width'] == 2 )
+        assert( conf['loc_pad/mode'] == 'reflect' )
+
+        # Get mask sift config
+        conf = get_config('ensemble_sift')
+        # Check a couple of options
+        assert( conf['sift/nensembles'] == 4 )
+        assert( conf['sift/max_imfs'] == None )
+        assert( conf['extrema/pad_width'] == 2 )
+        assert( conf['loc_pad/mode'] == 'reflect' )
