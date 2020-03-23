@@ -18,6 +18,7 @@ get_next_imf_mask
 
 """
 
+
 import logging
 import numpy as np
 import collections
@@ -139,11 +140,11 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_args={}):
     Other Parameters
     ----------------
     imf_args : dict
-        Optional dictionary of keyword options to be passed to emd.sift.get_next_imf.
+        Optional dictionary of keyword options to be passed to emd.get_next_imf.
 
     See Also
     --------
-    emd.sift.get_next_imf : Lower level function for extracting IMFs from data.
+    emd.get_next_imf : Lower level function for extracting IMFs from data.
 
     References
     ----------
@@ -230,13 +231,13 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
     Other Parameters
     ----------------
     imf_args : dict
-        Optional dictionary of arguments to be passed to emd.sift.get_next_imf
+        Optional dictionary of arguments to be passed to emd.get_next_imf
 
     See Also
     --------
     emd.sift.ensemble_sift - makes internal use of _sift_with_noise
     emd.sift.complete_ensemble_sift - makes internal use of _sift_with_noise
-    emd.sift.get_next_imf - called by _sift_with_noise to extract IMFs
+    emd.get_next_imf - called by _sift_with_noise to extract IMFs
 
 
     """
@@ -302,11 +303,11 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     Other Parameters
     ----------------
     imf_args : dict
-        Optional dictionary of keyword options to be passed to emd.sift.get_next_imf.
+        Optional dictionary of keyword options to be passed to emd.get_next_imf.
 
     See Also
     --------
-    emd.sift.get_next_imf : Lower level function for extracting IMFs from data.
+    emd.get_next_imf : Lower level function for extracting IMFs from data.
 
     References
     ----------
@@ -389,11 +390,11 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     Other Parameters
     ----------------
     imf_args : dict
-        Optional dictionary of keyword options to be passed to emd.sift.get_next_imf.
+        Optional dictionary of keyword options to be passed to emd.get_next_imf.
 
     See Also
     --------
-    emd.sift.get_next_imf : Lower level function for extracting IMFs from data.
+    emd.get_next_imf : Lower level function for extracting IMFs from data.
 
     References
     ----------
@@ -493,13 +494,13 @@ def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
     Other Parameters
     ----------------
     imf_opts : dict
-        Optional dictionary of keyword arguments to be passed to emd.sift.get_next_imf
+        Optional dictionary of keyword arguments to be passed to emd.get_next_imf
 
     See Also
     --------
     emd.sift.mask_sift_adaptive - calls get_next_imf_mask internally
     emd.sift.mask_sift_specified - calls get_next_imf_mask internally
-    emd.sift.get_next_imf - called by get_next_imf_mask to extract imfs
+    emd.get_next_imf - called by get_next_imf_mask to extract imfs
 
     """
     if mask_type not in ['all', 'sine', 'cosine']:
@@ -616,7 +617,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
     Other Parameters
     ----------------
     imf_opts : dict
-        Optional dictionary of keyword arguments to be passed to emd.sift.get_next_imf
+        Optional dictionary of keyword arguments to be passed to emd.get_next_imf
 
     Notes
     -----
@@ -654,7 +655,6 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         X = X[:, None]
 
     # if first mask is if or zc - compute first imf as normal and get freq
-    print(type(mask_freqs))
     if isinstance(mask_freqs, (list, tuple, np.ndarray)):
         logger.info('Using user specified masks')
     elif mask_freqs in ['zc', 'if'] or isinstance(mask_freqs, float):
@@ -983,6 +983,7 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
 ##################################################################
 # Second Layer SIFT
 
+
 @sift_logger('second_layer_sift')
 def sift_second_layer(IA, sift_func=sift, sift_args=None):
     """
@@ -1294,8 +1295,9 @@ class SiftConfig(collections.abc.MutableMapping):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name='sift', *args, **kwargs):
         self.store = dict()
+        self.name = name
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
@@ -1322,6 +1324,9 @@ class SiftConfig(collections.abc.MutableMapping):
     def __iter__(self):
         return iter(self.store)
 
+    def __str__(self):
+        return '%s %s\n%s' % (self.name, self.__class__, self.to_yaml())
+
     def __len__(self):
         return len(self.store)
 
@@ -1334,7 +1339,7 @@ class SiftConfig(collections.abc.MutableMapping):
 
     def to_yaml(self):
         import yaml
-        return yaml.dump(self.store)
+        return yaml.dump(self.store, sort_keys=False)
 
     def to_opts(self):
         out = self.store['sift']
@@ -1408,22 +1413,24 @@ def get_config(siftname='sift'):
                                                                   'combined_upper_lower'])
 
     # Get defaults for envelope interpolation
-    envelope_opts = _get_function_opts(interp_envelope, ignore=['X', 'extrema_opts', 'mode'])
+    envelope_opts = _get_function_opts(interp_envelope, ignore=['X', 'extrema_opts', 'mode', 'ret_extrema'])
 
     # Get defaults for computing IMFs
-    imf_opts = _get_function_opts(sift.get_next_imf, ignore=['X', 'envelope_opts'])
+    imf_opts = _get_function_opts(get_next_imf, ignore=['X', 'envelope_opts'])
 
     # Get defaults for the given sift variant
     sift_types = ['sift', 'ensemble_sift', 'complete_ensemble_sift',
                   'mask_sift', 'mask_sift_adaptive', 'mask_sift_specified']
     if siftname in sift_types:
-        sift_opts = _get_function_opts(getattr(sift, siftname), ignore=['X', 'imf_opts'])
+        import sys
+        mod = sys.modules[__name__]
+        sift_opts = _get_function_opts(getattr(mod, siftname), ignore=['X', 'imf_opts'])
     else:
         raise AttributeError('Sift siftname not recognised: please use one of {0}'.format(sift_types))
 
     sift_opts.update({'max_imfs': 5, 'sift_thresh': 1e-8})
 
-    out = SiftConfig()
+    out = SiftConfig(siftname)
     out['sift'] = sift_opts
     out['imf'] = imf_opts
     out['envelope'] = envelope_opts
