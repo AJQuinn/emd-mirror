@@ -5,7 +5,7 @@ import numpy as np
 
 from ..sift import sift, ensemble_sift, complete_ensemble_sift, \
                    mask_sift, mask_sift_adaptive, mask_sift_specified, \
-                   get_config, SiftConfig
+                   get_config
 from ..utils import abreu2010
 
 
@@ -158,21 +158,21 @@ class test_sift_config(unittest.TestCase):
         # Get sift config
         conf = get_config('sift')
         # Check a couple of options
-        assert( conf['sift/max_imfs'] == None )
-        assert( conf['extrema/pad_width'] == 2 )
-        assert( conf['loc_pad/mode'] == 'reflect' )
+        assert(conf['sift/max_imfs'] is None)
+        assert(conf['extrema/pad_width'] == 2)
+        assert(conf['loc_pad/mode'] == 'reflect')
 
         # Get ensemble sift config
         conf = get_config('ensemble_sift')
         # Check a couple of options
-        assert( conf['sift/max_imfs'] == None )
-        assert( conf['extrema/pad_width'] == 2 )
-        assert( conf['loc_pad/mode'] == 'reflect' )
+        assert(conf['sift/max_imfs'] is None)
+        assert(conf['extrema/pad_width'] == 2)
+        assert(conf['loc_pad/mode'] == 'reflect')
 
         # Get mask sift config
         conf = get_config('ensemble_sift')
         # Check a couple of options
-        assert( conf['sift/nensembles'] == 4 )
-        assert( conf['sift/max_imfs'] == None )
-        assert( conf['extrema/pad_width'] == 2 )
-        assert( conf['loc_pad/mode'] == 'reflect' )
+        assert(conf['sift/nensembles'] == 4)
+        assert(conf['sift/max_imfs'] is None)
+        assert(conf['extrema/pad_width'] == 2)
+        assert(conf['loc_pad/mode'] == 'reflect')
