@@ -66,8 +66,7 @@ def sift_logger(sift_name):
 
             if (sift_name == 'ensemble_sift') or \
                (sift_name == 'complete_ensemble_sift'):
-                # Print number of ensembles if ensemble sift - this is a
-                # positional arg not a kwarg
+                # Print number of ensembles if ensemble sift
                 logger.debug('Input data size: {0}'.format(args[0].shape))
                 if 'nensembles' in kwargs:
                     logger.debug('Computing {0} ensembles'.format(kwargs['nensembles']))

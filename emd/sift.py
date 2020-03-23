@@ -20,8 +20,11 @@ get_next_imf_mask
 
 import logging
 import numpy as np
+import collections
+from scipy import signal
+from scipy import interpolate as interp
 
-from . import spectra, utils
+from . import spectra
 from .logger import sift_logger
 
 # Housekeeping for logging
@@ -60,12 +63,12 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
     Other Parameters
     ----------------
     envelope_opts : dict
-        Optional dictionary of keyword arguments to be passed to emd.utils.interp_envelope
+        Optional dictionary of keyword arguments to be passed to emd.interp_envelope
 
     See Also
     --------
     emd.sift.sift - calls get_next_imf to extract IMFs
-    emd.utils.interp_envelope - called by get_next_imf to estimate upper and lower amplitude envelopes
+    emd.interp_envelope - called by get_next_imf to estimate upper and lower amplitude envelopes
 
     """
 
@@ -77,10 +80,10 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
     while continue_imf:
         niters += 1
 
-        upper = utils.interp_envelope(proto_imf, mode='upper',
-                                      **envelope_opts)
-        lower = utils.interp_envelope(proto_imf, mode='lower',
-                                      **envelope_opts)
+        upper = interp_envelope(proto_imf, mode='upper',
+                                **envelope_opts)
+        lower = interp_envelope(proto_imf, mode='lower',
+                                **envelope_opts)
 
         # If upper or lower are None we should stop sifting altogether
         if upper is None or lower is None:
@@ -444,7 +447,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
         res = p.starmap(sift, args)
         noise = noise - np.array([r[:, 0] for r in res]).T
 
-        pks, locs = utils.find_extrema(imf[:, -1])
+        pks, locs = find_extrema(imf[:, -1])
         if len(pks) < 2:
             continue_sift = False
 
@@ -536,7 +539,7 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
 
     # Compute first mask frequency from first IMF
     if first_mask_mode == 'zc':
-        num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
+        num_zero_crossings = zero_crossing_count(imf)[0, 0]
         z = num_zero_crossings / imf.shape[0] / 4
         logger.info('Found first mask frequency of {0}'.format(z))
     elif first_mask_mode == 'if':
@@ -552,15 +555,98 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
 
     return z
 
-# Implementation
 
+# Implementation
 
 @sift_logger('mask_sift')
 def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
               mask_freqs='zc', mask_step_factor=2,
-              ret_mask_freq=False,
+              mask_type='all', ret_mask_freq=False,
               max_imfs=9, sift_thresh=1e-8,
               imf_opts={}):
+    """
+    Compute Intrinsic Mode Functions from a dataset using a set of masking
+    signals to reduce mixing of components between modes [1]_.
+
+    This function can either compute the mask frequencies based on the fastest
+    dynamics in the data (the properties of the first IMF from a standard sift)
+    or apply a pre-specified set of masks.
+
+    Parameters
+    ----------
+    X : ndarray
+        1D input array containing the time-series data to be decomposed
+    mask_amp : scalar or array_like
+         Amplitude of mask signals as specified by mask_amp_mode. If scalar the
+         same value is applied to all IMFs, if an array is passed each value is
+         applied to each IMF in turn (Default value = 1)
+    mask_amp_mode : {'abs','ratio_imf','ratio_sig'}
+         Method for computing mask amplitude. Either in absolute units ('abs'), or as a
+         ratio of the amplitude of the input signal ('ratio_signal') or previous imf
+         ('ratio_imf') (Default value = 'ratio_imf')
+   mask_freqs : {'zc','if',float,,array_like}
+        Define the set of mask frequencies to use. If 'zc' or 'if' are passed,
+        the frequency of the first mask is taken from either the zero-crossings
+        or instantaneous frequnecy the first IMF of a standard sift on the
+        data. If a float is passed this is taken as the first mask frequency.
+        Subsequent masks are defined by the mask_step_factor. If an array_like
+        vector is passed, the values in the vector will specify the mask
+        frequencies.
+    mask_step_factor : scalar
+         Step in frequency between successive masks (Default value = 2)
+    mask_type : {'all','sine','cosine'}
+        Which type of masking signal to use. 'sine' or 'cosine' options return
+        the average of a +ve and -ve flipped wave. 'all' applies four masks:
+        sine and cosine with +ve and -ve sign and returns the average of all
+        four.
+    ret_mask_freq : bool
+         Boolean flag indicating whether mask frequencies are returned (Default value = False)
+    max_imfs : int
+         The maximum number of IMFs to compute. (Default value = None)
+    sift_thresh : scalar
+         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
+
+    Returns
+    -------
+    imf : ndarray
+        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
+    mask_freqs : ndarray
+        1D array of mask frequencies, if ret_mask_freq is set to True.
+
+    Other Parameters
+    ----------------
+    imf_opts : dict
+        Optional dictionary of keyword arguments to be passed to emd.sift.get_next_imf
+
+    Notes
+    -----
+    Here are some example mask_sift variants you can run:
+
+    A mask sift in which the mask frequencies are determined with
+    zero-crossings and mask amplitudes by a ratio with the amplitude of the
+    previous IMF (note - this is also the default):
+
+    >> imf = emd.sift.mask_sift(X, mask_amp_mode='ratio_imf', mask_freqs='zc')
+
+    A mask sift in which the first mask is set at .4 of the sampling rate and
+    subsequent masks found by successive division of this mask_freq by 3:
+
+    >> imf = emd.sift.mask_sift(X, mask_freqs=.4, mask_step_factor=3)
+
+    A mask sift using user specified frequencies and amplitudes:
+
+    >> mask_freqs = np.array([.4,.2,.1,.05,.025,0])
+    >> mask_amps = np.array([2,2,1,1,.5,.5])
+    >> imf = emd.sift.mask_sift(X, mask_freqs=mask_freqs, mask_amp=mask_amps, mask_amp_mode='abs')
+
+    References
+    ----------
+    .. [1] Ryan Deering, & James F. Kaiser. (2005). The Use of a Masking Signal
+       to Improve Empirical Mode Decomposition. In Proceedings. (ICASSP ’05). IEEE
+       International Conference on Acoustics, Speech, and Signal Processing, 2005.
+       IEEE. https://doi.org/10.1109/icassp.2005.1416051
+
+    """
 
     # initialise
     if X.ndim == 1:
@@ -601,7 +687,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
 
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
 
-        next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type='all', imf_opts=imf_opts)
+        next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type=mask_type, imf_opts=imf_opts)
 
         if imf_layer == 0:
             imf = next_imf
@@ -712,7 +798,7 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
 
     # Compute first mask frequency from first IMF
     if first_mask_mode == 'zc':
-        num_zero_crossings = utils.zero_crossing_count(imf)[0, 0]
+        num_zero_crossings = zero_crossing_count(imf)[0, 0]
         w = X.shape[0] / (num_zero_crossings / 2)
         z = num_zero_crossings / imf.shape[0] / 4
         zs = [z]
@@ -942,3 +1028,439 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
         imf2[:, ii, :tmp.shape[1]] = tmp
 
     return imf2
+
+
+##################################################################
+# SIFT Estimation Utilities
+
+
+def get_padded_extrema(X, pad_width=2, combined_upper_lower=False,
+                       loc_pad_opts={}, mag_pad_opts={}, parabolic_extrema=False):
+    """
+    Return a set of extrema from a signal including padded extrema at the edges
+    of the signal.
+
+    Parameters
+    ----------
+    X : ndarray
+        Input signal
+    combined_upper_lower : bool
+         Flag to indicate whether both upper and lower extrema should be
+         considered (Default value = False)
+
+    Returns
+    -------
+    max_locs : ndarray
+        location of extrema in samples
+    max_pks : ndarray
+        Magnitude of each extrema
+
+
+    """
+
+    if not loc_pad_opts:  # Empty dict evaluates to False
+        loc_pad_opts = {'mode': 'reflect', 'reflect_type': 'odd'}
+    else:
+        loc_pad_opts = loc_pad_opts.copy()  # Don't work in place...
+    loc_pad_mode = loc_pad_opts.pop('mode')
+
+    if not mag_pad_opts:  # Empty dict evaluates to False
+        mag_pad_opts = {'mode': 'median', 'stat_length': 1}
+    else:
+        mag_pad_opts = mag_pad_opts.copy()  # Don't work in place...
+    mag_pad_mode = mag_pad_opts.pop('mode')
+
+    if X.ndim == 2:
+        X = X[:, 0]
+
+    if combined_upper_lower:
+        max_locs, max_pks = find_extrema(np.abs(X))
+    else:
+        max_locs, max_pks = find_extrema(X)
+
+    if parabolic_extrema:
+        y = np.c_[X[max_locs-1], X[max_locs], X[max_locs+1]].T
+        max_locs, max_pks = compute_parabolic_extrema(y, max_locs)
+
+    # Return nothing we don't have enough extrema
+    if max_locs.size <= 1:
+        return None, None
+
+    # Determine how much padding to use
+    if max_locs.size < pad_width:
+        pad_width = max_locs.size
+
+    # Pad peak locations
+    ret_max_locs = np.pad(max_locs, pad_width, loc_pad_mode, **loc_pad_opts)
+
+    # Pad peak magnitudes
+    ret_max_pks = np.pad(max_pks, pad_width, mag_pad_mode, **mag_pad_opts)
+
+    while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
+        ret_max_locs = np.pad(ret_max_locs, pad_width, loc_pad_mode, **loc_pad_opts)
+        ret_max_pks = np.pad(ret_max_pks, pad_width, mag_pad_mode, **mag_pad_opts)
+
+    return ret_max_locs, ret_max_pks
+
+
+def compute_parabolic_extrema(y, locs):
+    """
+    Compute a parabolic approximation of the extrema of in triplets of points
+    based on section 3.2.1 from Rato 2008 [1]_.
+
+    Parameters
+    ----------
+    y : array_like
+        A [3 x nextrema] array containing the points immediately around the
+        extrema in a time-series.
+    locs : array_like
+        A [nextrema] length vector containing x-axis positions of the extrema
+
+    Returns
+    -------
+    numpy array
+        The estimated y-axis values of the interpolated extrema
+    numpy array
+        The estimated x-axis values of the interpolated extrema
+
+    References
+    ----------
+    .. [1] Rato, R. T., Ortigueira, M. D., & Batista, A. G. (2008). On the HHT,
+    its problems, and some solutions. Mechanical Systems and Signal Processing,
+    22(6), 1374–1394. https://doi.org/10.1016/j.ymssp.2007.11.028
+
+    """
+
+    # Parabola equation parameters for computing y from parameters a, b and c
+    # w = np.array([[1, 1, 1], [4, 2, 1], [9, 3, 1]])
+    # ... and its inverse for computing a, b and c from y
+    w_inv = np.array([[.5, -1, .5], [-5/2, 4, -3/2], [3, -3, 1]])
+    abc = w_inv.dot(y)
+
+    # Find co-ordinates of extrema from parameters abc
+    tp = - abc[1, :] / (2*abc[0, :])
+    t = tp - 2 + locs
+    y_hat = tp*abc[1, :]/2 + abc[2, :]
+
+    return t, y_hat
+
+
+def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
+                    ret_extrema=False):
+    """
+    Interpolate the amplitude envelope of a signal.
+
+    Parameters
+    ----------
+    X : ndarray
+        Input signal
+    mode : {'upper','lower','combined'}
+         Flag to set which envelope should be computed (Default value = 'upper')
+    interp_method : {'splrep','pchip','mono_pchip'}
+         Flag to indicate which interpolation method should be used (Default value = 'splrep')
+
+    Returns
+    -------
+    ndarray
+        Interpolated amplitude envelope
+
+
+    """
+
+    if not extrema_opts:  # Empty dict evaluates to False
+        extrema_opts = {'pad_width': 2,
+                        'loc_pad_opts': {},
+                        'mag_pad_opts': {}}
+    else:
+        extrema_opts = extrema_opts.copy()  # Don't work in place...
+
+    if interp_method not in ['splrep', 'mono_pchip', 'pchip']:
+        raise ValueError("Invalid interp_method value")
+
+    if mode == 'upper':
+        locs, pks = get_padded_extrema(X, combined_upper_lower=False, **extrema_opts)
+    elif mode == 'lower':
+        locs, pks = get_padded_extrema(-X, combined_upper_lower=False, **extrema_opts)
+    elif mode == 'combined':
+        locs, pks = get_padded_extrema(X, combined_upper_lower=True, **extrema_opts)
+    else:
+        raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')
+
+    if locs is None:
+        return None
+
+    # Run interpolation on envelope
+    t = np.arange(locs[0], locs[-1])
+    if interp_method == 'splrep':
+        f = interp.splrep(locs, pks)
+        env = interp.splev(t, f)
+    elif interp_method == 'mono_pchip':
+        pchip = interp.PchipInterpolator(locs, pks)
+        env = pchip(t)
+    elif interp_method == 'pchip':
+        pchip = interp.pchip(locs, pks)
+        env = pchip(t)
+
+    t_max = np.arange(locs[0], locs[-1])
+    tinds = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
+
+    env = np.array(env[tinds])
+
+    if env.shape[0] != X.shape[0]:
+        raise ValueError('Envelope length does not match input data {0} {1}'.format(
+            env.shape[0], X.shape[0]))
+
+    if mode == 'lower':
+        env = -env
+        pks = -pks
+
+    if ret_extrema:
+        return env, (locs, pks)
+    else:
+        return env
+
+
+def find_extrema(X, ret_min=False):
+    """
+    Identify extrema within a time-course and reject extrema whose magnitude is
+    below a set threshold.
+
+    Parameters
+    ----------
+    X : ndarray
+       Input signal
+    ret_min : bool
+         Flag to indicate whether maxima (False) or minima (True) should be identified(Default value = False)
+
+    Returns
+    -------
+    locs : ndarray
+        Location of extrema in samples
+    extrema : ndarray
+        Value of each extrema
+
+
+    """
+
+    if ret_min:
+        ind = signal.argrelmin(X, order=1)[0]
+    else:
+        ind = signal.argrelmax(X, order=1)[0]
+
+    # Only keep peaks with magnitude above machine precision
+    if len(ind) / X.shape[0] > 1e-3:
+        good_inds = ~(np.isclose(X[ind], X[ind - 1]) * np.isclose(X[ind], X[ind + 1]))
+        ind = ind[good_inds]
+
+    # if ind[0] == 0:
+    #    ind = ind[1:]
+
+    # if ind[-1] == X.shape[0]:
+    #    ind = ind[:-2]
+
+    return ind, X[ind]
+
+
+def zero_crossing_count(X):
+    """
+    Count the number of zero-crossings within a time-course through
+    differentiation of the sign of the signal.
+
+    Parameters
+    ----------
+    X : ndarray
+        Input array
+
+    Returns
+    -------
+    int
+        Number of zero-crossings
+
+    """
+
+    if X.ndim == 2:
+        X = X[:, None]
+
+    return (np.diff(np.sign(X), axis=0) != 0).sum(axis=0)
+
+
+##################################################################
+# SIFT Config Utilities
+
+
+class SiftConfig(collections.abc.MutableMapping):
+    """
+    A dictionary like object specifying keyword arguments configuring a sift.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.store = dict()
+        self.update(dict(*args, **kwargs))  # use the free update to set keys
+
+    def __getitem__(self, key):
+        key = self.__keytransform__(key)
+        if isinstance(key, list):
+            return self.store[key[0]][key[1]]
+        else:
+            return self.store[key]
+
+    def __setitem__(self, key, value):
+        key = self.__keytransform__(key)
+        if isinstance(key, list):
+            self.store[key[0]][key[1]] = value
+        else:
+            self.store[key] = value
+
+    def __delitem__(self, key):
+        key = self.__keytransform__(key)
+        if isinstance(key, list):
+            del self.store[key[0]][key[1]]
+        else:
+            del self.store[key]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
+    def __keytransform__(self, key):
+        key = key.split('/')
+        if len(key) == 1:
+            return key[0]
+        else:
+            return key
+
+    def to_yaml(self):
+        import yaml
+        return yaml.dump(self.store)
+
+    def to_opts(self):
+        out = self.store['sift']
+        out['imf_opts'] = self.store['imf']
+        out['imf_opts']['envelope_opts'] = self.store['envelope']
+        out['imf_opts']['envelope_opts']['extrema_opts'] = self.store['extrema']
+        out['imf_opts']['envelope_opts']['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
+        out['imf_opts']['envelope_opts']['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
+        return out
+
+
+def get_config(siftname='sift'):
+    """
+    Helper function for specifying config objects specifying parameters to be
+    used in a sift. The functions used during the sift areinspected
+    automatically and default values are populated into a nested dictionary
+    which can be modified and used as input to one of the sift functions.
+
+    Parameters
+    ----------
+    siftname : str
+        Name of the sift function to find configuration from
+
+    Returns
+    -------
+    SiftConfig
+        A modified dictionary containing the sift specification
+
+    Notes
+    -----
+
+    The sift config acts as a nested dictionary which can be modified to
+    specify parameters for different parts of the sift. This is initialised
+    using this function:
+
+    config = emd.sift.get_config()
+
+    The first level of the dictionary contains six sub-dicts configuring
+    different parts of the algorithm:
+
+    config['sift'] - top level sift options, mostly specific to the particular sift algorithm
+    config['imf'] - options for detecting IMFs
+    config['envelope'] - options for upper and lower envelope interpolation
+    config['extrema'] - options for extrema detection
+    config['mag_pad'] - options for y-values of padded extrema at edges
+    config['loc_pad'] - options for x-values of padded extrema at edges
+
+    Specific values can be modified in the dictionary
+
+    config['extrema']['parabolic_extrema'] = True
+
+    or using this shorthand
+
+    config['imf/env_step_factor'] = 1/3
+
+    Finally, the SiftConfig dictionary should be nested before being passed as
+    keyword arguments to a sift function.
+
+    imfs = emd.sift.sift(X, **config.nest())
+
+    """
+
+    # Extrema padding opts are hard-coded for the moment, these run through
+    # np.pad which has a complex signature
+    mag_pad_opts = {'mode': 'median', 'stat_length': 1}
+    loc_pad_opts = {'mode': 'reflect', 'reflect_type': 'odd'}
+
+    # Get defaults for extrema detection and padding
+    extrema_opts = _get_function_opts(get_padded_extrema, ignore=['X', 'mag_pad_opts',
+                                                                  'loc_pad_opts',
+                                                                  'combined_upper_lower'])
+
+    # Get defaults for envelope interpolation
+    envelope_opts = _get_function_opts(interp_envelope, ignore=['X', 'extrema_opts', 'mode'])
+
+    # Get defaults for computing IMFs
+    imf_opts = _get_function_opts(sift.get_next_imf, ignore=['X', 'envelope_opts'])
+
+    # Get defaults for the given sift variant
+    sift_types = ['sift', 'ensemble_sift', 'complete_ensemble_sift',
+                  'mask_sift', 'mask_sift_adaptive', 'mask_sift_specified']
+    if siftname in sift_types:
+        sift_opts = _get_function_opts(getattr(sift, siftname), ignore=['X', 'imf_opts'])
+    else:
+        raise AttributeError('Sift siftname not recognised: please use one of {0}'.format(sift_types))
+
+    sift_opts.update({'max_imfs': 5, 'sift_thresh': 1e-8})
+
+    out = SiftConfig()
+    out['sift'] = sift_opts
+    out['imf'] = imf_opts
+    out['envelope'] = envelope_opts
+    out['extrema'] = extrema_opts
+    out['mag_pad'] = mag_pad_opts
+    out['loc_pad'] = loc_pad_opts
+
+    return out
+
+
+def _get_function_opts(func, ignore=None):
+    """
+    Helper function for inspecting a function and extracting its keyword
+    arguments and their default values
+
+    Parameters
+    ----------
+    func : function
+        handle for the function to be inspected
+    ignore : {None or list}
+        optional list of keyword argument names to be ignored in function
+        signature
+
+    Returns
+    -------
+    dict
+        Dictionary of keyword arguments with keyword keys and default value
+        values.
+
+    """
+
+    if ignore is None:
+        ignore = []
+    import inspect
+    out = {}
+    sig = inspect.signature(func)
+    for p in sig.parameters:
+        if p not in out.keys() and p not in ignore:
+            out[p] = sig.parameters[p].default
+    return out
