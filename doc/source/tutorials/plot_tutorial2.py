@@ -191,7 +191,7 @@ plt.plot( x, 'k' )
 plt.plot( max_locs, max_mag, 'or' )
 plt.plot( min_locs, min_mag, 'ob' )
 plt.legend(['Signal','Maxima','Minima'])
-plt.title('Increased pad width')
+plt.title('Reflected extrema and increased pad width')
 
 
 #%%
