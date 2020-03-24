@@ -68,8 +68,8 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
 
     See Also
     --------
-    emd.sift.sift - calls get_next_imf to extract IMFs
-    emd.interp_envelope - called by get_next_imf to estimate upper and lower amplitude envelopes
+    emd.sift.sift
+    emd.sift.interp_envelope
 
     """
 
@@ -144,7 +144,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
 
     See Also
     --------
-    emd.get_next_imf : Lower level function for extracting IMFs from data.
+    emd.sift.get_next_imf
 
     References
     ----------
@@ -235,9 +235,9 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 
     See Also
     --------
-    emd.sift.ensemble_sift - makes internal use of _sift_with_noise
-    emd.sift.complete_ensemble_sift - makes internal use of _sift_with_noise
-    emd.get_next_imf - called by _sift_with_noise to extract IMFs
+    emd.sift.ensemble_sift
+    emd.sift.complete_ensemble_sift
+    emd.sift.get_next_imf
 
 
     """
@@ -307,7 +307,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 
     See Also
     --------
-    emd.get_next_imf : Lower level function for extracting IMFs from data.
+    emd.sift.get_next_imf
 
     References
     ----------
@@ -394,7 +394,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
     See Also
     --------
-    emd.get_next_imf : Lower level function for extracting IMFs from data.
+    emd.sift.get_next_imf
 
     References
     ----------
@@ -498,9 +498,8 @@ def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
 
     See Also
     --------
-    emd.sift.mask_sift_adaptive - calls get_next_imf_mask internally
-    emd.sift.mask_sift_specified - calls get_next_imf_mask internally
-    emd.get_next_imf - called by get_next_imf_mask to extract imfs
+    emd.sift.mask_sift
+    emd.sift.get_next_imf
 
     """
     if mask_type not in ['all', 'sine', 'cosine']:
@@ -639,6 +638,11 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
     >> mask_freqs = np.array([.4,.2,.1,.05,.025,0])
     >> mask_amps = np.array([2,2,1,1,.5,.5])
     >> imf = emd.sift.mask_sift(X, mask_freqs=mask_freqs, mask_amp=mask_amps, mask_amp_mode='abs')
+
+    See Also
+    --------
+    emd.sift.get_next_imf
+    emd.sift.get_next_imf_mask
 
     References
     ----------
