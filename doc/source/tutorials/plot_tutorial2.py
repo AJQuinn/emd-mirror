@@ -1,161 +1,296 @@
 """
-Running a Holospectrum
-======================
-This tutorial shows how we can compute a holospectrum to characterise the distribution of power in a signal as a function of both frequency of the carrier wave and the frequency of any amplitude modulations
+Configuring the SIFT
+====================
+Here we look at how to customise the different parts of the sift algorithm.
+There are many options which can be customised from top level sift parameters
+all the way down to extrema detection.
 
 """
 
 #%%
-# Simulating and exploring amplitude modulations
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# First of all, we import EMD alongside numpy and matplotlib. We will also use
-# scipy's ndimage module to smooth our results for visualisation later.
+# Lets make a simulated signal to get started.
 
-import matplotlib.pyplot as plt
-from scipy import ndimage
-import numpy as np
 import emd
+import numpy as np
+import matplotlib.pyplot as plt
+
+sample_rate = 1000
+seconds = 10
+num_samples = sample_rate*seconds
+time_vect = np.linspace(0, seconds, num_samples)
+freq = 5
+
+# Change extent of deformation from sinusoidal shape [-1 to 1]
+nonlinearity_deg = .25
+
+# Change left-right skew of deformation [-pi to pi]
+nonlinearity_phi = -np.pi/4
+
+# Compute the signal
+x = emd.utils.abreu2010( freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds )
+x += np.cos( 2*np.pi*1*time_vect )
+
 
 #%%
-# First we create a simulated signal to analyse. This signal will be composed
-# of a  linear trend and two oscillations, each with a different amplitude
-# modulation.
+# The SiftConfig object
+# ^^^^^^^^^^^^^^^^^^^^^
+# EMD can create a config dictionary which contains all the options that can be
+# customised for a given sift function. This can be created using the
+# get_config function in the sift submodule. Lets import emd and create the
+# config for a standard sift - we can view the options by calling print on the
+# config.
+#
+# The SiftConfig dictionary contains all the arguments for  functions that
+# are used in the sift algorithm.
+#
+# - "sift" contains arguments for the high level sift functions such as ``emd.sift.sift`` or ``emd.sift.ensemble_sift``
+# - "imf" contains arguments for ``emd.sift.get_next_imf``
+# - "envelope" contains arguments for ``emd.sift.interpolate_envelope``
+# - "extrema", "mag_pad" and  "loc_pad" have arguments for extrema detection and padding
 
-seconds = 60
-sample_rate = 200
-t = np.linspace(0,seconds,seconds*sample_rate)
-
-# First we create a slow 4.25Hz oscillation with a 0.5Hz amplitude modulation
-slow = np.sin( 2*np.pi*5*t ) * (.5+(np.cos( 2*np.pi*.5*t)/2))
-
-# Second, we create a faster 37Hz oscillation that is amplitude modulated by the first.
-fast = .5*np.sin( 2*np.pi*37*t ) * ( slow+(.5+(np.cos( 2*np.pi*.5*t)/2)) )
-
-# We create our signal by summing the oscillation and adding some noise
-x = slow+fast + np.random.randn(*t.shape)*.1
-
-# Plot the first 5 seconds of data
-plt.figure(figsize=(10,2))
-plt.plot(t[:sample_rate*5],x[:sample_rate*5],'k')
+config = emd.sift.get_config('sift')
+print(config)
 
 #%%
-# Next we run a simple sift with a cubic spline interpolation and estimate the
-# instantaneous frequency statistics from it using the Normalised Hilbert
-# Transform
+# These arguments are specific for the each type of sift (particularly at the top "sift" level).
 
-#imf = emd.sift.sift(x, interp_method='splrep')
-imf = emd.sift.mask_sift_adaptive(x,sd_thresh=.05,max_imfs=7,first_mask_mode=50/sample_rate,mask_amp_mode='ratio_sig')
-IP,IF,IA = emd.spectra.frequency_stats( imf, sample_rate ,'nht' )
-
-# Visualise the IMFs
-emd.plotting.plot_imfs( imf[:sample_rate*5,:], cmap=True, scale_y=True )
+config = emd.sift.get_config('ensemble_sift')
+print(config)
 
 #%%
-# The first IMF contains the 30Hz oscillation and the fourth captures the 8Hz
-# oscillation. Their amplitude modulations are described in the IA
-# (Instantaneous Amplitude) variable.
-# We can visualise these, note that the amplitude modulations (in red) are
-# themselves oscillatory.
+# The parameters in the config can be changed in the same way we would change
+# the key-value pairs in a nested dictionary or using a h5py inspiried shorthand.
 
-plt.figure(figsize=(10,9))
+# Standard
+config['sift']['nensembles'] = 24
+
+# Shorthard
+config['sift/max_imfs'] = 6
+
+#%%
+# The SiftConfig dictionary contains arguments for functions which are called
+# internally within the different sift implementations. These are stored in a
+# flat dictionary for convenient viewing and editing but must be nested before
+# being passed as arguments into the sift.
+#
+# This is as each stage in the sift takes a dictionary of options for the
+# lower-level functions as a keyword argument. The lower-level options are
+# stored within successively higher-levels so that these can be passed down to
+# the correct functions.
+#
+# We can nest the options for use by calling ``config.get_opts()``.
+
+nested_opts = config.to_opts()
+
+#%%
+# We make use of the yaml package to visualise the nested option tree.
+#
+# We now see that the ``imf`` options are stored within the ``sift`` options
+# under the keyword ``imf_opts``. Similarly the ``envelope`` options are stored
+# within ``imf`` and the ``extrema`` within ``envelope``.
+import yaml
+print(yaml.dump(nested_opts, sort_keys=False))
+
+#%%
+# This nested structure is passed as an unpacked dictionary to our sift function.
+
+config = emd.sift.get_config('sift')
+imf = emd.sift.sift(x, **config.to_opts())
+
+#%%
+# Extrema detection and padding
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#%%
+# The options are split into six types. Starting from the lowest level, extrema
+# detection and padding in emd is implemented in the ``emd.sift.find_extrema``
+# function. This is a simple function which identifies extrema using the
+# scipy.signal argrelmin and argrelmax functions.
+
+max_locs, max_mag = emd.sift.find_extrema( x )
+min_locs, min_mag = emd.sift.find_extrema( x, ret_min=True )
+
+plt.figure(figsize=(12,3))
+plt.plot( x, 'k' )
+plt.plot( max_locs, max_mag, 'or' )
+plt.plot( min_locs, min_mag, 'ob' )
+plt.legend(['Signal','Maxima','Minima'])
+
+
+#%%
+# Extrema padding is used to stablise the envelope at the edges of the
+# time-series. The ``emd.sift.get_padded_extrema`` function identifies and pads
+# extrema in a time-series. This calls the ``emd.sift.find_extrema`` internally.
+
+max_locs, max_mag = emd.sift.get_padded_extrema( x )
+min_locs, min_mag = emd.sift.get_padded_extrema( -x )
+min_mag = -min_mag
+
+plt.figure(figsize=(12,3))
+plt.plot( x, 'k' )
+plt.plot( max_locs, max_mag, 'or' )
+plt.plot( min_locs, min_mag, 'ob' )
+plt.legend(['Signal','Maxima','Minima'])
+
+#%%
+
+
+
+#%%
+# The extrema detection and padding arguments are specified in the config dict
+# under the extrema, mag_pad and loc_pad keywords. These are passed directly
+# into ``emd.sift.get_padded_extrema`` when running the sift.
+#
+# The padding is controlled by a build in numpy function ``np.pad``. The
+# ``mag_pad`` and ``loc_pad`` dictionaries are passed into np.pad to define the
+# padding in the y-axis (extrema magnitude) and x-axis (extrema time-point)
+# respectively. Note that ``np.pad`` takes a mode as a positional orgument -
+# this must be included as a keyword argument here.
+#
+# Lets try customising the extrema padding. First we get the 'extrema' options
+# from a nested config then try changing a couple of options
+
+ext_opts = config.to_opts('extrema')
+
+# The default options
+max_locs, max_mag = emd.sift.get_padded_extrema( x, **ext_opts )
+min_locs, min_mag = emd.sift.get_padded_extrema( -x, **ext_opts )
+min_mag = -min_mag
+
+plt.figure(figsize=(12,12))
+
+plt.subplot(311)
+plt.plot( x, 'k' )
+plt.plot( max_locs, max_mag, 'or' )
+plt.plot( min_locs, min_mag, 'ob' )
+plt.legend(['Signal','Maxima','Minima'])
+plt.title('Default')
+
+# Increase the pad width to 5 extrema
+ext_opts['pad_width'] = 5
+max_locs, max_mag = emd.sift.get_padded_extrema( x, **ext_opts )
+min_locs, min_mag = emd.sift.get_padded_extrema( -x, **ext_opts )
+min_mag = -min_mag
+
+plt.subplot(312)
+plt.plot( x, 'k' )
+plt.plot( max_locs, max_mag, 'or' )
+plt.plot( min_locs, min_mag, 'ob' )
+plt.legend(['Signal','Maxima','Minima'])
+plt.title('Increased pad width')
+
+# Change the y-axis padding to 'reflect' rather than 'median'
+ext_opts['mag_pad_opts']['mode'] = 'reflect'
+del ext_opts['mag_pad_opts']['stat_length']
+max_locs, max_mag = emd.sift.get_padded_extrema( x, **ext_opts )
+min_locs, min_mag = emd.sift.get_padded_extrema( -x, **ext_opts )
+min_mag = -min_mag
+
+plt.subplot(313)
+plt.plot( x, 'k' )
+plt.plot( max_locs, max_mag, 'or' )
+plt.plot( min_locs, min_mag, 'ob' )
+plt.legend(['Signal','Maxima','Minima'])
+plt.title('Increased pad width')
+
+
+#%%
+# Envelope interpolation
+# ^^^^^^^^^^^^^^^^^^^^^^
+
+#%%
+# Once extrema have been detected the maxima and minima are interpolated to
+# create an upper and lower envelope. This interpolation is performed with
+# ``emd.sift.interp_envlope`` and the options in the ``envelope`` section of
+# the config.
+#
+# This interpolation starts with the padded extrema from the previous section
+# so we will take the envelope and extrema options from the config object
+
+env_opts = config.to_opts('envelope')
+
+upper_env = emd.utils.interp_envelope( x, mode='upper', **env_opts )
+lower_env = emd.utils.interp_envelope( x, mode='lower', **env_opts )
+avg_env = (upper_env+lower_env) / 2
+
+plt.figure(figsize=(12,6))
 plt.subplot(211)
-plt.plot(t[:sample_rate*6],imf[:sample_rate*6,0],'k')
-plt.plot(t[:sample_rate*6],IA[:sample_rate*6,0],'r',linewidth=2)
-plt.legend(['IMF1','IMF1-Instantaneous Amplitude'],fontsize=14)
+plt.plot( x, 'k' )
+plt.plot( upper_env, 'r' )
+plt.plot( lower_env, 'b' )
+plt.plot( avg_env, 'g')
+plt.legend(['Signal','Maxima','Upper Envelope','Minima','Lower Envelope'])
+
+# Plot the signal with the average of the upper and lower envelopes subtracted.
 plt.subplot(212)
-plt.plot(t[:sample_rate*6],imf[:sample_rate*6,3],'k')
-plt.plot(t[:sample_rate*6],IA[:sample_rate*6,3],'r',linewidth=2)
-plt.legend(['IMF4','IMF4-Instantaneous Amplitude'],fontsize=14)
-plt.xlabel('Time')
+plt.plot( x-avg_env, 'k' )
+plt.legend(['Signal-Average Envelope'])
+
 
 #%%
-# We can describe the frequency content of these amplitude modulation signal
-# with another EMD. This is called a second level sift which decomposes the
-# instantaneous amplitude of each first level IMF with an additional set of
-# IMFs.
-
-# Helper function for the second level sift
-def mask_sift_second_layer( IA, masks, sift_args={} ):
-    imf2 = np.zeros( (IA.shape[0],IA.shape[1],sift_args['max_imfs']))
-    for ii in range(IA.shape[1]):
-        tmp = emd.sift.mask_sift_specified(IA[:, ii], mask_freqs=masks[ii:], **sift_args )
-        imf2[:, ii, :tmp.shape[1]] = tmp
-    return imf2
-
-# Define sift parameters for the second level
-masks = np.array([25/2**ii for ii in range(12)])/sample_rate
-sift_args = {'mask_amp_mode':'ratio_sig','max_imfs':5,'sd_thresh':.05,'interp_method':'mono_pchip','mask_amp':2}
-
-# Sift the first 5 first level IMFs
-imf2 = mask_sift_second_layer( IA, masks, sift_args=sift_args)
+# IMF Extraction
+# ^^^^^^^^^^^^^^
 
 #%%
-# We can see that the oscillatory content in the amplitude modulations has been
-# described with ad additional set of IMFs. Here we plot the IMFs for the
-# amplitude modulations of IMFs 1 (as plotted above).
+# The next layer is IMF extraction as implemented in ``emd.sift.get_next_imf``.
+# This uses the envelope interpolation and extrema detection to carry out the
+# sifting iterations on a time-series to return a single intrinsic mode
+# function.
+#
+# This is the main function used when implementing novel types of sift. For
+# instance, the ensemble sift uses this ``emd.sift.get_next_imf`` to extract
+# IMFs from many repetitions of the signal with small amounts of noise added.
+# Similarly the mask sift calls ``emd.sift.get_next_imf`` after adding a mask
+# signal to the data.
+#
+# Here we use ``get_next_imf`` to implement a very simple sift. We extract the
+# first IMF, subtract it from the data and then extract the second IMF. We then
+# plot the original signal, the two IMFs and the residual.
 
-emd.plotting.plot_imfs( imf2[:sample_rate*5,0,:], scale_y=True, cmap=True )
+# Adjust the threshold for accepting an IMF
+config['imf/sd_thresh'] = 0.05
+# Extract the options for get_next_imf
+imf_opts = config.to_opts('imf')
+
+imf1,continue_sift = emd.sift.get_next_imf(x[:,None], **imf_opts)
+print(imf1.shape)
+imf2,continue_sift = emd.sift.get_next_imf(x[:,None]-imf1, **imf_opts)
+
+plt.figure(figsize=(12,12))
+plt.subplot(411)
+plt.plot(x,'k')
+plt.ylim(-3,3)
+plt.title('Original Signal')
+
+plt.subplot(412)
+plt.plot(imf1,'k')
+plt.ylim(-3,3)
+plt.title('IMF1')
+
+plt.subplot(413)
+plt.plot(imf2,'k')
+plt.ylim(-3,3)
+plt.title('IMF2')
+
+plt.subplot(414)
+plt.plot(x[:,None]-imf1-imf2,'k')
+plt.ylim(-3,3)
+plt.title('Residual')
 
 #%%
-# We can compute the frequency stats for the second level IMFs using the same
-# options as for the first levels.
-
-IP2,IF2,IA2 = emd.spectra.frequency_stats( imf2, sample_rate ,'nht' )
+# Sifting
+#^^^^^^^^
 
 #%%
-# Finally, we want to visualise our results. We first define two sets of
-# histogram bins, one for the main carrier frequency oscillations and one for
-# the amplitude modulations.
+# Finally, the top-level of options configure the sift itself. These options
+# vary between the type of sift that is being performed and many options don't
+# generalise between different variants of the sift.
+#
+# Here we use the config object to perform a simple sift very similar to the
+# one we implemented in the previous section.
 
-# Carrier frequency histogram definition
-edges,bins = emd.spectra.define_hist_bins(1,100,128,'log')
-# AM frequency histogram definition
-edges2,bins2 = emd.spectra.define_hist_bins(1e-2,32,64,'log')
+config = emd.sift.get_config('sift')
 
-# Compute the 1d Hilbert-Huang transform (power over carrier frequency)
-spec = emd.spectra.hilberthuang_1d( IF, IA, edges )
+imf = emd.sift.sift(x, **config.to_opts())
 
-# Compute the 2d Hilbert-Huang transform (power over time x carrier frequency)
-hht = emd.spectra.hilberthuang( IF, IA, edges )
-shht = ndimage.gaussian_filter( hht, 2 )
-
-# Compute the 3d Holospectrum transform (power over time x carrier frequency x AM frequency)
-# Here we return the time averaged Holospectrum (power over carrier frequency x AM frequency)
-holo = emd.spectra.holospectrum(IF[:,:],IF2[:,:,:],IA2[:,:,:],edges,edges2)
-sholo = holo
-
-#%%
-# We summarise the results with a four part figure:
-# - top-left shows a segment of our original signal
-# - top-right shows the 1D Hilbert-Huang power spectrum
-# - bottom-left shows a segment of the 2D Hilbert-Huang transform
-# - bottom-right shows the Holospectrum summed over the time dimension
-
-plt.figure(figsize=(16,10))
-
-# Plot a section of the time-course
-plt.axes([.1,.55,.6,.4])
-plt.plot(t[:sample_rate*5],x[:sample_rate*5],'k',linewidth=1)
-plt.xlim(0,5)
-plt.ylim(-2.5,2.5)
-
-# Plot a section of the time-course
-plt.axes([.75,.55,.225,.4])
-plt.plot(bins,spec)
-
-# Plot a section of the Hilbert-Huang transform
-plt.axes([.1,.1,.6,.4])
-plt.pcolormesh(t[:sample_rate*5],bins,shht[:,:sample_rate*5],cmap='ocean_r')
-plt.yscale('log')
-
-# Plot a the Holospectrum
-plt.axes([.75,.1,.225,.4])
-#plt.pcolormesh(bins2,bins,sholo.T,cmap='ocean_r')
-plt.contour(bins2,bins,np.sqrt(sholo.T),48,cmap='ocean_r')
-plt.yscale('log')
-plt.xscale('log')
-plt.plot( (bins2[0],bins2[-1]), (5,5),'grey',linewidth=.5)
-plt.plot( (bins2[0],bins2[-1]), (37,37), 'grey',linewidth=.5)
-plt.plot( (.5,.5), (bins[0],bins[-1]),'grey',linewidth=.5)
-plt.plot( (5,5), (bins[0],bins[-1]),'grey',linewidth=.5)
-
+emd.plotting.plot_imfs(imf,cmap=True,scale_y=True)
