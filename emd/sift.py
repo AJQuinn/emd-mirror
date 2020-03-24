@@ -1323,7 +1323,13 @@ class SiftConfig(collections.abc.MutableMapping):
         return iter(self.store)
 
     def __str__(self):
-        return '%s %s\n%s' % (self.name, self.__class__, self.to_yaml())
+        out = []
+        for stage in self.store.keys():
+            out.append(stage + ':')
+            for key in self.store[stage].keys():
+                out.append('    {0} : {1}'.format(key, self.store[stage][key]))
+
+        return '%s %s\n%s' % (self.name, self.__class__, '\n'.join(out))
 
     def __len__(self):
         return len(self.store)
