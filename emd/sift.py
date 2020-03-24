@@ -1345,14 +1345,33 @@ class SiftConfig(collections.abc.MutableMapping):
         import yaml
         return yaml.dump(self.store, sort_keys=False)
 
-    def to_opts(self):
-        out = self.store['sift']
-        out['imf_opts'] = self.store['imf']
-        out['imf_opts']['envelope_opts'] = self.store['envelope']
-        out['imf_opts']['envelope_opts']['extrema_opts'] = self.store['extrema']
-        out['imf_opts']['envelope_opts']['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
-        out['imf_opts']['envelope_opts']['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
-        return out
+    def to_opts(self, stage='sift'):
+
+        if stage == 'sift':
+            out = self.store['sift']
+            out['imf_opts'] = self.store['imf']
+            out['imf_opts']['envelope_opts'] = self.store['envelope']
+            out['imf_opts']['envelope_opts']['extrema_opts'] = self.store['extrema']
+            out['imf_opts']['envelope_opts']['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
+            out['imf_opts']['envelope_opts']['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
+        elif stage == 'imf':
+            out = self.store['imf']
+            out['envelope_opts'] = self.store['envelope']
+            out['envelope_opts']['extrema_opts'] = self.store['extrema']
+            out['envelope_opts']['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
+            out['envelope_opts']['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
+        elif stage == 'envelope':
+            out = self.store['envelope']
+            out['extrema_opts'] = self.store['extrema']
+            out['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
+            out['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
+        elif stage == 'extrema':
+            out = self.store['extrema']
+            out['mag_pad_opts'] = self.store['mag_pad']
+            out['loc_pad_opts'] = self.store['loc_pad']
+        else:
+            raise TypeError("stage ({}) not recognised, use 'sift', 'imf', 'envelope' or 'extrema'".format(stage))
+        return out.copy()
 
 
 def get_config(siftname='sift'):
