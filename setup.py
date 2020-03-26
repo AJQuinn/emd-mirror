@@ -7,8 +7,8 @@ from setuptools import setup
 scripts = []
 
 name = 'emd'
-version = '0.1'
-release = '0.1.0'
+version = '0.2'
+release = '0.2.0'
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
