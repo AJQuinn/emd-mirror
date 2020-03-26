@@ -10,9 +10,10 @@ all the way down to extrema detection.
 #%%
 # Lets make a simulated signal to get started.
 
-import emd
+import yaml
 import numpy as np
 import matplotlib.pyplot as plt
+import emd
 
 sample_rate = 1000
 seconds = 10
@@ -27,8 +28,8 @@ nonlinearity_deg = .25
 nonlinearity_phi = -np.pi/4
 
 # Compute the signal
-x = emd.utils.abreu2010( freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds )
-x += np.cos( 2*np.pi*1*time_vect )
+x = emd.utils.abreu2010(freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds)
+x += np.cos(2*np.pi*1*time_vect)
 
 
 #%%
@@ -88,7 +89,6 @@ nested_opts = config.to_opts()
 # We now see that the ``imf`` options are stored within the ``sift`` options
 # under the keyword ``imf_opts``. Similarly the ``envelope`` options are stored
 # within ``imf`` and the ``extrema`` within ``envelope``.
-import yaml
 print(yaml.dump(nested_opts, sort_keys=False))
 
 #%%
@@ -107,14 +107,14 @@ imf = emd.sift.sift(x, **config.to_opts())
 # function. This is a simple function which identifies extrema using the
 # scipy.signal argrelmin and argrelmax functions.
 
-max_locs, max_mag = emd.sift.find_extrema( x )
-min_locs, min_mag = emd.sift.find_extrema( x, ret_min=True )
+max_locs, max_mag = emd.sift.find_extrema(x)
+min_locs, min_mag = emd.sift.find_extrema(x, ret_min=True)
 
-plt.figure(figsize=(12,3))
-plt.plot( x, 'k' )
-plt.plot( max_locs, max_mag, 'or' )
-plt.plot( min_locs, min_mag, 'ob' )
-plt.legend(['Signal','Maxima','Minima'])
+plt.figure(figsize=(12, 3))
+plt.plot(x, 'k')
+plt.plot(max_locs, max_mag, 'or')
+plt.plot(min_locs, min_mag, 'ob')
+plt.legend(['Signal', 'Maxima', 'Minima'])
 
 
 #%%
@@ -122,18 +122,17 @@ plt.legend(['Signal','Maxima','Minima'])
 # time-series. The ``emd.sift.get_padded_extrema`` function identifies and pads
 # extrema in a time-series. This calls the ``emd.sift.find_extrema`` internally.
 
-max_locs, max_mag = emd.sift.get_padded_extrema( x )
-min_locs, min_mag = emd.sift.get_padded_extrema( -x )
+max_locs, max_mag = emd.sift.get_padded_extrema(x)
+min_locs, min_mag = emd.sift.get_padded_extrema(-x)
 min_mag = -min_mag
 
-plt.figure(figsize=(12,3))
-plt.plot( x, 'k' )
-plt.plot( max_locs, max_mag, 'or' )
-plt.plot( min_locs, min_mag, 'ob' )
-plt.legend(['Signal','Maxima','Minima'])
+plt.figure(figsize=(12, 3))
+plt.plot(x, 'k')
+plt.plot(max_locs, max_mag, 'or')
+plt.plot(min_locs, min_mag, 'ob')
+plt.legend(['Signal', 'Maxima', 'Minima'])
 
 #%%
-
 
 
 #%%
@@ -153,44 +152,44 @@ plt.legend(['Signal','Maxima','Minima'])
 ext_opts = config.to_opts('extrema')
 
 # The default options
-max_locs, max_mag = emd.sift.get_padded_extrema( x, **ext_opts )
-min_locs, min_mag = emd.sift.get_padded_extrema( -x, **ext_opts )
+max_locs, max_mag = emd.sift.get_padded_extrema(x, **ext_opts)
+min_locs, min_mag = emd.sift.get_padded_extrema(-x, **ext_opts)
 min_mag = -min_mag
 
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(12, 12))
 
 plt.subplot(311)
-plt.plot( x, 'k' )
-plt.plot( max_locs, max_mag, 'or' )
-plt.plot( min_locs, min_mag, 'ob' )
-plt.legend(['Signal','Maxima','Minima'])
+plt.plot(x, 'k')
+plt.plot(max_locs, max_mag, 'or')
+plt.plot(min_locs, min_mag, 'ob')
+plt.legend(['Signal', 'Maxima', 'Minima'])
 plt.title('Default')
 
 # Increase the pad width to 5 extrema
 ext_opts['pad_width'] = 5
-max_locs, max_mag = emd.sift.get_padded_extrema( x, **ext_opts )
-min_locs, min_mag = emd.sift.get_padded_extrema( -x, **ext_opts )
+max_locs, max_mag = emd.sift.get_padded_extrema(x, **ext_opts)
+min_locs, min_mag = emd.sift.get_padded_extrema(-x, **ext_opts)
 min_mag = -min_mag
 
 plt.subplot(312)
-plt.plot( x, 'k' )
-plt.plot( max_locs, max_mag, 'or' )
-plt.plot( min_locs, min_mag, 'ob' )
-plt.legend(['Signal','Maxima','Minima'])
+plt.plot(x, 'k')
+plt.plot(max_locs, max_mag, 'or')
+plt.plot(min_locs, min_mag, 'ob')
+plt.legend(['Signal', 'Maxima', 'Minima'])
 plt.title('Increased pad width')
 
 # Change the y-axis padding to 'reflect' rather than 'median'
 ext_opts['mag_pad_opts']['mode'] = 'reflect'
 del ext_opts['mag_pad_opts']['stat_length']
-max_locs, max_mag = emd.sift.get_padded_extrema( x, **ext_opts )
-min_locs, min_mag = emd.sift.get_padded_extrema( -x, **ext_opts )
+max_locs, max_mag = emd.sift.get_padded_extrema(x, **ext_opts)
+min_locs, min_mag = emd.sift.get_padded_extrema(-x, **ext_opts)
 min_mag = -min_mag
 
 plt.subplot(313)
-plt.plot( x, 'k' )
-plt.plot( max_locs, max_mag, 'or' )
-plt.plot( min_locs, min_mag, 'ob' )
-plt.legend(['Signal','Maxima','Minima'])
+plt.plot(x, 'k')
+plt.plot(max_locs, max_mag, 'or')
+plt.plot(min_locs, min_mag, 'ob')
+plt.legend(['Signal', 'Maxima', 'Minima'])
 plt.title('Reflected extrema and increased pad width')
 
 
@@ -209,21 +208,21 @@ plt.title('Reflected extrema and increased pad width')
 
 env_opts = config.to_opts('envelope')
 
-upper_env = emd.utils.interp_envelope( x, mode='upper', **env_opts )
-lower_env = emd.utils.interp_envelope( x, mode='lower', **env_opts )
+upper_env = emd.utils.interp_envelope(x, mode='upper', **env_opts)
+lower_env = emd.utils.interp_envelope(x, mode='lower', **env_opts)
 avg_env = (upper_env+lower_env) / 2
 
-plt.figure(figsize=(12,6))
+plt.figure(figsize=(12, 6))
 plt.subplot(211)
-plt.plot( x, 'k' )
-plt.plot( upper_env, 'r' )
-plt.plot( lower_env, 'b' )
-plt.plot( avg_env, 'g')
-plt.legend(['Signal','Maxima','Upper Envelope','Minima','Lower Envelope'])
+plt.plot(x, 'k')
+plt.plot(upper_env, 'r')
+plt.plot(lower_env, 'b')
+plt.plot(avg_env, 'g')
+plt.legend(['Signal', 'Maxima', 'Upper Envelope', 'Minima', 'Lower Envelope'])
 
 # Plot the signal with the average of the upper and lower envelopes subtracted.
 plt.subplot(212)
-plt.plot( x-avg_env, 'k' )
+plt.plot(x-avg_env, 'k')
 plt.legend(['Signal-Average Envelope'])
 
 
@@ -252,29 +251,29 @@ config['imf/sd_thresh'] = 0.05
 # Extract the options for get_next_imf
 imf_opts = config.to_opts('imf')
 
-imf1,continue_sift = emd.sift.get_next_imf(x[:,None], **imf_opts)
+imf1, continue_sift = emd.sift.get_next_imf(x[:, None], **imf_opts)
 print(imf1.shape)
-imf2,continue_sift = emd.sift.get_next_imf(x[:,None]-imf1, **imf_opts)
+imf2, continue_sift = emd.sift.get_next_imf(x[:, None]-imf1, **imf_opts)
 
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(12, 12))
 plt.subplot(411)
-plt.plot(x,'k')
-plt.ylim(-3,3)
+plt.plot(x, 'k')
+plt.ylim(-3, 3)
 plt.title('Original Signal')
 
 plt.subplot(412)
-plt.plot(imf1,'k')
-plt.ylim(-3,3)
+plt.plot(imf1, 'k')
+plt.ylim(-3, 3)
 plt.title('IMF1')
 
 plt.subplot(413)
-plt.plot(imf2,'k')
-plt.ylim(-3,3)
+plt.plot(imf2, 'k')
+plt.ylim(-3, 3)
 plt.title('IMF2')
 
 plt.subplot(414)
-plt.plot(x[:,None]-imf1-imf2,'k')
-plt.ylim(-3,3)
+plt.plot(x[:, None]-imf1-imf2, 'k')
+plt.ylim(-3, 3)
 plt.title('Residual')
 
 #%%
@@ -293,4 +292,4 @@ config = emd.sift.get_config('sift')
 
 imf = emd.sift.sift(x, **config.to_opts())
 
-emd.plotting.plot_imfs(imf,cmap=True,scale_y=True)
+emd.plotting.plot_imfs(imf, cmap=True, scale_y=True)
