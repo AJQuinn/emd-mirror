@@ -31,8 +31,8 @@ nonlinearity_deg = .25
 nonlinearity_phi = -np.pi/4
 
 # Compute the signal
-x = emd.utils.abreu2010( freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds )
-x += np.cos( 2*np.pi*1*time_vect )
+x = emd.utils.abreu2010(freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds)
+x += np.cos(2 * np.pi * 1 * time_vect)
 
 #%%
 # We can then estimate the IMFs for the signal:
@@ -49,7 +49,7 @@ IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
 #%%
 # From the instantaneous frequency and amplitude, we can compute the Hilbert-Huang spectrum:
 
-freq_edges,freq_bins = emd.spectra.define_hist_bins(0, 10, 100)
+freq_edges, freq_bins = emd.spectra.define_hist_bins(0, 10, 100)
 hht = emd.spectra.hilberthuang(IF, IA, freq_edges)
 
 #%%
@@ -58,7 +58,7 @@ hht = emd.spectra.hilberthuang(IF, IA, freq_edges)
 #
 # we can now plot some summary information, first the IMFs:
 
-emd.plotting.plot_imfs( imf, scale_y=True, cmap=True )
+emd.plotting.plot_imfs(imf, scale_y=True, cmap=True)
 
 #%%
 #
@@ -67,7 +67,7 @@ emd.plotting.plot_imfs( imf, scale_y=True, cmap=True )
 plt.figure(figsize=(10, 6))
 
 plt.subplot(1, 1, 1)
-plt.pcolormesh(time_vect[:5000], freq_bins, hht[:,:5000], cmap='ocean_r')
+plt.pcolormesh(time_vect[:5000], freq_bins, hht[:, :5000], cmap='ocean_r')
 plt.ylabel('Frequency (Hz)')
 plt.xlabel('Time (secs)')
 
