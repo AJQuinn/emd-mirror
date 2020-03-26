@@ -35,7 +35,7 @@ x = emd.utils.abreu2010(freq, nonlinearity_deg, nonlinearity_phi, sample_rate, s
 x += np.cos(2 * np.pi * 1 * time_vect)
 
 # Visualise the time-series for analysis
-plt.figure(figsize=(12,4))
+plt.figure(figsize=(12, 4))
 plt.plot(x)
 
 #%%
