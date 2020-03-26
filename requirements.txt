@@ -11,4 +11,4 @@ numpydoc
 coverage
 pytest
 pytest-cov
-pyyaml
+pyyaml>=5.1
