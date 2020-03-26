@@ -34,6 +34,10 @@ nonlinearity_phi = -np.pi/4
 x = emd.utils.abreu2010( freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds )
 x += np.cos( 2*np.pi*1*time_vect )
 
+# Visualise the time-series for analysis
+plt.figure(figsize=(12,4))
+plt.plot(x)
+
 #%%
 # We can then estimate the IMFs for the signal:
 
