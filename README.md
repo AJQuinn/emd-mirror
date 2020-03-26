@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.com/OHBA-analysis/emd.svg?branch=master)](https://travis-ci.com/OHBA-analysis/emd)
-
 A python package for Empirical Mode Decomposition and related spectral analyses.
+
+Please note that this project is in active development for the moment - the API may change relatively quickly between releases!
 
 # Installation
 
@@ -13,7 +13,7 @@ pip install emd
 or clone and install the source code.
 
 ```
-git clone https://gitlab.com/ajquinn/emd.git
+git clone https://gitlab.com/emd-dev/emd.git
 cd emd
 pip install .
 ```
@@ -23,7 +23,7 @@ on numpy and scipy for computation and matplotlib for visualisation.
 
 # Quick Start
 
-Full documentation can be found at https://emd.readthedocs.org
+Full documentation can be found at https://emd.readthedocs.org and development/issue tracking at gitlab.com/emd-dev/emd
 
 Import emd
 
