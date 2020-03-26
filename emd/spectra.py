@@ -391,7 +391,7 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
         Vector of frequency bins for amplitude-modulation frequencies
     mode : {'energy','amplitude'}
          Flag indicating whether to sum the energy or amplitudes (Default value = 'energy')
-    return_time : {'sum','mean',False}
+    squash_time : {'sum','mean',False}
          Flag indicating whether to marginalise over the time dimension
          (Default value = 'sum')
 
@@ -402,8 +402,8 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
 
     Notes
     -----
-    output will be a 3D [samples x am_freq x carrier_freq] array if
-    return_time is True else a 2D [ am_freq x carrier_freq ] array is returned
+    Output will be a 3D [samples x am_freq x carrier_freq] array if squash_time
+    is False and a 2D [ am_freq x carrier_freq ] array if squash_time is true.
 
 
     References
@@ -558,9 +558,9 @@ def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
     specs = np.zeros((len(freq_edges) - 1, infr.shape[1]))
 
     # Remove values outside the bin range
-    infr = infr.copy()
-    infr[infr < freq_edges[0]] = np.nan
-    infr[infr > freq_edges[-1]] = np.nan
+    infr = infr.copy()  # Don't work in place on input freqs
+    outside_inds = (infr < freq_edges[0]) + (infr > freq_edges[-1])
+    infr[outside_inds] = np.nan
 
     finds = np.digitize(infr, freq_edges)
 
