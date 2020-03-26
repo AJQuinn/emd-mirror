@@ -394,23 +394,32 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     # get diff to next cycle for each cycle
     for ii in range(1, cycles.max() + 1):
 
-        di = cycles[np.where(cycles == ii)[0][-1] + 1][0] - ii
-
-        if di < 1 or ii == 1:
-            if chn is not None:
-                if len(chn) >= min_chain:
+        if chn is None:
+            chn = [ii]  # Start new chain if there isn't one
+        else:
+            # We're currently in a chain - test whether current cycle is directly after previous cycle
+            if cycles[np.where(cycles == ii)[0][0] - 1][0] == 0:
+                # Start of new chain - store previous chain and start new one
+                if len(chn) >= min_chain:  # Drop chains which are too short
                     if drop_first > 0:
                         chn = chn[drop_first:]
                     if drop_last > 0:
                         chn = chn[:-drop_last]
-
                     chains.append(chn)
-            # Start New chain
-            chn = [ii]
-        else:
-            # Extend current chain
-            chn.append(ii)
+                # Initialise next chain
+                chn = [ii]
 
+            else:
+                # Continuation of previous chain
+                chn.append(ii)
+
+    # If we're at the end - store what we have
+    if len(chn) >= min_chain:  # Drop chains which are too short
+        if drop_first > 0:
+            chn = chn[drop_first:]
+        if drop_last > 0:
+            chn = chn[:-drop_last]
+        chains.append(chn)
     return chains
 
 

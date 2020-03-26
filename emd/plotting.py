@@ -43,7 +43,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
         ax.spines[tag].set_visible(False)
     ax.plot((time_vect[0], time_vect[-1]), (0, 0), color=[.5, .5, .5])
     ax.plot(time_vect, imfs.sum(axis=1), 'k')
-    ax.tick_params(axis='x', labelbottom='off')
+    ax.tick_params(axis='x', labelbottom=False)
     ax.set_xlim(time_vect[0], time_vect[-1])
     ax.set_ylabel('Signal', rotation=0, labelpad=10)
 
@@ -70,7 +70,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
         ax.set_ylabel('IMF {0}'.format(ii), rotation=0, labelpad=10)
 
         if ii < nplots:
-            ax.tick_params(axis='x', labelbottom='off')
+            ax.tick_params(axis='x', labelbottom=False)
         if freqs is not None:
             ax.set_title(freqs[ii - 1], fontsize=8)
 

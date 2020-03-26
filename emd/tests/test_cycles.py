@@ -2,7 +2,6 @@
 import unittest
 
 import numpy as np
-from scipy import signal
 
 
 class test_cycles(unittest.TestCase):
@@ -10,11 +9,16 @@ class test_cycles(unittest.TestCase):
     def setUp(self):
         self.sample_rate = 1000
         self.seconds = 2
-        self.time_vect = np.linspace(0, self.seconds, self.sample_rate * self.seconds)
+        self.pad_time = .1
+        nsamples = int((self.sample_rate * self.seconds) + (2*self.pad_time*self.sample_rate))
+        self.time_vect = np.linspace(-self.pad_time,
+                                     self.seconds+self.pad_time,
+                                     nsamples)
         self.signal = np.sin(2 * np.pi * 10 * self.time_vect)[:, None]
 
-    def cycle_generator(self, f, phase=np.pi, distort=None):
+    def cycle_generator(self, f, phase=0, distort=None):
         from ..cycles import get_cycle_inds
+        from ..spectra import frequency_stats
 
         x = np.sin(2 * np.pi * f * self.time_vect + phase)[:, None]
 
@@ -23,16 +27,16 @@ class test_cycles(unittest.TestCase):
             x[distort - 25:distort + 25, 0] += np.linspace(-.1, .1, 50)
 
         # This is a perfect sin so we can use normal hilbert
-        IP = np.angle(signal.hilbert(x, axis=0)) + np.pi
+        IP, IF, IA = frequency_stats(x, self.sample_rate, 'hilbert')
         # Find good cycles
-        cycles = get_cycle_inds(IP)[:, 0]
+        cycles = get_cycle_inds(IP, return_good=True)[:, 0]
 
         return cycles
 
     def test_simple_cycle_counting(self):
 
         # Test basic cycle detection
-        uni_cycles = np.unique(self.cycle_generator(4, phase=1.5 * np.pi))
+        uni_cycles = np.unique(self.cycle_generator(4))
         assert(np.all(uni_cycles == np.arange(9)))
 
         uni_cycles = np.unique(self.cycle_generator(5, phase=1.5 * np.pi))
@@ -41,17 +45,17 @@ class test_cycles(unittest.TestCase):
     def test_cycle_count_with_bad_start_and_end(self):
 
         # Test basic cycle detection
-        cycles = self.cycle_generator(4, phase=1.5)
+        cycles = self.cycle_generator(4, phase=0)
         uni_cycles = np.unique(cycles)
-        assert(np.all(uni_cycles == np.arange(8)))
+        assert(np.all(uni_cycles == np.arange(9)))
         assert(cycles[50] == 0)
-        assert(cycles[1950] == 0)
+        assert(cycles[2150] == 0)
 
-        cycles = self.cycle_generator(5, phase=1.5)
+        cycles = self.cycle_generator(5, phase=0)
         uni_cycles = np.unique(cycles)
-        assert(np.all(uni_cycles == np.arange(10)))
+        assert(np.all(uni_cycles == np.arange(11)))
         assert(cycles[50] == 0)
-        assert(cycles[1950] == 0)
+        assert(cycles[2150] == 0)
 
     def test_cycle_count_with_bad_in_middle(self):
 
@@ -63,29 +67,29 @@ class test_cycles(unittest.TestCase):
     def test_cycle_chain(self):
         from ..cycles import get_cycle_chain
 
-        cycles = self.cycle_generator(4, phase=1.5 * np.pi)
+        cycles = self.cycle_generator(4, phase=0)
         chain = get_cycle_chain(cycles)
-        assert(np.all(chain == np.array([1, 2, 3, 4, 5, 6, 7])))
+        assert(np.all(chain[0] == np.array([1, 2, 3, 4, 5, 6, 7, 8])))
 
-        cycles = self.cycle_generator(4, phase=1.5 * np.pi, distort=1100)
+        cycles = self.cycle_generator(4, phase=0, distort=1200)
         chain = get_cycle_chain(cycles)
-        assert(np.all(chain == np.array([[1, 2, 3], [4, 5, 6]])))
+        assert(np.all(chain == [[1, 2, 3, 4], [5, 6, 7]]))
 
         chain = get_cycle_chain(cycles, drop_first=True)
-        assert(np.all(chain == np.array([[2, 3], [5, 6]])))
+        assert(np.all(chain == np.array([[2, 3, 4], [6, 7]])))
 
         chain = get_cycle_chain(cycles, drop_last=True)
-        assert(np.all(chain == np.array([[1, 2], [4, 5]])))
+        assert(np.all(chain == np.array([[1, 2, 3], [5, 6]])))
 
         chain = get_cycle_chain(cycles, drop_first=True, drop_last=True)
-        assert(np.all(chain == np.array([[2], [5]])))
+        assert(np.all(chain == np.array([[2, 3], [6]])))
 
-        cycles = self.cycle_generator(4, phase=1.5 * np.pi, distort=800)
+        cycles = self.cycle_generator(4, phase=0, distort=800)
         chain = get_cycle_chain(cycles)
-        assert(np.all(chain == np.array([[1, 2], [3, 4, 5, 6]])))
+        assert(np.all(chain == np.array([[1, 2], [3, 4, 5, 6, 7]])))
 
         chain = get_cycle_chain(cycles, min_chain=3)
-        assert(np.all(chain == np.array([3, 4, 5, 6])))
+        assert(np.all(chain == np.array([3, 4, 5, 6, 7])))
 
 
 class test_kdt_match(unittest.TestCase):

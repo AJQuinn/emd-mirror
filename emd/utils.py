@@ -21,8 +21,8 @@ wrap_phase
 """
 
 import numpy as np
-from scipy import interpolate as interp
-from scipy import signal
+
+from .sift import interp_envelope
 
 
 def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
@@ -100,186 +100,6 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
         X = X[:, :, 0]
 
     return X
-
-
-def get_padded_extrema(X, combined_upper_lower=False):
-    """
-    Return a set of extrema from a signal including padded extrema at the edges
-    of the signal.
-
-    Parameters
-    ----------
-    X : ndarray
-        Input signal
-    combined_upper_lower : bool
-         Flag to indicate whether both upper and lower extrema should be
-         considered (Default value = False)
-
-    Returns
-    -------
-    max_locs : ndarray
-        location of extrema in samples
-    max_pks : ndarray
-        Magnitude of each extrema
-
-
-    """
-
-    if X.ndim == 2:
-        X = X[:, 0]
-
-    if combined_upper_lower:
-        max_locs, max_pks = find_extrema(np.abs(X))
-    else:
-        max_locs, max_pks = find_extrema(X)
-
-    # Return nothing we don't have enough extrema
-    if max_locs.size <= 1:
-        return None, None
-
-    # Determine how much padding to use
-    N = 2  # should make this analytic somehow
-    if max_locs.size < N:
-        N = max_locs.size
-
-    # Pad peak locations
-    ret_max_locs = np.pad(max_locs, N, 'reflect', reflect_type='odd')
-
-    # Pad peak magnitudes
-    ret_max_pks = np.pad(max_pks, N, 'median', stat_length=1)
-
-    while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
-        ret_max_locs = np.pad(ret_max_locs, N, 'reflect', reflect_type='odd')
-        ret_max_pks = np.pad(ret_max_pks, N, 'median', stat_length=1)
-
-    return ret_max_locs, ret_max_pks
-
-
-def interp_envelope(X, mode='upper', interp_method='splrep'):
-    """
-    Interpolate the amplitude envelope of a signal.
-
-    Parameters
-    ----------
-    X : ndarray
-        Input signal
-    mode : {'upper','lower','combined'}
-         Flag to set which envelope should be computed (Default value = 'upper')
-    interp_method : {'splrep','pchip','mono_pchip'}
-         Flag to indicate which interpolation method should be used (Default value = 'splrep')
-
-    Returns
-    -------
-    ndarray
-        Interpolated amplitude envelope
-
-
-    """
-
-    if interp_method not in ['splrep', 'mono_pchip', 'pchip']:
-        raise ValueError("Invalid interp_method value")
-
-    if mode == 'upper':
-        locs, pks = get_padded_extrema(X, combined_upper_lower=False)
-    elif mode == 'lower':
-        locs, pks = get_padded_extrema(-X, combined_upper_lower=False)
-    elif mode == 'combined':
-        locs, pks = get_padded_extrema(X, combined_upper_lower=True)
-    else:
-        raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')
-
-    if locs is None:
-        return None
-
-    # Run interpolation on envelope
-    t = np.arange(locs[0], locs[-1])
-    if interp_method == 'splrep':
-        f = interp.splrep(locs, pks)
-        env = interp.splev(t, f)
-    elif interp_method == 'mono_pchip':
-        pchip = interp.PchipInterpolator(locs, pks)
-        env = pchip(t)
-    elif interp_method == 'pchip':
-        pchip = interp.pchip(locs, pks)
-        env = pchip(t)
-
-    t_max = np.arange(locs[0], locs[-1])
-    tinds = np.logical_and((t_max >= 0), (t_max < X.shape[0]))
-
-    env = np.array(env[tinds])
-
-    if env.shape[0] != X.shape[0]:
-        raise ValueError('Envelope length does not match input data {0} {1}'.format(
-            env.shape[0], X.shape[0]))
-
-    if mode == 'lower':
-        return -env
-    else:
-        return env
-
-
-def find_extrema(X, ret_min=False):
-    """
-    Identify extrema within a time-course and reject extrema whose magnitude is
-    below a set threshold.
-
-    Parameters
-    ----------
-    X : ndarray
-       Input signal
-    ret_min : bool
-         Flag to indicate whether maxima (False) or minima (True) should be identified(Default value = False)
-
-    Returns
-    -------
-    locs : ndarray
-        Location of extrema in samples
-    extrema : ndarray
-        Value of each extrema
-
-
-    """
-
-    if ret_min:
-        ind = signal.argrelmin(X, order=1)[0]
-    else:
-        ind = signal.argrelmax(X, order=1)[0]
-
-    # Only keep peaks with magnitude above machine precision
-    if len(ind) / X.shape[0] > 1e-3:
-        good_inds = ~(np.isclose(X[ind], X[ind - 1]) * np.isclose(X[ind], X[ind + 1]))
-        ind = ind[good_inds]
-
-    # if ind[0] == 0:
-    #    ind = ind[1:]
-
-    # if ind[-1] == X.shape[0]:
-    #    ind = ind[:-2]
-
-    return ind, X[ind]
-
-
-def zero_crossing_count(X):
-    """
-    Count the number of zero-crossings within a time-course through
-    differentiation of the sign of the signal.
-
-    Parameters
-    ----------
-    X : ndarray
-        Input array
-
-    Returns
-    -------
-    int
-        Number of zero-crossings
-
-    """
-
-    if X.ndim == 2:
-        X = X[:, None]
-
-    return (np.diff(np.sign(X), axis=0) != 0).sum(axis=0)
 
 
 def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
@@ -383,6 +203,7 @@ def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
     if lock_to not in ['max', 'min']:
         raise ValueError("Invalid lock_to value")
 
+    from .sift import find_extrema
     if lock_to == 'max':
         locs, pks = find_extrema(X, ret_min=False)
     else:
