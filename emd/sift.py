@@ -20,6 +20,7 @@ get_next_imf_mask
 
 
 import logging
+import warnings
 import numpy as np
 import collections
 from scipy import signal
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 # Utilities
 
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
+def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -65,6 +66,8 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
     ----------------
     envelope_opts : dict
         Optional dictionary of keyword arguments to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
 
     See Also
     --------
@@ -90,7 +93,7 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
         if upper is None or lower is None:
             continue_flag = False
             continue_imf = False
-            logger.debug('Finishing sift: IMF has no extrema'.format(niters))
+            logger.debug('Finishing sift: IMF has no extrema')
             continue
 
         # Find local mean
@@ -118,7 +121,8 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}):
 # SIFT implementation
 
 @sift_logger('sift')
-def sift(X, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
+def sift(X, sift_thresh=1e-8, max_imfs=None,
+         imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     original sift algorithm [1]_.
@@ -140,7 +144,11 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
     Other Parameters
     ----------------
     imf_opts : dict
-        Optional dictionary of keyword options to be passed to emd.get_next_imf.
+        Optional dictionary of keyword options to be passed to emd.get_next_imf
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
 
     See Also
     --------
@@ -172,7 +180,10 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
 
     while continue_sift:
 
-        next_imf, continue_sift = get_next_imf(proto_imf, **imf_opts)
+        next_imf, continue_sift = get_next_imf(proto_imf,
+                                               envelope_opts=envelope_opts,
+                                               extrema_opts=extrema_opts,
+                                               **imf_opts)
 
         if layer == 0:
             imf = next_imf
@@ -199,7 +210,8 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
 # Utilities
 
 def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
-                     sift_thresh=1e-8, max_imfs=None, job_ind=1, imf_opts={}):
+                     sift_thresh=1e-8, max_imfs=None, job_ind=1,
+                     imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Helper function for applying white noise to a signal prior to computing the
     sift.
@@ -232,6 +244,10 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
     ----------------
     imf_opts : dict
         Optional dictionary of arguments to be passed to emd.get_next_imf
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
 
     See Also
     --------
@@ -253,13 +269,15 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
         noise = noise * noise_scaling
 
     ensX = X.copy() + noise
-    imf = sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_opts=imf_opts)
+    imf = sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs,
+               imf_opts=imf_opts, envelope_opts=envelope_opts, extrema_opts=extrema_opts)
 
     if noise_mode == 'single':
         return imf
     elif noise_mode == 'flip':
         ensX = X.copy() - noise
-        imf += sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs, imf_opts=imf_opts)
+        imf += sift(ensX, sift_thresh=sift_thresh, max_imfs=max_imfs,
+                    imf_opts=imf_opts, envelope_opts=envelope_opts, extrema_opts=extrema_opts)
         return imf / 2
 
 
@@ -267,7 +285,8 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
-                  nprocesses=1, sift_thresh=1e-8, max_imfs=None, imf_opts={}):
+                  nprocesses=1, sift_thresh=1e-8, max_imfs=None,
+                  imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -304,6 +323,10 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     ----------------
     imf_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_next_imf.
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
 
     See Also
     --------
@@ -334,7 +357,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     p = mp.Pool(processes=nprocesses)
 
     noise = None
-    args = [(X, noise_scaling, noise, noise_mode, sift_thresh, max_imfs, ii, imf_opts)
+    args = [(X, noise_scaling, noise, noise_mode, sift_thresh, max_imfs, ii, imf_opts, envelope_opts, extrema_opts)
             for ii in range(nensembles)]
 
     res = p.starmap(_sift_with_noise, args)
@@ -354,7 +377,8 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 @sift_logger('complete_ensemble_sift')
 def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
-                           sift_thresh=1e-8, max_imfs=None, imf_opts={}):
+                           sift_thresh=1e-8, max_imfs=None,
+                           imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -391,6 +415,10 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     ----------------
     imf_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_next_imf.
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
 
     See Also
     --------
@@ -423,7 +451,8 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     noise = np.random.random_sample((X.shape[0], nensembles)) * noise_scaling
 
     # Do a normal ensemble sift to obtain the first IMF
-    args = [(X, noise_scaling, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_opts)
+    args = [(X, noise_scaling, noise[:, ii, None], noise_mode, sift_thresh,
+             1, ii, imf_opts, envelope_opts, extrema_opts)
             for ii in range(nensembles)]
     res = p.starmap(_sift_with_noise, args)
     imf = np.array([r for r in res]).mean(axis=0)
@@ -436,7 +465,8 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
         proto_imf = X - imf.sum(axis=1)[:, None]
 
-        args = [(proto_imf, None, noise[:, ii, None], noise_mode, sift_thresh, 1, ii, imf_opts)
+        args = [(proto_imf, None, noise[:, ii, None], noise_mode, sift_thresh,
+                1, ii, imf_opts, envelope_opts, extrema_opts)
                 for ii in range(nensembles)]
         res = p.starmap(_sift_with_noise, args)
         next_imf = np.array([r for r in res]).mean(axis=0)
@@ -470,7 +500,8 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
 # Utilities
 
-def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
+def get_next_imf_mask(X, z, amp, mask_type='all',
+                      imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set using the mask sift appraoch. This is
     a helper function used within the more general sifting functions.
@@ -495,6 +526,10 @@ def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
     ----------------
     imf_opts : dict
         Optional dictionary of keyword arguments to be passed to emd.get_next_imf
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
 
     See Also
     --------
@@ -509,16 +544,28 @@ def get_next_imf_mask(X, z, amp, mask_type='all', imf_opts={}):
 
     if mask_type == 'all' or mask_type == 'cosine':
         mask = amp * np.cos(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_c, continue_sift = get_next_imf(X + mask, **imf_opts)
+        next_imf_up_c, continue_sift = get_next_imf(X + mask,
+                                                    envelope_opts=envelope_opts,
+                                                    extrema_opts=extrema_opts,
+                                                    **imf_opts)
         next_imf_up_c -= mask
-        next_imf_down_c, continue_sift = get_next_imf(X - mask, **imf_opts)
+        next_imf_down_c, continue_sift = get_next_imf(X - mask,
+                                                      envelope_opts=envelope_opts,
+                                                      extrema_opts=extrema_opts,
+                                                      **imf_opts)
         next_imf_down_c += mask
 
     if mask_type == 'all' or mask_type == 'sine':
         mask = amp * np.sin(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_s, continue_sift = get_next_imf(X + mask, **imf_opts)
+        next_imf_up_s, continue_sift = get_next_imf(X + mask,
+                                                    envelope_opts=envelope_opts,
+                                                    extrema_opts=extrema_opts,
+                                                    **imf_opts)
         next_imf_up_s -= mask
-        next_imf_down_s, continue_sift = get_next_imf(X - mask, **imf_opts)
+        next_imf_down_s, continue_sift = get_next_imf(X - mask,
+                                                      envelope_opts=envelope_opts,
+                                                      extrema_opts=extrema_opts,
+                                                      **imf_opts)
         next_imf_down_s += mask
 
     if mask_type == 'all':
@@ -563,7 +610,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
               mask_freqs='zc', mask_step_factor=2,
               mask_type='all', ret_mask_freq=False,
               max_imfs=9, sift_thresh=1e-8,
-              imf_opts={}):
+              imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes [1]_.
@@ -617,6 +664,10 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
     ----------------
     imf_opts : dict
         Optional dictionary of keyword arguments to be passed to emd.get_next_imf
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
 
     Notes
     -----
@@ -691,7 +742,8 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
 
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
 
-        next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type=mask_type, imf_opts=imf_opts)
+        next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type=mask_type,
+                                     imf_opts=imf_opts, envelope_opts=envelope_opts, extrema_opts=extrema_opts)
 
         if imf_layer == 0:
             imf = next_imf
@@ -718,7 +770,8 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
 def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
                        mask_amp=1, mask_amp_mode='ratio_imf',
                        mask_step_factor=2, ret_mask_freq=False,
-                       first_mask_mode='if', imf_opts={}):
+                       first_mask_mode='if',
+                       imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes.
@@ -763,6 +816,15 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
     mask_freqs : ndarray
         1D array of mask frequencies, if ret_mask_freq is set to True.
 
+    Other Parameters
+    ----------------
+    imf_opts : dict
+        Optional dictionary of keyword arguments to be passed to emd.get_next_imf
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+
     References
     ----------
     .. [1] Ryan Deering, & James F. Kaiser. (2005). The Use of a Masking Signal
@@ -771,6 +833,10 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
        IEEE. https://doi.org/10.1109/icassp.2005.1416051
 
     """
+
+    warnings.warn("'emd.sift.mask_sift_adaptive' is deprecated and will be \
+                   removed in the next version of EMD.\nPlease switch to use \
+                   'emd.sift.mask_sift' to remove this warning", DeprecationWarning)
 
     if X.ndim == 1:
         # add dummy dimension
@@ -815,7 +881,8 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
         z = first_mask_mode
         amp = amp * X.std()
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
-        imf = get_next_imf_mask(X, z, amp, mask_type='all', imf_opts=imf_opts)
+        imf = get_next_imf_mask(X, z, amp, mask_type='all',
+                                imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
         zs = [z]
         z = z / mask_step_factor
         zs.append(z)
@@ -836,8 +903,8 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
 
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
-        next_imf = get_next_imf_mask(proto_imf, z, amp,
-                                     mask_type='all', imf_opts=imf_opts)
+        next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
+                                     imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
 
         imf = np.concatenate((imf, next_imf), axis=1)
 
@@ -861,7 +928,8 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
                         mask_amp=1, mask_amp_mode='ratio_imf',
                         mask_step_factor=2, ret_mask_freq=False,
                         mask_initial_freq=None, mask_freqs=None,
-                        mask_amps=None, imf_opts={}):
+                        mask_amps=None,
+                        imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes.
@@ -909,6 +977,15 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
     mask_freqs : ndarray
         1D array of mask frequencies, if ret_mask_freq is set to True.
 
+    Other Parameters
+    ----------------
+    imf_opts : dict
+        Optional dictionary of keyword arguments to be passed to emd.get_next_imf
+    envelope_opts : dict
+        Optional dictionary of keyword options to be passed to emd.interp_envelope
+    extrema_opts : dict
+        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+
     References
     ----------
     .. [1] Ryan Deering, & James F. Kaiser. (2005). The Use of a Masking Signal
@@ -917,6 +994,10 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
        IEEE. https://doi.org/10.1109/icassp.2005.1416051
 
     """
+
+    warnings.warn("'emd.sift.mask_sift_specified' is deprecated and will be \
+                   removed in the next version of EMD.\nPlease switch to use \
+                   'emd.sift.mask_sift' to remove this warning", DeprecationWarning)
 
     if X.ndim == 1:
         # add dummy dimension
@@ -945,7 +1026,8 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
 
     logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(1, z, amp))
 
-    imf = get_next_imf_mask(X, z, amp, mask_type='all', imf_opts=imf_opts)
+    imf = get_next_imf_mask(X, z, amp, mask_type='all',
+                            imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
 
     layer = 1
     proto_imf = X.copy() - imf
@@ -967,7 +1049,8 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
 
         logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
-        next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all', imf_opts=imf_opts)
+        next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
+                                     imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
 
         imf = np.concatenate((imf, next_imf), axis=1)
 
@@ -1305,21 +1388,30 @@ class SiftConfig(collections.abc.MutableMapping):
     def __getitem__(self, key):
         key = self.__keytransform__(key)
         if isinstance(key, list):
-            return self.store[key[0]][key[1]]
+            if len(key) == 2:
+                return self.store[key[0]][key[1]]
+            elif len(key) == 3:
+                return self.store[key[0]][key[1]][key[2]]
         else:
             return self.store[key]
 
     def __setitem__(self, key, value):
         key = self.__keytransform__(key)
         if isinstance(key, list):
-            self.store[key[0]][key[1]] = value
+            if len(key) == 2:
+                self.store[key[0]][key[1]] = value
+            elif len(key) == 3:
+                self.store[key[0]][key[1]][key[2]] = value
         else:
             self.store[key] = value
 
     def __delitem__(self, key):
         key = self.__keytransform__(key)
         if isinstance(key, list):
-            del self.store[key[0]][key[1]]
+            if len(key) == 2:
+                del self.store[key[0]][key[1]]
+            elif len(key) == 3:
+                del self.store[key[0]][key[1]][key[2]]
         else:
             del self.store[key]
 
@@ -1328,10 +1420,14 @@ class SiftConfig(collections.abc.MutableMapping):
 
     def __str__(self):
         out = []
+        lower_level = ['imf_opts', 'envelope_opts', 'extrema_opts']
         for stage in self.store.keys():
-            out.append(stage + ':')
-            for key in self.store[stage].keys():
-                out.append('    {0} : {1}'.format(key, self.store[stage][key]))
+            if stage not in lower_level:
+                out.append('{0} : {1}'.format(stage, self.store[stage]))
+            else:
+                out.append(stage + ':')
+                for key in self.store[stage].keys():
+                    out.append('    {0} : {1}'.format(key, self.store[stage][key]))
 
         return '%s %s\n%s' % (self.name, self.__class__, '\n'.join(out))
 
@@ -1343,6 +1439,9 @@ class SiftConfig(collections.abc.MutableMapping):
         if len(key) == 1:
             return key[0]
         else:
+            if len(key) > 3:
+                raise ValueError("Requested key is nested too deep. Should be a \
+                                 maximum of three levels separated by '/'")
             return key
 
     def to_yaml(self):
@@ -1443,7 +1542,7 @@ def get_config(siftname='sift'):
     envelope_opts = _get_function_opts(interp_envelope, ignore=['X', 'extrema_opts', 'mode', 'ret_extrema'])
 
     # Get defaults for computing IMFs
-    imf_opts = _get_function_opts(get_next_imf, ignore=['X', 'envelope_opts'])
+    imf_opts = _get_function_opts(get_next_imf, ignore=['X', 'envelope_opts', 'extrema_opts'])
 
     # Get defaults for the given sift variant
     sift_types = ['sift', 'ensemble_sift', 'complete_ensemble_sift',
@@ -1451,17 +1550,21 @@ def get_config(siftname='sift'):
     if siftname in sift_types:
         import sys
         mod = sys.modules[__name__]
-        sift_opts = _get_function_opts(getattr(mod, siftname), ignore=['X', 'imf_opts'])
+        sift_opts = _get_function_opts(getattr(mod, siftname), ignore=['X', 'imf_opts'
+                                                                       'envelope_opts',
+                                                                       'extrema_opts'])
     else:
         raise AttributeError('Sift siftname not recognised: please use one of {0}'.format(sift_types))
 
+    print(sift_opts)
     out = SiftConfig(siftname)
-    out['sift'] = sift_opts
-    out['imf'] = imf_opts
-    out['envelope'] = envelope_opts
-    out['extrema'] = extrema_opts
-    out['mag_pad'] = mag_pad_opts
-    out['loc_pad'] = loc_pad_opts
+    for key in sift_opts:
+        out[key] = sift_opts[key]
+    out['imf_opts'] = imf_opts
+    out['envelope_opts'] = envelope_opts
+    out['extrema_opts'] = extrema_opts
+    out['extrema_opts/mag_pad_opts'] = mag_pad_opts
+    out['extrema_opts/loc_pad_opts'] = loc_pad_opts
 
     return out
 

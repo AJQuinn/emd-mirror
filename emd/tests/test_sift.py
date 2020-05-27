@@ -4,8 +4,7 @@ import unittest
 import numpy as np
 
 from ..sift import sift, ensemble_sift, complete_ensemble_sift, \
-                   mask_sift, mask_sift_adaptive, mask_sift_specified, \
-                   get_config
+                   mask_sift, get_config
 from ..utils import abreu2010
 
 
@@ -43,17 +42,6 @@ class test_sift_defaults(unittest.TestCase):
         imf = mask_sift(self.x[:200], max_imfs=5, mask_freqs='zc')
         assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
 
-    def test_mask_sift_adaptive_default(self):
-        """Check adaptive mask sift runs with some simple settings"""
-        imf = mask_sift_adaptive(self.x[:200], max_imfs=5)
-        assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
-
-    def test_complete_mask_sift_specified_default(self):
-        """Check specified mask sift runs with some simple settings"""
-        mask_freqs = np.array([.25/2**ii for ii in range(1, 7)])
-        imf = mask_sift_specified(self.x[:200], max_imfs=5, mask_freqs=mask_freqs)
-        assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
-
 
 class test_sift_behaviour(unittest.TestCase):
 
@@ -77,8 +65,9 @@ class test_sift_behaviour(unittest.TestCase):
         x = abreu2010(f1, .2, 0, sample_rate, seconds)
         self.x = x + np.cos(2.3 * np.pi * f2 * time_vect) + np.linspace(-.5, 1, len(time_vect))
 
-        self.imf_kwargs = {'envelope_opts': {'interp_method': 'splrep'}}
-        self.imf = sift(self.x, imf_opts=self.imf_kwargs)
+        self.imf_kwargs = {}
+        self.envelope_opts = {'interp_method': 'splrep'}
+        self.imf = sift(self.x, imf_opts=self.imf_kwargs, envelope_opts=self.envelope_opts)
 
     def test_complete_decomposition(self):
         """Test that IMFs are complete description of signal"""
@@ -158,21 +147,21 @@ class test_sift_config(unittest.TestCase):
         # Get sift config
         conf = get_config('sift')
         # Check a couple of options
-        assert(conf['sift/max_imfs'] is None)
-        assert(conf['extrema/pad_width'] == 2)
-        assert(conf['loc_pad/mode'] == 'reflect')
+        assert(conf['max_imfs'] is None)
+        assert(conf['extrema_opts/pad_width'] == 2)
+        assert(conf['extrema_opts/loc_pad_opts/mode'] == 'reflect')
 
         # Get ensemble sift config
         conf = get_config('ensemble_sift')
         # Check a couple of options
-        assert(conf['sift/max_imfs'] is None)
-        assert(conf['extrema/pad_width'] == 2)
-        assert(conf['loc_pad/mode'] == 'reflect')
+        assert(conf['max_imfs'] is None)
+        assert(conf['extrema_opts/pad_width'] == 2)
+        assert(conf['extrema_opts/loc_pad_opts/mode'] == 'reflect')
 
         # Get mask sift config
         conf = get_config('ensemble_sift')
         # Check a couple of options
-        assert(conf['sift/nensembles'] == 4)
-        assert(conf['sift/max_imfs'] is None)
-        assert(conf['extrema/pad_width'] == 2)
-        assert(conf['loc_pad/mode'] == 'reflect')
+        assert(conf['nensembles'] == 4)
+        assert(conf['max_imfs'] is None)
+        assert(conf['extrema_opts/pad_width'] == 2)
+        assert(conf['extrema_opts/loc_pad_opts/mode'] == 'reflect')

@@ -10,10 +10,9 @@ all the way down to extrema detection.
 #%%
 # Lets make a simulated signal to get started.
 
-import yaml
+import emd
 import numpy as np
 import matplotlib.pyplot as plt
-import emd
 
 sample_rate = 1000
 seconds = 10
@@ -59,43 +58,39 @@ config = emd.sift.get_config('ensemble_sift')
 print(config)
 
 #%%
+# The SiftConfig dictionary contains arguments and default values for functions
+# which are called internally within the different sift implementations. The
+# dictionary can be used to viewing and editing the options before they are
+# passed into the sift function.
+#
+# The SiftConfig dictionary is nested, in that some items in the dictionary
+# store further dictionaries of options. This hierarchy of options reflects
+# where the options are used in the sift process. The top-level of the
+# dictionary contains arguments which may be passed directly to the sift
+# functions, whilst options needed for internal function calls are stored in
+# nested subdictionaries.
+#
 # The parameters in the config can be changed in the same way we would change
 # the key-value pairs in a nested dictionary or using a h5py inspiried shorthand.
 
+# This is a top-level argument used directly by ensemble_sift
+config['nensembles'] = 24
+
+# This is a sub-arguemnt used by interp_envelope, which is called within
+# ensemble_sift.
+
 # Standard
-config['sift']['nensembles'] = 24
-
+config['envelope_opts']['interp_type'] = 'mono_pchip'
 # Shorthard
-config['sift/max_imfs'] = 6
+config['envelope_opts/interp_type'] = 'mono_pchip'
 
-#%%
-# The SiftConfig dictionary contains arguments for functions which are called
-# internally within the different sift implementations. These are stored in a
-# flat dictionary for convenient viewing and editing but must be nested before
-# being passed as arguments into the sift.
-#
-# This is as each stage in the sift takes a dictionary of options for the
-# lower-level functions as a keyword argument. The lower-level options are
-# stored within successively higher-levels so that these can be passed down to
-# the correct functions.
-#
-# We can nest the options for use by calling ``config.get_opts()``.
-
-nested_opts = config.to_opts()
-
-#%%
-# We make use of the yaml package to visualise the nested option tree.
-#
-# We now see that the ``imf`` options are stored within the ``sift`` options
-# under the keyword ``imf_opts``. Similarly the ``envelope`` options are stored
-# within ``imf`` and the ``extrema`` within ``envelope``.
-print(yaml.dump(nested_opts, sort_keys=False))
+print(config)
 
 #%%
 # This nested structure is passed as an unpacked dictionary to our sift function.
 
 config = emd.sift.get_config('sift')
-imf = emd.sift.sift(x, **config.to_opts())
+imf = emd.sift.sift(x, **config)
 
 #%%
 # Extrema detection and padding
@@ -149,7 +144,7 @@ plt.legend(['Signal', 'Maxima', 'Minima'])
 # Lets try customising the extrema padding. First we get the 'extrema' options
 # from a nested config then try changing a couple of options
 
-ext_opts = config.to_opts('extrema')
+ext_opts = config['extrema_opts']
 
 # The default options
 max_locs, max_mag = emd.sift.get_padded_extrema(x, **ext_opts)
@@ -206,7 +201,7 @@ plt.title('Reflected extrema and increased pad width')
 # This interpolation starts with the padded extrema from the previous section
 # so we will take the envelope and extrema options from the config object
 
-env_opts = config.to_opts('envelope')
+env_opts = config['envelope_opts']
 
 upper_env = emd.utils.interp_envelope(x, mode='upper', **env_opts)
 lower_env = emd.utils.interp_envelope(x, mode='lower', **env_opts)
@@ -247,9 +242,9 @@ plt.legend(['Signal-Average Envelope'])
 # plot the original signal, the two IMFs and the residual.
 
 # Adjust the threshold for accepting an IMF
-config['imf/sd_thresh'] = 0.05
+config['imf_opts/sd_thresh'] = 0.05
 # Extract the options for get_next_imf
-imf_opts = config.to_opts('imf')
+imf_opts = config['imf_opts']
 
 imf1, continue_sift = emd.sift.get_next_imf(x[:, None], **imf_opts)
 print(imf1.shape)
@@ -290,6 +285,6 @@ plt.title('Residual')
 
 config = emd.sift.get_config('sift')
 
-imf = emd.sift.sift(x, **config.to_opts())
+imf = emd.sift.sift(x, **config)
 
 emd.plotting.plot_imfs(imf, cmap=True, scale_y=True)

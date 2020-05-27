@@ -9,6 +9,9 @@ This getting started tutorial shows how to use EMD to analyse a synthetic signal
 # Running an EMD and frequency transform
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # First of all, we import both the numpy and EMD modules:
+
+# sphinx_gallery_thumbnail_number = 2
+
 import matplotlib.pyplot as plt
 import numpy as np
 import emd
