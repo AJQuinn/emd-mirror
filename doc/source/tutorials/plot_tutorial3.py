@@ -13,6 +13,8 @@ carrier wave and the frequency of any amplitude modulations
 # First of all, we import EMD alongside numpy and matplotlib. We will also use
 # scipy's ndimage module to smooth our results for visualisation later.
 
+# sphinx_gallery_thumbnail_number = 5
+
 import matplotlib.pyplot as plt
 from scipy import ndimage
 import numpy as np
@@ -46,11 +48,11 @@ plt.plot(t[:sample_rate*5], x[:sample_rate*5], 'k')
 # Transform
 
 config = emd.sift.get_config('mask_sift')
-config['sift/max_imfs'] = 7
-config['sift/mask_freqs'] = 50/sample_rate
-config['sift/mask_amp_mode'] = 'ratio_sig'
-config['imf/sd_thresh'] = 0.05
-imf = emd.sift.mask_sift(x, **config.to_opts())
+config['max_imfs'] = 7
+config['mask_freqs'] = 50/sample_rate
+config['mask_amp_mode'] = 'ratio_sig'
+config['imf_opts/sd_thresh'] = 0.05
+imf = emd.sift.mask_sift(x, **config)
 IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
 
 # Visualise the IMFs
@@ -83,10 +85,10 @@ plt.xlabel('Time')
 
 # Helper function for the second level sift
 def mask_sift_second_layer(IA, masks, config={}):
-    imf2 = np.zeros((IA.shape[0], IA.shape[1], config['sift/max_imfs']))
+    imf2 = np.zeros((IA.shape[0], IA.shape[1], config['max_imfs']))
     for ii in range(IA.shape[1]):
-        config['sift/mask_freqs'] = masks[ii:]
-        tmp = emd.sift.mask_sift(IA[:, ii], **config.to_opts())
+        config['mask_freqs'] = masks[ii:]
+        tmp = emd.sift.mask_sift(IA[:, ii], **config)
         imf2[:, ii, :tmp.shape[1]] = tmp
     return imf2
 
@@ -94,11 +96,11 @@ def mask_sift_second_layer(IA, masks, config={}):
 # Define sift parameters for the second level
 masks = np.array([25/2**ii for ii in range(12)])/sample_rate
 config = emd.sift.get_config('mask_sift')
-config['sift/mask_amp_mode'] = 'ratio_sig'
-config['sift/mask_amp'] = 2
-config['sift/max_imfs'] = 5
-config['imf/sd_thresh'] = 0.05
-config['envelope/interp_method'] = 'mono_pchip'
+config['mask_amp_mode'] = 'ratio_sig'
+config['mask_amp'] = 2
+config['max_imfs'] = 5
+config['imf_opts/sd_thresh'] = 0.05
+config['envelope_opts/interp_method'] = 'mono_pchip'
 
 # Sift the first 5 first level IMFs
 imf2 = mask_sift_second_layer(IA, masks, config=config)
