@@ -20,9 +20,13 @@ wrap_phase
 
 """
 
+import logging
 import numpy as np
 
 from .sift import interp_envelope
+
+# Housekeeping for logging
+logger = logging.getLogger(__name__)
 
 
 def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
@@ -58,6 +62,15 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
        1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
     """
+    logger.info('STARTED: Amplitude-Normalise')
+
+    if X.ndim == 2:
+        logger.debug('Normalising {0} samples across {1} IMFs'.format(*X.shape))
+    else:
+        logger.debug('Normalising {0} samples across {1} first-level and {2} second-level IMFs'.format(*X.shape))
+    logger.debug('Using {0} interpolation with threshold of {1} and max_iters {2}'.format(interp_method,
+                                                                                          thresh,
+                                                                                          max_iters))
 
     # Don't normalise in place
     X = X.copy()
@@ -89,16 +102,24 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
                 else:
                     continue_norm = True
 
-                    if np.abs(env.sum() - env.shape[0]) < thresh:
+                    iter_val = np.abs(env.sum() - env.shape[0])
+                    if iter_val < thresh:
                         continue_norm = False
 
+                        logger.info('Normalise of IMF-{0}-{1} complete in {2} iters (val={3})'.format(iimf,
+                                                                                                      jimf,
+                                                                                                      iters,
+                                                                                                      iter_val))
+
     if clip:
+        logger.debug('Clipping signal to -1:1 range')
         # Make absolutely sure nothing daft is happening
         X = np.clip(X, -1, 1)
 
     if orig_dim == 2:
         X = X[:, :, 0]
 
+    logger.info('COMPLETED: Amplitude-Normalise')
     return X
 
 
