@@ -124,11 +124,16 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
         array containing the phase aligned observations
 
     """
+    logger.info('STARTED: phase-align cycles')
 
     phase_edges, phase_bins = spectra.define_hist_bins(0, 2 * np.pi, npoints)
 
     if cycles is None:
         cycles = get_cycle_inds(ip)
+
+    logger.debug('aligning {0} cycles over {1} phase points with {2} interpolation'.format(cycles.max(),
+                                                                                           npoints,
+                                                                                           interp_kind))
 
     ncycles = cycles.max()
     avg = np.zeros((npoints, ncycles))
@@ -142,6 +147,7 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
 
         avg[:, ii - 1] = f(phase_bins)
 
+    logger.info('COMPLETED: phase-align cycles')
     return avg
 
 
@@ -199,6 +205,12 @@ def get_cycle_inds(phase, return_good=True, mask=None,
 
 
     """
+
+    logger.info('STARTED: get cycle indices')
+    logger.debug('computing on {0} samples over {1} IMFs '.format(phase.shape[0],
+                                                                  phase.shape[1]))
+    if mask is not None:
+        logger.debug('{0} ({1}%) samples masked out'.format(mask.sum(), np.round(100*(mask.sum()/phase.shape[0]), 2)))
 
     if phase.max() > 2 * np.pi:
         print('Wrapping phase')
@@ -277,6 +289,9 @@ def get_cycle_inds(phase, return_good=True, mask=None,
                 cycles[inds[jj]:inds[jj + 1], ii] = count
                 count += 1
 
+        logger.info('found {0} cycles in IMF-{1}'.format(cycles[:, ii].max(), ii))
+
+    logger.info('COMPLETED: get cycle indices')
     return cycles
 
 
@@ -303,6 +318,13 @@ def get_cycle_stat(cycles, values, mode='compressed', metric='mean'):
 
     """
 
+    if (cycles.ndim > 1) and (cycles.shape[1] > 1):
+        raise ValueError('Cycles for {0} IMFs passed in, \
+                          please input the cycles for a single IMF'.format(cycles.shape[1]))
+
+    logger.info('STARTED: get cycle stats')
+    logger.debug('computing stats for {0} cycles over {1} samples'.format(cycles.max(), cycles.shape[0]))
+    logger.debug('computing metric {0} and returning {1}-array'.format(metric, mode))
     # https://stackoverflow.com/a/39598529
     unq, ids, count = np.unique(cycles, return_inverse=True, return_counts=True)
     vals = np.bincount(ids, values)
@@ -320,6 +342,7 @@ def get_cycle_stat(cycles, values, mode='compressed', metric='mean'):
             ret[cycles == ii] = vals[ii - 1]
         vals = ret
 
+    logger.info('COMPLETED: get cycle stats')
     return vals
 
 

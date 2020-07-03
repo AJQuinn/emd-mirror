@@ -416,6 +416,17 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
        https://doi.org/10.1098/rsta.2015.0206
 
     """
+    logger.info('STARTED: compute Holospectrum')
+    logger.debug('computing on {0} samples over {1} first-level \
+                  IMFs and {2} second level IMFs'.format(infr2.shape[0],
+                                                         infr2.shape[1],
+                                                         infr2.shape[2]))
+    logger.debug('First level freq bins: {0} to {1} in {2} steps'.format(freq_edges[0],
+                                                                         freq_edges[1],
+                                                                         len(freq_edges)))
+    logger.debug('Second level freq bins: {0} to {1} in {2} steps'.format(freq_edges2[0],
+                                                                          freq_edges2[1],
+                                                                          len(freq_edges2)))
 
     if mode == 'energy':
         inam2 = inam2**2
@@ -442,20 +453,26 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
     if squash_time is False:
         # Return the full matrix
         holo = holo.toarray().reshape(new_shape[0], fold_dim2, fold_dim1)
+        logger.info('Returning full 3D Holospectrum')
     elif squash_time == 'mean':
         # Collapse time dimension while we're still sparse
         holo = holo.mean(axis=0)
         holo = holo.reshape(fold_dim2, fold_dim1)
+        logger.info('Returning 2D Holospectrum averaged over time')
     elif squash_time == 'sum':
         # Collapse time dimension while we're still sparse
         holo = holo.sum(axis=0)
         holo = holo.reshape(fold_dim2, fold_dim1)
+        logger.info('Returning 2D Holospectrum summed over time')
 
     if squash_time is False:
-        return np.array(holo[:, 1:-1, 1:-1])
+        holo = np.array(holo[:, 1:-1, 1:-1])
     else:
         # Alays returns full-array until someone implements N-D sparse in scipy
-        return np.array(holo[1:-1, 1:-1])  # don't return a matrix
+        holo = np.array(holo[1:-1, 1:-1])  # don't return a matrix
+
+    logger.info('COMPLETED: Holospectrum - output size {0}'.format(holo.shape))
+    return holo
 
 
 def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
@@ -500,6 +517,13 @@ def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
 
     """
 
+    logger.info('STARTED: compute Hilbert-Huang Transform')
+    logger.debug('computing on {0} samples over {1} IMFs '.format(infr.shape[0],
+                                                                  infr.shape[1]))
+    logger.debug('Freq bins: {0} to {1} in {2} steps'.format(freq_edges[0],
+                                                             freq_edges[1],
+                                                             len(freq_edges)))
+
     if mode == 'energy':
         inam = inam**2
 
@@ -516,6 +540,7 @@ def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
     # Create sparse matrix
     hht = sparse.coo_matrix(coo_data, shape=(len(freq_edges) - 1, xinds.shape[0]))
 
+    logger.info('COMPLETED: Hilbert-Huang Transform - output size {0}'.format(hht.shape))
     if return_sparse:
         return hht
     else:
