@@ -21,7 +21,7 @@ kdt_match
 import numpy as np
 from scipy import interpolate as interp
 
-from . import spectra, utils
+from . import spectra, utils, sift
 
 # Housekeeping for logging
 import logging
@@ -267,9 +267,9 @@ def get_cycle_inds(phase, return_good=True, mask=None,
                     try:
                         cycle = imf[inds[jj]:inds[jj + 1]]
                         # Should extend this to cope with multiple peaks etc
-                        ctrl = (0, utils.find_extrema(cycle)[0][0],
+                        ctrl = (0, sift.find_extrema(cycle)[0][0],
                                 np.where(np.gradient(np.sign(cycle)) == -1)[0][0],
-                                utils.find_extrema(-cycle)[0][0],
+                                sift.find_extrema(-cycle)[0][0],
                                 len(cycle))
                         if len(ctrl) == 5 and np.all(np.sign(np.diff(ctrl))):
                             cycle_checks[3] = True
@@ -372,9 +372,9 @@ def get_control_points(x, good_cycles):
 
         # Note! we're currently just taking the first peak or trough if there
         # are more than one. This is dumb.
-        ctrl.append((0, utils.find_extrema(cycle)[0][0],
+        ctrl.append((0, sift.find_extrema(cycle)[0][0],
                      np.where(np.gradient(np.sign(cycle)) == -1)[0][0],
-                     utils.find_extrema(-cycle)[0][0],
+                     sift.find_extrema(-cycle)[0][0],
                      len(cycle)))
 
     return np.array(ctrl)
