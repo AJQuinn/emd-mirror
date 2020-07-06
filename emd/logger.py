@@ -51,6 +51,18 @@ def set_level(level='INFO'):
     logging.info('Logging Level changed to {0}'.format(level))
 
 
+def shut_down():
+    """
+    Function for disabling logging in EMD
+
+    Note, this  doesn't remove the logger altogether, but sets the logging
+    level extremely high so no output ever appears.
+    """
+
+    logging.info('EMD logging shutting down')
+    logging.getLogger().setLevel(100)
+
+
 # ------------------------------------
 
 # Decorator for logging sift function
