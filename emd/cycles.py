@@ -186,8 +186,8 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     -----
     Good cycles are those with
     1 : A strictly positively increasing phase
-    2 : A phase starting within phase_step of zero (ie 0 < x < phase_step)
-    3 : A phase ending within phase_step of 2pi (is 2pi-phase_step < x < 2pi)
+    2 : A phase starting within phase_step of zero (ie 0 < x < phase_edge)
+    3 : A phase ending within phase_step of 2pi (is 2pi-phase_edge < x < 2pi)
     4 : A set of 4 unique control points
             (ascending zero, peak, descending zero & trough)
 
