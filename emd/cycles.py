@@ -295,7 +295,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     return cycles
 
 
-def get_cycle_stat(cycles, values, mode='compressed', metric='mean'):
+def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
     """
     Compute the average of a set of observations for each cycle.
 
@@ -309,6 +309,10 @@ def get_cycle_stat(cycles, values, mode='compressed', metric='mean'):
          Flag to indicate whether to return a single value per cycle or the
          average values filled within a vector of the same size as values
          (Default value = 'compressed')
+    func : function
+        Function to call on the data in values for each cycle (Default
+        np.mean). This can be any function, built-in or user defined, that
+        processes a single vector of data returning a single value.
 
     Returns
     -------
@@ -317,33 +321,36 @@ def get_cycle_stat(cycles, values, mode='compressed', metric='mean'):
 
 
     """
-
     if (cycles.ndim > 1) and (cycles.shape[1] > 1):
         raise ValueError('Cycles for {0} IMFs passed in, \
                           please input the cycles for a single IMF'.format(cycles.shape[1]))
 
     logger.info('STARTED: get cycle stats')
     logger.debug('computing stats for {0} cycles over {1} samples'.format(cycles.max(), cycles.shape[0]))
-    logger.debug('computing metric {0} and returning {1}-array'.format(metric, mode))
-    # https://stackoverflow.com/a/39598529
-    unq, ids, count = np.unique(cycles, return_inverse=True, return_counts=True)
-    vals = np.bincount(ids, values)
+    logger.debug('computing metric {0} and returning {1}-array'.format(func, mode))
 
-    if metric == 'mean':
-        vals = vals / count
-    elif metric != 'sum':
-        # We already have the sum so just check the argument is as expected
-        raise ValueError('Metric not recognise, please use either \'mean\' or \'sum\'')
+    if mode == 'compressed':
+        out = np.zeros((cycles.max() + 1, )) * np.nan
+    elif mode == 'full':
+        out = np.zeros_like(values) * np.nan
 
-    if mode == 'full':
-        ret = np.zeros_like(cycles, dtype=float)
-        ret.fill(np.nan)
-        for ii in range(1, cycles.max() + 1):
-            ret[cycles == ii] = vals[ii - 1]
-        vals = ret
+    for cind in range(1, cycles.max() + 1):
+        stat = func(values[cycles == cind])
+
+        if mode == 'compressed':
+            out[cind] = stat
+        elif mode == 'full':
+            out[cycles == cind] = stat
+
+    # Currently including the first value as the stat for 'non-cycles' in
+    # compressed mode for backwards compatibility with earlier work, might be
+    # confusing overall - should probably rethink this whether this makes any
+    # sense
+    if mode == 'compressed':
+        out[0] = func(values[cycles == 0])
 
     logger.info('COMPLETED: get cycle stats')
-    return vals
+    return out
 
 
 def get_control_points(x, good_cycles):

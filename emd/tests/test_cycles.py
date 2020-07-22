@@ -110,21 +110,17 @@ class test_kdt_match(unittest.TestCase):
 def test_get_cycle_vals():
     from ..cycles import get_cycle_stat
 
-    x = np.array([1, 2, 2, 3, 3, 3])
+    x = np.array([0, 1, 1, 1, 1, 2, 2, 3, 3, 3, 0])
     y = np.ones_like(x)
 
     # Compute the average of y within bins of x
     bin_avg = get_cycle_stat(x, y)
-    assert(np.all(bin_avg == [1, 1, 1]))
+    assert(np.all(bin_avg == [1., 1., 1., 1.]))
 
-    # Compute average of y within bins of x and return full vector
-    bin_avg = get_cycle_stat(x, y, mode='full')
-    assert(np.all(bin_avg == y))
+    # Compute sum of y within bins of x and return full vector
+    bin_avg = get_cycle_stat(x, y, mode='full', func=np.sum)
+    assert(np.allclose(bin_avg, np.array([np.nan, 4., 4., 4., 4., 2., 2., 3., 3., 3., np.nan]), equal_nan=True))
 
     # Compute the sum of y within bins of x
-    bin_counts = get_cycle_stat(x, y, metric='sum')
-    assert(np.all(bin_counts == [1, 2, 3]))
-
-    # Compute the sum of y within bins of x and return full vector
-    bin_counts = get_cycle_stat(x, y, mode='full', metric='sum')
-    assert(np.all(bin_counts == x))
+    bin_counts = get_cycle_stat(x, y, func=np.sum)
+    assert(np.all(bin_counts == [2, 4, 2, 3]))
