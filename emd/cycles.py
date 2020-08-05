@@ -377,13 +377,33 @@ def get_control_points(x, good_cycles):
     for ii in range(1, good_cycles.max() + 1):
         cycle = x[good_cycles == ii]
 
-        # Note! we're currently just taking the first peak or trough if there
-        # are more than one. This is dumb.
-        ctrl.append((0, sift.find_extrema(cycle)[0][0],
-                     np.where(np.gradient(np.sign(cycle)) == -1)[0][0],
-                     sift.find_extrema(-cycle)[0][0],
-                     len(cycle)))
+        # Peak
+        pk = sift.find_extrema(cycle)[0]
+        # Ascending-zero crossing
+        asc = np.where(np.diff(np.sign(cycle)) == -2)[0]
+        # Trough
+        tr = sift.find_extrema(-cycle)[0]
 
+        # Replace values with nan if more or less than 1 ctrl point is found
+        if len(pk) == 1:
+            pk = pk[0]
+        else:
+            pk = np.nan
+
+        if len(tr) == 1:
+            tr = tr[0]
+        else:
+            tr = np.nan
+
+        if len(asc) == 1:
+            asc = asc[0]
+        else:
+            asc = np.nan
+
+        # Append to list
+        ctrl.append((0, pk, asc, tr, len(cycle)-1))
+
+    # Return as array
     return np.array(ctrl)
 
 
