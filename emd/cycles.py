@@ -131,6 +131,30 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
     if cycles is None:
         cycles = get_cycle_inds(ip)
 
+    if ip.ndim == 2 and ip.shape[1] > 1:
+        # too many imfs - error
+        msg = 'emd.cycles.phase_align only works on a single IMF - input IP dims are {0}'.format(ip.shape)
+        logger.warning(msg)
+        raise ValueError(msg)
+    elif ip.ndim == 1:
+        ip = ip[:, None]
+
+    if x.ndim == 2 and x.shape[1] > 1:
+        # too many imfs - error
+        msg = 'emd.cycles.phase_align only works on a single IMF - input x dims are {0}'.format(x.shape)
+        logger.warning(msg)
+        raise ValueError(msg)
+    elif x.ndim == 1:
+        x = x[:, None]
+
+    if cycles.ndim == 2 and cycles.shape[1] > 1:
+        # too many imfs - error
+        msg = 'emd.cycles.phase_align only works on a single IMF - input cycles dims are {0}'.format(cycles.shape)
+        logger.warning(msg)
+        raise ValueError(msg)
+    elif cycles.ndim == 1:
+        cycles = cycles[:, None]
+
     logger.debug('aligning {0} cycles over {1} phase points with {2} interpolation'.format(cycles.max(),
                                                                                            npoints,
                                                                                            interp_kind))
@@ -139,8 +163,8 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
     avg = np.zeros((npoints, ncycles))
     for ii in range(1, ncycles + 1):
 
-        phase_data = ip[cycles[:, 0] == ii, 0]
-        x_data = x[cycles[:, 0] == ii]
+        phase_data = ip[cycles[:] == ii]
+        x_data = x[cycles[:] == ii]
 
         f = interp.interp1d(phase_data, x_data, kind=interp_kind,
                             bounds_error=False, fill_value='extrapolate')
