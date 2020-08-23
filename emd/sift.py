@@ -1556,7 +1556,6 @@ def get_config(siftname='sift'):
     else:
         raise AttributeError('Sift siftname not recognised: please use one of {0}'.format(sift_types))
 
-    print(sift_opts)
     out = SiftConfig(siftname)
     for key in sift_opts:
         out[key] = sift_opts[key]
