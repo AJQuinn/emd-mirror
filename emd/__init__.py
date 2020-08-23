@@ -9,3 +9,4 @@ from . import example  # noqa: F401, F403
 from . import logger  # noqa: F401, F403
 from . import cycles  # noqa: F401, F403
 from . import sift  # noqa: F401, F403
+from . import support  # noqa: F401, F403
