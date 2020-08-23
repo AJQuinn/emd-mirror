@@ -19,6 +19,7 @@ Where appropriate, links to specific Issues & Merge Requests are appreciated.
 
 ### Added
 - This changelog [!18](https://gitlab.com/emd-dev/emd/-/merge_requests/18)
+- support.py submodule with some helper functions for checking installs and running tests [!20](https://gitlab.com/emd-dev/emd/-/merge_requests/20)
 
 ### Fixed
 - Input array dimensions in phase_align clarified and fixed up [ef28b36c](https://gitlab.com/emd-dev/emd/-/commit/ef28b36cac8be7224280fd7ba02d25b3f084ab30)
