@@ -3,4 +3,4 @@ channels:
 dependencies:
    - pip
    - pip:
-     - git+https://gitlab.com/emd-dev/emd.git
+     - emd
