@@ -85,9 +85,9 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}, extrema_opt
         niters += 1
 
         upper = interp_envelope(proto_imf, mode='upper',
-                                **envelope_opts)
+                                **envelope_opts, extrema_opts=extrema_opts)
         lower = interp_envelope(proto_imf, mode='lower',
-                                **envelope_opts)
+                                **envelope_opts, extrema_opts=extrema_opts)
 
         # If upper or lower are None we should stop sifting altogether
         if upper is None or lower is None:
