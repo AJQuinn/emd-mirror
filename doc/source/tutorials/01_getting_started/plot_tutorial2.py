@@ -1,9 +1,11 @@
 """
-Configuring the SIFT
-====================
-Here we look at how to customise the different parts of the sift algorithm.
-There are many options which can be customised from top level sift parameters
-all the way down to extrema detection.
+The sift in detail
+==================
+Here, we will run through the different steps of the sift and get to know some
+of the lower-level functions which are used by the core sift functions.  There
+are four levels of functions which are used in the sift.
+
+We will take a look at each of these steps in turn using a simulated time-series.
 
 """
 
@@ -26,71 +28,37 @@ nonlinearity_deg = .25
 # Change left-right skew of deformation [-pi to pi]
 nonlinearity_phi = -np.pi/4
 
-# Compute the signal
+# Create a non-linear oscillation
 x = emd.utils.abreu2010(freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds)
-x += np.cos(2*np.pi*1*time_vect)
 
+x += np.cos(2 * np.pi * 1 * time_vect)        # Add a simple 1Hz sinusoid
+x -= np.sin(2 * np.pi * 2.2e-1 * time_vect)   # Add part of a very slow cycle as a trend
+
+# sphinx_gallery_thumbnail_number = 4
 
 #%%
-# The SiftConfig object
-# ^^^^^^^^^^^^^^^^^^^^^
-# EMD can create a config dictionary which contains all the options that can be
-# customised for a given sift function. This can be created using the
-# get_config function in the sift submodule. Lets import emd and create the
-# config for a standard sift - we can view the options by calling print on the
-# config.
-#
-# The SiftConfig dictionary contains all the arguments for  functions that
-# are used in the sift algorithm.
-#
-# - "sift" contains arguments for the high level sift functions such as ``emd.sift.sift`` or ``emd.sift.ensemble_sift``
-# - "imf" contains arguments for ``emd.sift.get_next_imf``
-# - "envelope" contains arguments for ``emd.sift.interpolate_envelope``
-# - "extrema", "mag_pad" and  "loc_pad" have arguments for extrema detection and padding
+# Sifting
+#^^^^^^^^
 
+#%%
+# The top-level of options configure the sift itself. These options vary
+# between the type of sift that is being performed and options don't generalise
+# between different variants of the sift.
+#
+# Here we will run a standard sift on our simulation.
+
+# Get the default configuration for a sift
 config = emd.sift.get_config('sift')
-print(config)
+# Adjust the threshold for accepting an IMF
+config['imf_opts/sd_thresh'] = 0.05
+
+imf = emd.sift.sift(x)
+
+emd.plotting.plot_imfs(imf, cmap=True, scale_y=True)
 
 #%%
-# These arguments are specific for the each type of sift (particularly at the top "sift" level).
+# Internally the `sift` function
 
-config = emd.sift.get_config('ensemble_sift')
-print(config)
-
-#%%
-# The SiftConfig dictionary contains arguments and default values for functions
-# which are called internally within the different sift implementations. The
-# dictionary can be used to viewing and editing the options before they are
-# passed into the sift function.
-#
-# The SiftConfig dictionary is nested, in that some items in the dictionary
-# store further dictionaries of options. This hierarchy of options reflects
-# where the options are used in the sift process. The top-level of the
-# dictionary contains arguments which may be passed directly to the sift
-# functions, whilst options needed for internal function calls are stored in
-# nested subdictionaries.
-#
-# The parameters in the config can be changed in the same way we would change
-# the key-value pairs in a nested dictionary or using a h5py inspiried shorthand.
-
-# This is a top-level argument used directly by ensemble_sift
-config['nensembles'] = 24
-
-# This is a sub-arguemnt used by interp_envelope, which is called within
-# ensemble_sift.
-
-# Standard
-config['envelope_opts']['interp_type'] = 'mono_pchip'
-# Shorthard
-config['envelope_opts/interp_type'] = 'mono_pchip'
-
-print(config)
-
-#%%
-# This nested structure is passed as an unpacked dictionary to our sift function.
-
-config = emd.sift.get_config('sift')
-imf = emd.sift.sift(x, **config)
 
 #%%
 # Extrema detection and padding
@@ -238,53 +206,38 @@ plt.legend(['Signal-Average Envelope'])
 # signal to the data.
 #
 # Here we use ``get_next_imf`` to implement a very simple sift. We extract the
-# first IMF, subtract it from the data and then extract the second IMF. We then
-# plot the original signal, the two IMFs and the residual.
+# first IMF, subtract it from the data and then extract the second and third
+# IMFs. We then plot the original signal, the IMFs and the residual.
 
-# Adjust the threshold for accepting an IMF
-config['imf_opts/sd_thresh'] = 0.05
 # Extract the options for get_next_imf
 imf_opts = config['imf_opts']
 
-imf1, continue_sift = emd.sift.get_next_imf(x[:, None], **imf_opts)
-print(imf1.shape)
-imf2, continue_sift = emd.sift.get_next_imf(x[:, None]-imf1, **imf_opts)
+imf1, continue_sift = emd.sift.get_next_imf(x[:, None],           **imf_opts)
+imf2, continue_sift = emd.sift.get_next_imf(x[:, None]-imf1,      **imf_opts)
+imf3, continue_sift = emd.sift.get_next_imf(x[:, None]-imf1-imf2, **imf_opts)
 
 plt.figure(figsize=(12, 12))
-plt.subplot(411)
+plt.subplot(511)
 plt.plot(x, 'k')
-plt.ylim(-3, 3)
+plt.ylim(-4, 4)
 plt.title('Original Signal')
 
-plt.subplot(412)
+plt.subplot(512)
 plt.plot(imf1, 'k')
-plt.ylim(-3, 3)
+plt.ylim(-4, 4)
 plt.title('IMF1')
 
-plt.subplot(413)
+plt.subplot(513)
 plt.plot(imf2, 'k')
-plt.ylim(-3, 3)
+plt.ylim(-4, 4)
 plt.title('IMF2')
 
-plt.subplot(414)
-plt.plot(x[:, None]-imf1-imf2, 'k')
-plt.ylim(-3, 3)
+plt.subplot(514)
+plt.plot(imf3, 'k')
+plt.ylim(-4, 4)
+plt.title('IMF2')
+
+plt.subplot(515)
+plt.plot(x[:, None]-imf1-imf2-imf3, 'k')
+plt.ylim(-4, 4)
 plt.title('Residual')
-
-#%%
-# Sifting
-#^^^^^^^^
-
-#%%
-# Finally, the top-level of options configure the sift itself. These options
-# vary between the type of sift that is being performed and many options don't
-# generalise between different variants of the sift.
-#
-# Here we use the config object to perform a simple sift very similar to the
-# one we implemented in the previous section.
-
-config = emd.sift.get_config('sift')
-
-imf = emd.sift.sift(x, **config)
-
-emd.plotting.plot_imfs(imf, cmap=True, scale_y=True)

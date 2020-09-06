@@ -22,6 +22,7 @@ wrap_phase
 
 import logging
 import numpy as np
+from scipy import signal
 
 from .sift import interp_envelope
 
@@ -305,3 +306,35 @@ def wrap_phase(IP, ncycles=1, mode='2pi'):
         phases = (IP + (np.pi * ncycles)) % (ncycles * 2 * np.pi) - (np.pi * ncycles)
 
     return phases
+
+
+def ar_simulate(freq, sample_rate, seconds, r=.95, noise_std=None, random_seed=None):
+    """
+    Create a simulated oscillation using an autoregressive filter. A simple
+    filter is defined by direct pole placement and applied to white noise to
+    generate a random signal with a defined oscillatory peak frequency that
+    exhibits random variability frequency, amplitude and waveform.
+
+    """
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    if freq > 0:
+        freq_rads = (2 * np.pi * freq) / sample_rate
+        a1 = np.array([1, -2*r*np.cos(freq_rads), (r**2)])
+    else:
+        a1 = np.poly(r)
+
+    num_samples = int(sample_rate * seconds)
+
+    x = signal.filtfilt(1, a1, np.random.randn(1, num_samples)).T
+
+    if noise_std is not None:
+        noise = np.std(x)*noise_std*np.random.randn(1, num_samples).T
+        x = x + noise
+
+    if random_seed is not None:
+        np.random.seed()  # restore defaults
+
+    return x

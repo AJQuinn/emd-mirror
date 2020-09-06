@@ -34,8 +34,12 @@ nonlinearity_deg = .25
 nonlinearity_phi = -np.pi/4
 
 # Compute the signal
+
+# Create a non-linear oscillation
 x = emd.utils.abreu2010(freq, nonlinearity_deg, nonlinearity_phi, sample_rate, seconds)
-x += np.cos(2 * np.pi * 1 * time_vect)
+
+x += np.cos(2 * np.pi * 1 * time_vect)        # Add a simple 1Hz sinusoid
+x -= np.sin(2 * np.pi * 2.2e-1 * time_vect)   # Add part of a very slow cycle as a trend
 
 # Visualise the time-series for analysis
 plt.figure(figsize=(12, 4))

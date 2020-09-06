@@ -7,11 +7,14 @@ SIFT Functions
 .. autofunction:: emd.sift.sift
 .. autofunction:: emd.sift.ensemble_sift
 .. autofunction:: emd.sift.complete_ensemble_sift
-.. autofunction:: emd.sift.mask_sift_adaptive
-.. autofunction:: emd.sift.mask_sift_specified
+.. autofunction:: emd.sift.mask_sift
+
+.. autofunction:: emd.sift.get_config
 
 .. autofunction:: emd.sift.get_next_imf
 .. autofunction:: emd.sift.get_next_imf_mask
+.. autofunction:: emd.sift.interp_envelope
+.. autofunction:: emd.sift.get_padded_extrema
 
 Frequency Functions
 *********************
@@ -36,4 +39,15 @@ Spectrum Utils
 
 .. autofunction:: emd.spectra.define_hist_bins
 .. autofunction:: emd.spectra.define_hist_bins_from_data
+
+Cycle Utils
+*********************
+
+.. autofunction:: emd.cycles.get_cycle_inds
+.. autofunction:: emd.cycles.get_cycle_stat
+.. autofunction:: emd.cycles.get_cycle_chain
+.. autofunction:: emd.cycles.get_control_points
+.. autofunction:: emd.cycles.phase_align
+.. autofunction:: emd.cycles.mean_vector
+.. autofunction:: emd.cycles.kdt_match
 
