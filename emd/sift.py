@@ -19,6 +19,7 @@ get_next_imf_mask
 """
 
 
+import yaml
 import logging
 import warnings
 import numpy as np
@@ -1444,9 +1445,30 @@ class SiftConfig(collections.abc.MutableMapping):
                                  maximum of three levels separated by '/'")
             return key
 
-    def to_yaml(self):
-        import yaml
-        return yaml.dump(self.store, sort_keys=False)
+    def _get_yamlsafe_dict(self):
+        conf = self.store.copy()
+        return _array_to_list(conf)
+
+    def to_yaml_text(self):
+        return yaml.dump(self._get_yamlsafe_dict(), sort_keys=False)
+
+    def to_yaml_file(self, fname):
+        with open(fname, 'w') as f:
+            yaml.dump(self._get_yamlsafe_dict(), f, sort_keys=False)
+
+    @classmethod
+    def from_yaml_file(cls, fname):
+        ret = cls()
+        with open(fname, 'r') as f:
+            ret.store = yaml.load(f, Loader=yaml.FullLoader)
+
+        return ret
+
+    @classmethod
+    def from_yaml_stream(cls, stream):
+        ret = cls()
+        ret.store = yaml.load(stream, Loader=yaml.FullLoader)
+        return ret
 
     def to_opts(self, stage='sift'):
 
@@ -1598,3 +1620,12 @@ def _get_function_opts(func, ignore=None):
         if p not in out.keys() and p not in ignore:
             out[p] = sig.parameters[p].default
     return out
+
+
+def _array_to_list(conf):
+    for key, val in conf.items():
+        if isinstance(val, np.ndarray):
+            conf[key] = val.tolist()
+        elif isinstance(val, dict):
+            conf[key] = _array_to_list(conf[key])
+    return conf
