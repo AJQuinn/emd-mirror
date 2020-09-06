@@ -1,5 +1,5 @@
 """
-Running a Holospectrum
+The Holospectrum
 ======================
 This tutorial shows how we can compute a holospectrum to characterise the
 distribution of power in a signal as a function of both frequency of the

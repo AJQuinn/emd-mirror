@@ -1,5 +1,3 @@
-EMD - Tutorial Examples
-=======================
 
-These tutorials are designed to help get started with Empirical Mode
-Decomposition analysis using this toolbox.
+These tutorials are designed to help get you started with data analysis using
+the EMD toolbox.
