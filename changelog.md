@@ -18,12 +18,24 @@ Where appropriate, links to specific Issues & Merge Requests are appreciated.
 ## [Unreleased]
 
 ### Added
+### Fixed
+### Changed
+
+## [0.3.1]
+
+### Added
 - This changelog [!18](https://gitlab.com/emd-dev/emd/-/merge_requests/18)
 - support.py submodule with some helper functions for checking installs and running tests [!20](https://gitlab.com/emd-dev/emd/-/merge_requests/20)
 - envs subdir containing anaconda install environment config files [!21](https://gitlab.com/emd-dev/emd/-/merge_requests/21)
+- Options for reading and writing sift configs to yaml format [!24](https://gitlab.com/emd-dev/emd/-/merge_requests/24)
+- major update to webpage [!12](https://gitlab.com/emd-dev/emd/-/merge_requests/24)
+  - Reformat page to bootstrap
+  - Add & update the tutorials
+  - New landing page
 
 ### Fixed
 - Input array dimensions in phase_align clarified and fixed up [ef28b36c](https://gitlab.com/emd-dev/emd/-/commit/ef28b36cac8be7224280fd7ba02d25b3f084ab30)
+- Extrema opts were dropped in get_next_imf [!23](https://gitlab.com/emd-dev/emd/-/merge_requests/23)
 
 ### Changed
 - get_control_points internal refector [af153ed6](https://gitlab.com/emd-dev/emd/-/commit/af153ed606601f3963c125329c86710e47c06b45)
