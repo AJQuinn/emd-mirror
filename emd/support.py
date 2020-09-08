@@ -40,7 +40,7 @@ def run_tests():
 # Ensurance Department
 
 
-def ensure_equal_dims(to_check, names, func_name):
+def ensure_equal_dims(to_check, names, func_name, dim=None):
     """
     Check that a set of arrays all have the same dimension. Raise an error with
     details if not.
@@ -53,6 +53,8 @@ def ensure_equal_dims(to_check, names, func_name):
         List of variable names for arrays in to_check
     func_name : str
         Name of function calling ensure_equal_dims
+    dim : int
+        Integer index of specific axes to ensure shape of, default is to compare all dims
 
     Raises
     ------
@@ -61,7 +63,12 @@ def ensure_equal_dims(to_check, names, func_name):
 
     """
 
-    all_dims = [x.shape for x in to_check]
+    if dim == None:
+        dim = np.arange(to_check[0].ndim)
+    else:
+        dim = [dim]
+
+    all_dims = [tuple(np.array(x.shape)[dim]) for x in to_check]
     check = [True] + [all_dims[0] == all_dims[ii + 1] for ii in range(len(all_dims[1:]))]
 
     if np.alltrue(check) == False:  # noqa: E712
