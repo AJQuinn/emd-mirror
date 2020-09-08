@@ -29,6 +29,7 @@ from scipy import interpolate as interp
 
 from . import spectra
 from .logger import sift_logger
+from .support import ensure_1d_with_singleton, ensure_2d
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -170,9 +171,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None,
         imf_opts = {'env_step_size': 1,
                     'sd_thresh': .1}
 
-    if X.ndim == 1:
-        # add dummy dimension
-        X = X[:, None]
+    X = ensure_1d_with_singleton([X], ['X'], 'sift')
 
     continue_sift = True
     layer = 0
@@ -351,6 +350,8 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
         raise ValueError(
             'noise_mode: {0} not recognised, please use \'single\' or \'flip\''.format(noise_mode))
 
+    X = ensure_1d_with_singleton([X], ['X'], 'sift')
+
     # Noise is defined with respect to variance in the data
     noise_scaling = X.std() * ensemble_noise
 
@@ -438,9 +439,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     import multiprocessing as mp
     p = mp.Pool(processes=nprocesses)
 
-    if X.ndim == 1:
-        # add dummy dimension
-        X = X[:, None]
+    X = ensure_1d_with_singleton([X], ['X'], 'sift')
 
     # Noise is defined with respect to variance in the data
     noise_scaling = X.std() * ensemble_noise
@@ -705,10 +704,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
 
     """
 
-    # initialise
-    if X.ndim == 1:
-        # add dummy dimension
-        X = X[:, None]
+    X = ensure_1d_with_singleton([X], ['X'], 'sift')
 
     # if first mask is if or zc - compute first imf as normal and get freq
     if isinstance(mask_freqs, (list, tuple, np.ndarray)):
@@ -1103,6 +1099,9 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
        https://doi.org/10.1098/rsta.2015.0206
 
     """
+
+    IA = ensure_2d([IA], ['IA'], 'sift_second_layer')
+
     if (sift_args is None) or ('max_imfs' not in sift_args):
         max_imfs = IA.shape[1]
     elif 'max_imfs' in sift_args:
