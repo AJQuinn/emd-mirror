@@ -22,6 +22,7 @@ import numpy as np
 from scipy import interpolate as interp
 
 from . import spectra, utils, sift
+from .support import ensure_equal_dims, ensure_vector, ensure_2d
 
 # Housekeeping for logging
 import logging
@@ -124,40 +125,27 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
         array containing the phase aligned observations
 
     """
+    # Preamble
     logger.info('STARTED: phase-align cycles')
+
+    if cycles is None:
+        out = ensure_vector((ip, x), ('ip', 'x'), 'phase_align')
+        ip, x = out
+        ensure_equal_dims((ip, x), ('ip', 'x'), 'phase_align')
+        cycles = get_cycle_inds(ip)
+    else:
+        out = ensure_vector((ip, x, cycles), ('ip', 'x', 'cycles'), 'phase_align')
+        ip, x, cycles = out
+        ensure_equal_dims((ip, x, cycles), ('ip', 'x', 'cycles'), 'phase_align')
+
+    # Main Body
 
     phase_edges, phase_bins = spectra.define_hist_bins(0, 2 * np.pi, npoints)
 
-    if cycles is None:
-        cycles = get_cycle_inds(ip)
-
-    if ip.ndim == 2 and ip.shape[1] > 1:
-        # too many imfs - error
-        msg = 'emd.cycles.phase_align only works on a single IMF - input IP dims are {0}'.format(ip.shape)
-        logger.warning(msg)
-        raise ValueError(msg)
-    elif ip.ndim == 1:
-        ip = ip[:, None]
-
-    if x.ndim == 2 and x.shape[1] > 1:
-        # too many imfs - error
-        msg = 'emd.cycles.phase_align only works on a single IMF - input x dims are {0}'.format(x.shape)
-        logger.warning(msg)
-        raise ValueError(msg)
-    elif x.ndim == 1:
-        x = x[:, None]
-
-    if cycles.ndim == 2 and cycles.shape[1] > 1:
-        # too many imfs - error
-        msg = 'emd.cycles.phase_align only works on a single IMF - input cycles dims are {0}'.format(cycles.shape)
-        logger.warning(msg)
-        raise ValueError(msg)
-    elif cycles.ndim == 1:
-        cycles = cycles[:, None]
-
-    logger.debug('aligning {0} cycles over {1} phase points with {2} interpolation'.format(cycles.max(),
-                                                                                           npoints,
-                                                                                           interp_kind))
+    msg = 'aligning {0} cycles over {1} phase points with {2} interpolation'
+    logger.debug(msg.format(cycles.max(),
+                 npoints,
+                 interp_kind))
 
     ncycles = cycles.max()
     avg = np.zeros((npoints, ncycles))
@@ -230,11 +218,25 @@ def get_cycle_inds(phase, return_good=True, mask=None,
 
     """
 
+    # Preamble
     logger.info('STARTED: get cycle indices')
+    if mask is not None:
+        phase, mask = ensure_2d([phase, mask], ['phase', 'mask'], 'get_cycle_inds')
+        if phase.shape[0] != mask.shape[0]:
+            msg = 'get_cycle_inds input mismatch - phase {0} and mask {1} should '
+            msg += 'have equal number of samples in first dimension'
+            msg = msg.format(phase.shape, mask.shape)
+            logger.error(msg)
+            raise ValueError(msg)
+    else:
+        phase = ensure_2d([phase], ['phase'], 'get_cycle_inds')
+
     logger.debug('computing on {0} samples over {1} IMFs '.format(phase.shape[0],
                                                                   phase.shape[1]))
     if mask is not None:
         logger.debug('{0} ({1}%) samples masked out'.format(mask.sum(), np.round(100*(mask.sum()/phase.shape[0]), 2)))
+
+    # Main body
 
     if phase.max() > 2 * np.pi:
         print('Wrapping phase')
@@ -345,13 +347,16 @@ def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
 
 
     """
-    if (cycles.ndim > 1) and (cycles.shape[1] > 1):
-        raise ValueError('Cycles for {0} IMFs passed in, \
-                          please input the cycles for a single IMF'.format(cycles.shape[1]))
-
+    # Preamble
     logger.info('STARTED: get cycle stats')
+    out = ensure_vector([cycles, values], ['cycles', 'values'], 'get_cycle_stat')
+    cycles, values = out
+    ensure_equal_dims([cycles, values], ['cycles', 'values'], 'get_cycle_stat')
+
     logger.debug('computing stats for {0} cycles over {1} samples'.format(cycles.max(), cycles.shape[0]))
     logger.debug('computing metric {0} and returning {1}-array'.format(func, mode))
+
+    # Main Body
 
     if mode == 'compressed':
         out = np.zeros((cycles.max() + 1, )) * np.nan
@@ -396,6 +401,16 @@ def get_control_points(x, good_cycles):
 
 
     """
+
+    # Preamble
+    x, good_cycles = ensure_vector((x, good_cycles),
+                                   ('x', 'good_cycles'),
+                                   'get_control_points')
+    ensure_equal_dims((x, good_cycles),
+                      ('x', 'good_cycles'),
+                      'get_control_points')
+
+    # Main Body
 
     ctrl = list()
     for ii in range(1, good_cycles.max() + 1):
@@ -453,9 +468,10 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
 
 
     """
+    # Preamble
+    cycles = ensure_2d([cycles], ['cycles'], 'get_cycle_chain')
 
-    if cycles.ndim == 1:
-        cycles = cycles[:, None]
+    # Main Body
 
     if drop_first is True:
         drop_first = 1
@@ -601,7 +617,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     if y.ndim == 1:
         y = y[:, None]
 
-    ##
+    #
     logging.info('Starting KD-Tree Match')
     msg = 'Matching {0} features from y ({1} observations) to x ({2} observations)'
     logging.info(msg.format(x.shape[1], y.shape[0], x.shape[0]))
@@ -655,7 +671,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     x_inds = np.where(final > -1)[0]
     y_inds = final[x_inds]
 
-    ##
+    #
     logging.info('Returning {0} matched observations'.format(x_inds.shape[0]))
 
     return x_inds, y_inds
