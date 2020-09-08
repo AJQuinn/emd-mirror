@@ -22,7 +22,7 @@ import numpy as np
 from scipy import interpolate as interp
 
 from . import spectra, utils, sift
-from .support import ensure_equal_dims, ensure_vector, ensure_2d
+from .support import ensure_equal_dims, ensure_vector, ensure_2d, ensure_1d_with_singleton
 
 # Housekeeping for logging
 import logging
@@ -63,13 +63,23 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
 
     """
 
+    # Preamble
+    ip = ensure_vector([ip], ['ip'], 'bin_by_phase')
+    if weights is not None:
+        weights = ensure_1d_with_singleton( [weights], ['weights'], 'bin_by_phase')
+        ensure_equal_dims((ip,x,weights), ('ip','x','weights'), 'bin_by_phase', dim=0)
+    else:
+        ensure_equal_dims((ip,x), ('ip','x'), 'bin_by_phase', dim=0)
+
+    # Main body
+
     if bin_edges is None:
         bin_edges, bin_centres = spectra.define_hist_bins(0, 2 * np.pi, nbins)
     else:
         nbins = len(bin_edges) - 1
         bin_centres = bin_edges[:-1] + np.diff(bin_edges) / 2
 
-    bin_inds = np.digitize(ip, bin_edges)[:, 0]
+    bin_inds = np.digitize(ip, bin_edges)
 
     out_dims = list((nbins, *x.shape[1:]))
     avg = np.zeros(out_dims) * np.nan
@@ -222,12 +232,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     logger.info('STARTED: get cycle indices')
     if mask is not None:
         phase, mask = ensure_2d([phase, mask], ['phase', 'mask'], 'get_cycle_inds')
-        if phase.shape[0] != mask.shape[0]:
-            msg = 'get_cycle_inds input mismatch - phase {0} and mask {1} should '
-            msg += 'have equal number of samples in first dimension'
-            msg = msg.format(phase.shape, mask.shape)
-            logger.error(msg)
-            raise ValueError(msg)
+        ensure_equal_dims((phase, mask), ('phase', 'mask'), 'get_cycle_inds', dim=0)
     else:
         phase = ensure_2d([phase], ['phase'], 'get_cycle_inds')
 
