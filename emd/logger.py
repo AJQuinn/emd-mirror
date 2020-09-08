@@ -8,20 +8,33 @@ from functools import wraps
 import logging
 logger = logging.getLogger(__name__)
 
+INFO_fmt = '%(asctime)s {prefix} - %(funcName)10s() : %(message)s'
+INFO_date = '%H:%M:%S'
+DEBUG_fmt = '%(asctime)s {prefix} emd.%(module)s:%(lineno)s - %(funcName)20s() : %(message)s'
+DEBUG_date = '%m-%d %H:%M:%S'
 
-def set_up(level='DEBUG', filename=None, mode='both'):
+def set_up(level='DEBUG', filename=None, mode='both', prefix=None):
     """
     LEVELS = [DEBUG, INFO, WARN, ERROR, FATAL]
     """
-    fmt = '[%(filename)s:%(lineno)s - %(funcName)20s()'
 
-    fmt = '%(asctime)s emd.%(module)s:%(lineno)s - %(funcName)20s() : %(message)s'
+    if prefix is None:
+        prefix = ''
+    else:
+        prefix = '(' + prefix + ')'
+
+    if level == 'DEBUG':
+        fmt = DEBUG_fmt.format(prefix=prefix)
+        datefmt = DEBUG_date
+    else:
+        fmt = INFO_fmt.format(prefix=prefix)
+        datefmt = INFO_date
 
     if (mode == 'console') or (mode == 'both'):
         # Start logging to console
         logging.basicConfig(level=getattr(logging, level),
                             format=fmt,
-                            datefmt='%m-%d %H:%M:%S')
+                            datefmt=datefmt)
 
     if (filename is not None) and (mode == 'both'):
         # Add file handler to existing console logger
@@ -35,7 +48,7 @@ def set_up(level='DEBUG', filename=None, mode='both'):
         # Start logging to file
         logging.basicConfig(level=getattr(logging, level),
                             format=fmt, filename=filename,
-                            datefmt='%m-%d %H:%M:%S')
+                            datefmt=datefmt)
 
     logging.info('Logging Started on {0}'.format(level))
     logging.info('Logging mode \'{0}\''.format(mode))
