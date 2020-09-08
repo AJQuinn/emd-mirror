@@ -8,7 +8,7 @@ scripts = []
 
 name = 'emd'
 version = '0.3'
-release = '0.3.1'
+release = '0.3.1.dev'
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
