@@ -66,10 +66,10 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
     # Preamble
     ip = ensure_vector([ip], ['ip'], 'bin_by_phase')
     if weights is not None:
-        weights = ensure_1d_with_singleton( [weights], ['weights'], 'bin_by_phase')
-        ensure_equal_dims((ip,x,weights), ('ip','x','weights'), 'bin_by_phase', dim=0)
+        weights = ensure_1d_with_singleton([weights], ['weights'], 'bin_by_phase')
+        ensure_equal_dims((ip, x, weights), ('ip', 'x', 'weights'), 'bin_by_phase', dim=0)
     else:
-        ensure_equal_dims((ip,x), ('ip','x'), 'bin_by_phase', dim=0)
+        ensure_equal_dims((ip, x), ('ip', 'x'), 'bin_by_phase', dim=0)
 
     # Main body
 

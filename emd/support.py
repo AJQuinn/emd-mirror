@@ -63,7 +63,7 @@ def ensure_equal_dims(to_check, names, func_name, dim=None):
 
     """
 
-    if dim == None:
+    if dim is None:
         dim = np.arange(to_check[0].ndim)
     else:
         dim = [dim]

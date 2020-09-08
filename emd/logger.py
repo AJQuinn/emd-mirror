@@ -13,6 +13,7 @@ INFO_date = '%H:%M:%S'
 DEBUG_fmt = '%(asctime)s {prefix} emd.%(module)s:%(lineno)s - %(funcName)20s() : %(message)s'
 DEBUG_date = '%m-%d %H:%M:%S'
 
+
 def set_up(level='DEBUG', filename=None, mode='both', prefix=None):
     """
     LEVELS = [DEBUG, INFO, WARN, ERROR, FATAL]
