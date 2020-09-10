@@ -526,7 +526,7 @@ def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
 
     """
 
-    infr, inam = ensure_2d([infr, inam], ['infr','inam'], 'hilberthuang')
+    infr, inam = ensure_2d([infr, inam], ['infr', 'inam'], 'hilberthuang')
     ensure_equal_dims((infr, inam), ('infr', 'inam'), 'hilberthuang')
 
     logger.info('STARTED: compute Hilbert-Huang Transform')
