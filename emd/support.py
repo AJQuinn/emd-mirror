@@ -115,6 +115,7 @@ def ensure_vector(to_check, names, func_name):
             msg = "Checking {0} inputs - trimming singleton from input '{1}'"
             msg = msg.format(func_name, names[idx])
             out_args[idx] = out_args[idx][:, 0]
+            logger.warning(msg)
         elif (xx.ndim > 1) and (xx.shape[1] != 1):
             msg = "Checking {0} inputs - Input '{1}' {2} must be a vector or 2d with singleton second dim"
             msg = msg.format(func_name, names[idx], xx.shape)

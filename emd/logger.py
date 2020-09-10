@@ -4,6 +4,7 @@
 
 import numpy as np
 from functools import wraps
+from .support import get_install_dir, get_installed_version
 
 import logging
 logger = logging.getLogger(__name__)
@@ -55,6 +56,9 @@ def set_up(level='DEBUG', filename=None, mode='both', prefix=None):
     logging.info('Logging mode \'{0}\''.format(mode))
     if (filename is not None) and (mode == 'file') or (mode == 'both'):
         logging.info('Logging to file: {0}'.format(filename))
+
+    logging.info('EMD v{0} installed in {1}'.format(get_installed_version(),
+                                                    get_install_dir()))
 
 
 def set_level(level='INFO'):
