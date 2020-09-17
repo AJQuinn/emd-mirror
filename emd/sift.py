@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 # Utilities
 
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}, extrema_opts={}):
+def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -85,6 +85,12 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}, extrema_opt
     niters = 0
     while continue_imf:
         niters += 1
+
+        if niters == 3*max_iters//4
+            logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
+        elif niters > max_iters:
+            logger.debug('Sift failed. No covergence after {0} iterations, '.format(niters))
+            return None, False
 
         upper = interp_envelope(proto_imf, mode='upper',
                                 **envelope_opts, extrema_opts=extrema_opts)
@@ -624,14 +630,14 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
     X : ndarray
         1D input array containing the time-series data to be decomposed
     mask_amp : scalar or array_like
-         Amplitude of mask signals as specified by mask_amp_mode. If scalar the
-         same value is applied to all IMFs, if an array is passed each value is
-         applied to each IMF in turn (Default value = 1)
+        Amplitude of mask signals as specified by mask_amp_mode. If scalar the
+        same value is applied to all IMFs, if an array is passed each value is
+        applied to each IMF in turn (Default value = 1)
     mask_amp_mode : {'abs','ratio_imf','ratio_sig'}
-         Method for computing mask amplitude. Either in absolute units ('abs'), or as a
-         ratio of the amplitude of the input signal ('ratio_signal') or previous imf
-         ('ratio_imf') (Default value = 'ratio_imf')
-   mask_freqs : {'zc','if',float,,array_like}
+        Method for computing mask amplitude. Either in absolute units ('abs'), or as a
+        ratio of the amplitude of the input signal ('ratio_signal') or previous imf
+        ('ratio_imf') (Default value = 'ratio_imf')
+    mask_freqs : {'zc','if',float,,array_like}
         Define the set of mask frequencies to use. If 'zc' or 'if' are passed,
         the frequency of the first mask is taken from either the zero-crossings
         or instantaneous frequnecy the first IMF of a standard sift on the
@@ -640,7 +646,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         vector is passed, the values in the vector will specify the mask
         frequencies.
     mask_step_factor : scalar
-         Step in frequency between successive masks (Default value = 2)
+        Step in frequency between successive masks (Default value = 2)
     mask_type : {'all','sine','cosine'}
         Which type of masking signal to use. 'sine' or 'cosine' options return
         the average of a +ve and -ve flipped wave. 'all' applies four masks:
