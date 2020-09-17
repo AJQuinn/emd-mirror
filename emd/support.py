@@ -34,8 +34,20 @@ def run_tests():
     https://docs.pytest.org/en/latest/usage.html#calling-pytest-from-python-code
 
     """
-    pytest.main(['-x', get_install_dir()])
 
+    inst_dir = get_install_dir()
+
+    if os.path.exists(os.path.join(inst_dir,'tests')) == False:
+        logger.info('Test directory not found in: {0}'.format(inst_dir))
+        logger.info('(this is normal for PyPI/pip EMD installs)')
+    else:
+        logger.info('Running EMD package tests from: {0}'.format(inst_dir))
+        out = pytest.main(['-x', inst_dir])
+
+        if out.value != 0:
+            logger.warning('EMD package tests FAILED - EMD may not behave as expected')
+        else:
+            logger.info('EMD package tests passed')
 
 # Ensurance Department
 
