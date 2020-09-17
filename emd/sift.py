@@ -86,7 +86,7 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
     while continue_imf:
         niters += 1
 
-        if niters == 3*max_iters//4
+        if niters == 3*max_iters//4:
             logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
         elif niters > max_iters:
             logger.debug('Sift failed. No covergence after {0} iterations, '.format(niters))

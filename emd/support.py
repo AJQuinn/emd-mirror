@@ -37,7 +37,7 @@ def run_tests():
 
     inst_dir = get_install_dir()
 
-    if os.path.exists(os.path.join(inst_dir,'tests')) == False:
+    if os.path.exists(os.path.join(inst_dir, 'tests')) is False:
         logger.info('Test directory not found in: {0}'.format(inst_dir))
         logger.info('(this is normal for PyPI/pip EMD installs)')
     else:
