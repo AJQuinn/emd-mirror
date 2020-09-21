@@ -293,9 +293,9 @@ def get_cycle_inds(phase, return_good=True, mask=None,
                     try:
                         cycle = imf[inds[jj]:inds[jj + 1]]
                         # Should extend this to cope with multiple peaks etc
-                        ctrl = (0, sift.find_extrema(cycle)[0][0],
+                        ctrl = (0, sift._find_extrema(cycle)[0][0],
                                 np.where(np.gradient(np.sign(cycle)) == -1)[0][0],
-                                sift.find_extrema(-cycle)[0][0],
+                                sift._find_extrema(-cycle)[0][0],
                                 len(cycle))
                         if len(ctrl) == 5 and np.all(np.sign(np.diff(ctrl))):
                             cycle_checks[3] = True
@@ -417,11 +417,11 @@ def get_control_points(x, good_cycles):
         cycle = x[good_cycles == ii]
 
         # Peak
-        pk = sift.find_extrema(cycle)[0]
+        pk = sift._find_extrema(cycle)[0]
         # Ascending-zero crossing
         asc = np.where(np.diff(np.sign(cycle)) == -2)[0]
         # Trough
-        tr = sift.find_extrema(-cycle)[0]
+        tr = sift._find_extrema(-cycle)[0]
 
         # Replace values with nan if more or less than 1 ctrl point is found
         if len(pk) == 1:
