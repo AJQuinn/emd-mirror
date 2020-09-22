@@ -232,6 +232,8 @@ html_theme_options = {
         ("Quick-Start", "quick_start"),
         ("Tutorials", "auto_tutorials/index"),
         ("Reference", "reference"),
+        ("Contribute", "contribute"),
+        ("GitLab", "https://gitlab.com/emd-dev/emd", True)
     ],
 
     # Render the next and previous page links in navbar. (Default: true)
