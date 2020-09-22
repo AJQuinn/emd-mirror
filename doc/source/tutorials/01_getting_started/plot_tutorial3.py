@@ -141,7 +141,7 @@ print(inspect.signature(my_mask_sift))
 # directly edit the text file to customise the sift parameters from there if
 # preferred. The save and load operations are performed by
 # ``emd.sift.SiftConfig.to_yaml_file`` and
-# ``emd.sift.SiftConfig.from_yaml_file`` repectively.
+# ``emd.sift.SiftConfig.from_yaml_file`` respectively.
 #
 # Lets look at an example. We're going to store this config in a temporary file
 # on your system for this tutorial. This avoids clutter and should work on all
