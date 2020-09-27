@@ -493,7 +493,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
         res = p.starmap(sift, args)
         noise = noise - np.array([r[:, 0] for r in res]).T
 
-        pks, locs = find_extrema(imf[:, -1])
+        pks, locs = _find_extrema(imf[:, -1])
         if len(pks) < 2:
             continue_sift = False
 
@@ -1138,25 +1138,32 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
 # SIFT Estimation Utilities
 
 
-def get_padded_extrema(X, pad_width=2, combined_upper_lower=False,
-                       loc_pad_opts={}, mag_pad_opts={}, parabolic_extrema=False):
+def get_padded_extrema(X, pad_width=2, mode='peaks', parabolic_extrema=False,
+                       loc_pad_opts={}, mag_pad_opts={}):
     """
     Return a set of extrema from a signal including padded extrema at the edges
-    of the signal.
+    of the signal. Padding is carried out using numpy.pad and the
 
     Parameters
     ----------
     X : ndarray
         Input signal
-    combined_upper_lower : bool
-         Flag to indicate whether both upper and lower extrema should be
-         considered (Default value = False)
+    pad_width : int >= 0
+        Number of additional extrema to add to the start and end
+    ext_mode : {'peaks', 'troughs', 'abs_peaks'}
+        Switch between detecting peaks, troughs or peaks in the abs signal
+    parabolic_extrema : bool
+        Flag indicating whether extrema positions should be refined by parabolic interpolation
+    loc_pad_opts : dict
+        Optional dictionary of options to be passed to np.pad when padding extrema locations
+    mag_pad_opts : dict
+        Optional dictionary of options to be passed to np.pad when padding extrema magnitudes
 
     Returns
     -------
-    max_locs : ndarray
+    locs : ndarray
         location of extrema in samples
-    max_pks : ndarray
+    mags : ndarray
         Magnitude of each extrema
 
 
@@ -1177,34 +1184,84 @@ def get_padded_extrema(X, pad_width=2, combined_upper_lower=False,
     if X.ndim == 2:
         X = X[:, 0]
 
-    if combined_upper_lower:
-        max_locs, max_pks = find_extrema(np.abs(X))
+    if mode == 'peaks':
+        max_locs, max_ext = _find_extrema(X, parabolic_extrema=parabolic_extrema)
+    elif mode == 'troughs':
+        max_locs, max_ext = _find_extrema(-X, parabolic_extrema=parabolic_extrema)
+        max_ext = -max_ext
+    elif mode == 'abs_peaks':
+        max_locs, max_ext = _find_extrema(np.abs(X), parabolic_extrema=parabolic_extrema)
     else:
-        max_locs, max_pks = find_extrema(X)
+        raise ValueError('Mode {0} not recognised by get_padded_extrema'.format(mode))
 
-    if parabolic_extrema:
-        y = np.c_[X[max_locs-1], X[max_locs], X[max_locs+1]].T
-        max_locs, max_pks = compute_parabolic_extrema(y, max_locs)
-
-    # Return nothing we don't have enough extrema
-    if max_locs.size <= 1:
+    # Return nothing if we don't have enough extrema
+    if (len(max_locs) == 0) or (max_locs.size <= 1):
         return None, None
 
     # Determine how much padding to use
     if max_locs.size < pad_width:
         pad_width = max_locs.size
 
+    # Return now if we're not padding
+    if (pad_width is None) or (pad_width == 0):
+        return max_locs, max_ext
+
     # Pad peak locations
     ret_max_locs = np.pad(max_locs, pad_width, loc_pad_mode, **loc_pad_opts)
 
     # Pad peak magnitudes
-    ret_max_pks = np.pad(max_pks, pad_width, mag_pad_mode, **mag_pad_opts)
+    ret_max_ext = np.pad(max_ext, pad_width, mag_pad_mode, **mag_pad_opts)
 
+    # Keep padding if the locations don't stretch to the edge
     while max(ret_max_locs) < len(X) or min(ret_max_locs) >= 0:
         ret_max_locs = np.pad(ret_max_locs, pad_width, loc_pad_mode, **loc_pad_opts)
-        ret_max_pks = np.pad(ret_max_pks, pad_width, mag_pad_mode, **mag_pad_opts)
+        ret_max_ext = np.pad(ret_max_ext, pad_width, mag_pad_mode, **mag_pad_opts)
 
-    return ret_max_locs, ret_max_pks
+    return ret_max_locs, ret_max_ext
+
+
+def _find_extrema(X, peak_prom_thresh=None, parabolic_extrema=False):
+    """
+    Identify extrema within a time-course and reject extrema whose magnitude is
+    below a set threshold.
+
+    Parameters
+    ----------
+    X : ndarray
+       Input signal
+    peak_prom_thresh : {None, float}
+       Only include peaks which have prominences above this threshold or None
+       for no threshold (default is no threshold)
+    parabolic_extrema : bool
+        Flag indicating whether peak estimation should be refined by parabolic
+        interpolation (default is False)
+
+    Returns
+    -------
+    locs : ndarray
+        Location of extrema in samples
+    extrema : ndarray
+        Value of each extrema
+
+
+    """
+
+    ext_locs = signal.argrelextrema(X, np.greater, order=1)[0]
+
+    if len(ext_locs) == 0:
+        return np.array([]), np.array([])
+
+    if peak_prom_thresh is not None:
+        prom, _, _ = signal._peak_finding.peak_prominences(X, ext_locs, wlen=3)
+        keeps = np.where(prom > peak_prom_thresh)[0]
+        ext_locs = ext_locs[keeps]
+
+    if parabolic_extrema:
+        y = np.c_[X[ext_locs-1], X[ext_locs], X[ext_locs+1]].T
+        ext_locs, max_pks = compute_parabolic_extrema(y, ext_locs)
+        return ext_locs, max_pks
+    else:
+        return ext_locs, X[ext_locs]
 
 
 def compute_parabolic_extrema(y, locs):
@@ -1282,11 +1339,11 @@ def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
         raise ValueError("Invalid interp_method value")
 
     if mode == 'upper':
-        locs, pks = get_padded_extrema(X, combined_upper_lower=False, **extrema_opts)
+        locs, pks = get_padded_extrema(X, mode='peaks', **extrema_opts)
     elif mode == 'lower':
-        locs, pks = get_padded_extrema(-X, combined_upper_lower=False, **extrema_opts)
+        locs, pks = get_padded_extrema(X, mode='troughs', **extrema_opts)
     elif mode == 'combined':
-        locs, pks = get_padded_extrema(X, combined_upper_lower=True, **extrema_opts)
+        locs, pks = get_padded_extrema(X, mode='abs_peaks', **extrema_opts)
     else:
         raise ValueError('Mode not recognised. Use mode= \'upper\'|\'lower\'|\'combined\'')
 
@@ -1314,55 +1371,10 @@ def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
         raise ValueError('Envelope length does not match input data {0} {1}'.format(
             env.shape[0], X.shape[0]))
 
-    if mode == 'lower':
-        env = -env
-        pks = -pks
-
     if ret_extrema:
         return env, (locs, pks)
     else:
         return env
-
-
-def find_extrema(X, ret_min=False):
-    """
-    Identify extrema within a time-course and reject extrema whose magnitude is
-    below a set threshold.
-
-    Parameters
-    ----------
-    X : ndarray
-       Input signal
-    ret_min : bool
-         Flag to indicate whether maxima (False) or minima (True) should be identified(Default value = False)
-
-    Returns
-    -------
-    locs : ndarray
-        Location of extrema in samples
-    extrema : ndarray
-        Value of each extrema
-
-
-    """
-
-    if ret_min:
-        ind = signal.argrelmin(X, order=1)[0]
-    else:
-        ind = signal.argrelmax(X, order=1)[0]
-
-    # Only keep peaks with magnitude above machine precision
-    if len(ind) / X.shape[0] > 1e-3:
-        good_inds = ~(np.isclose(X[ind], X[ind - 1]) * np.isclose(X[ind], X[ind + 1]))
-        ind = ind[good_inds]
-
-    # if ind[0] == 0:
-    #    ind = ind[1:]
-
-    # if ind[-1] == X.shape[0]:
-    #    ind = ind[:-2]
-
-    return ind, X[ind]
 
 
 def zero_crossing_count(X):
@@ -1575,7 +1587,7 @@ def get_config(siftname='sift'):
     # Get defaults for extrema detection and padding
     extrema_opts = _get_function_opts(get_padded_extrema, ignore=['X', 'mag_pad_opts',
                                                                   'loc_pad_opts',
-                                                                  'combined_upper_lower'])
+                                                                  'mode'])
 
     # Get defaults for envelope interpolation
     envelope_opts = _get_function_opts(interp_envelope, ignore=['X', 'extrema_opts', 'mode', 'ret_extrema'])

@@ -18,8 +18,12 @@ Where appropriate, links to specific Issues & Merge Requests are appreciated.
 ## [Unreleased]
 
 ### Added
+- Add input array shape ensurance functions and start to use in sift & cycle submodules  [!26](https://gitlab.com/emd-dev/emd/-/merge_requests/26)
+
 ### Fixed
+
 ### Changed
+- Refactor some options extrema detection functions [!29](https://gitlab.com/emd-dev/emd/-/merge_requests/29)
 
 ## [0.3.1]
 
