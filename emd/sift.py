@@ -28,7 +28,7 @@ from scipy import signal
 from scipy import interpolate as interp
 
 from . import spectra
-from .logger import sift_logger
+from .logger import sift_logger, wrap_verbose
 from .support import ensure_1d_with_singleton, ensure_2d
 
 # Housekeeping for logging
@@ -128,9 +128,10 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
 
 # SIFT implementation
 
+@wrap_verbose
 @sift_logger('sift')
 def sift(X, sift_thresh=1e-8, max_imfs=None,
-         imf_opts={}, envelope_opts={}, extrema_opts={}):
+         imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     original sift algorithm [1]_.
@@ -157,6 +158,8 @@ def sift(X, sift_thresh=1e-8, max_imfs=None,
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     See Also
     --------
@@ -289,10 +292,11 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 
 # Implementation
 
+@wrap_verbose
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
                   nprocesses=1, sift_thresh=1e-8, max_imfs=None,
-                  imf_opts={}, envelope_opts={}, extrema_opts={}):
+                  imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -333,6 +337,8 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     See Also
     --------
@@ -382,11 +388,12 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     return imfs
 
 
+@wrap_verbose
 @sift_logger('complete_ensemble_sift')
 def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
                            sift_thresh=1e-8, max_imfs=None,
-                           imf_opts={}, envelope_opts={}, extrema_opts={}):
+                           imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -427,6 +434,8 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     See Also
     --------
@@ -611,12 +620,13 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
 
 # Implementation
 
+@wrap_verbose
 @sift_logger('mask_sift')
 def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
               mask_freqs='zc', mask_step_factor=2,
               mask_type='all', ret_mask_freq=False,
               max_imfs=9, sift_thresh=1e-8,
-              imf_opts={}, envelope_opts={}, extrema_opts={}):
+              imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes [1]_.
@@ -674,6 +684,8 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     Notes
     -----
