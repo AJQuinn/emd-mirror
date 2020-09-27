@@ -743,7 +743,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
             # Should be array_like if not a single number
             amp = mask_amp[imf_layer] * sd
 
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
 
         next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type=mask_type,
                                      imf_opts=imf_opts, envelope_opts=envelope_opts, extrema_opts=extrema_opts)
@@ -883,7 +883,7 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
     elif first_mask_mode < .5:
         z = first_mask_mode
         amp = amp * X.std()
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
         imf = get_next_imf_mask(X, z, amp, mask_type='all',
                                 imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
         zs = [z]
@@ -904,7 +904,7 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
             # Should be array_like if not a single number
             amp = mask_amp[layer] * sd
 
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
         next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
                                      imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
@@ -1027,7 +1027,7 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
         # Should be array_like if not a single number
         amp = mask_amp[layer] * sd
 
-    logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(1, z, amp))
+    logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(1, z, amp))
 
     imf = get_next_imf_mask(X, z, amp, mask_type='all',
                             imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
@@ -1050,7 +1050,7 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
             # Should be array_like if not a single number
             amp = mask_amp[layer] * sd
 
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
         next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
                                      imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
