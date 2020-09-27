@@ -177,3 +177,24 @@ def sift_logger(sift_name):
             return func_output
         return sift_logger
     return add_logger
+
+
+# Decorator for logging sift function
+def wrap_verbose(func):
+    # This is the actual decorator
+    @wraps(func)
+    def inner_verbose(*args, **kwargs):
+
+        if 'verbose' in kwargs:
+            tmp_level = kwargs['verbose']
+            current_level = get_level()
+            set_level(level=tmp_level)
+
+        # Call function itself
+        func_output = func(*args, **kwargs)
+
+        if 'verbose' in kwargs:
+            set_level(level=logging._levelToName[current_level])
+
+        return func_output
+    return inner_verbose
