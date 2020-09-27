@@ -623,10 +623,10 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         y = y[:, None]
 
     #
-    logging.info('Starting KD-Tree Match')
+    logger.info('Starting KD-Tree Match')
     msg = 'Matching {0} features from y ({1} observations) to x ({2} observations)'
-    logging.info(msg.format(x.shape[1], y.shape[0], x.shape[0]))
-    logging.debug('K: {0}, distance_upper_bound: {1}'.format(K, distance_upper_bound))
+    logger.info(msg.format(x.shape[1], y.shape[0], x.shape[0]))
+    logger.debug('K: {0}, distance_upper_bound: {1}'.format(K, distance_upper_bound))
 
     # Initialise Tree and find nearest neighbours
     from scipy import spatial
@@ -658,7 +658,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         selected.extend(inds[np.where(uni_matches)[0], ii])
 
         msg = '{0} Matches in layer {1}'
-        logging.debug(msg.format(np.sum(uni_matches), ii))
+        logger.debug(msg.format(np.sum(uni_matches), ii))
 
     # Find column index of left-most choice per row (ie closest unique neighbour)
     winner = np.argmax(II, axis=1)
@@ -677,7 +677,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     y_inds = final[x_inds]
 
     #
-    logging.info('Returning {0} matched observations'.format(x_inds.shape[0]))
+    logger.info('Returning {0} matched observations'.format(x_inds.shape[0]))
 
     return x_inds, y_inds
 
