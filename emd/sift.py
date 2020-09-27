@@ -28,7 +28,7 @@ from scipy import signal
 from scipy import interpolate as interp
 
 from . import spectra
-from .logger import sift_logger
+from .logger import sift_logger, wrap_verbose
 from .support import ensure_1d_with_singleton, ensure_2d
 
 # Housekeeping for logging
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 # Utilities
 
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}, extrema_opts={}):
+def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -86,6 +86,12 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}, extrema_opt
     while continue_imf:
         niters += 1
 
+        if niters == 3*max_iters//4:
+            logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
+        elif niters > max_iters:
+            logger.debug('Sift failed. No covergence after {0} iterations, '.format(niters))
+            return None, False
+
         upper = interp_envelope(proto_imf, mode='upper',
                                 **envelope_opts, extrema_opts=extrema_opts)
         lower = interp_envelope(proto_imf, mode='lower',
@@ -122,9 +128,10 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, envelope_opts={}, extrema_opt
 
 # SIFT implementation
 
+@wrap_verbose
 @sift_logger('sift')
 def sift(X, sift_thresh=1e-8, max_imfs=None,
-         imf_opts={}, envelope_opts={}, extrema_opts={}):
+         imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     original sift algorithm [1]_.
@@ -151,6 +158,8 @@ def sift(X, sift_thresh=1e-8, max_imfs=None,
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     See Also
     --------
@@ -283,10 +292,11 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 
 # Implementation
 
+@wrap_verbose
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
                   nprocesses=1, sift_thresh=1e-8, max_imfs=None,
-                  imf_opts={}, envelope_opts={}, extrema_opts={}):
+                  imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -327,6 +337,8 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     See Also
     --------
@@ -376,11 +388,12 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     return imfs
 
 
+@wrap_verbose
 @sift_logger('complete_ensemble_sift')
 def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
                            sift_thresh=1e-8, max_imfs=None,
-                           imf_opts={}, envelope_opts={}, extrema_opts={}):
+                           imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -421,6 +434,8 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     See Also
     --------
@@ -605,12 +620,13 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
 
 # Implementation
 
+@wrap_verbose
 @sift_logger('mask_sift')
 def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
               mask_freqs='zc', mask_step_factor=2,
               mask_type='all', ret_mask_freq=False,
               max_imfs=9, sift_thresh=1e-8,
-              imf_opts={}, envelope_opts={}, extrema_opts={}):
+              imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes [1]_.
@@ -624,14 +640,14 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
     X : ndarray
         1D input array containing the time-series data to be decomposed
     mask_amp : scalar or array_like
-         Amplitude of mask signals as specified by mask_amp_mode. If scalar the
-         same value is applied to all IMFs, if an array is passed each value is
-         applied to each IMF in turn (Default value = 1)
+        Amplitude of mask signals as specified by mask_amp_mode. If scalar the
+        same value is applied to all IMFs, if an array is passed each value is
+        applied to each IMF in turn (Default value = 1)
     mask_amp_mode : {'abs','ratio_imf','ratio_sig'}
-         Method for computing mask amplitude. Either in absolute units ('abs'), or as a
-         ratio of the amplitude of the input signal ('ratio_signal') or previous imf
-         ('ratio_imf') (Default value = 'ratio_imf')
-   mask_freqs : {'zc','if',float,,array_like}
+        Method for computing mask amplitude. Either in absolute units ('abs'), or as a
+        ratio of the amplitude of the input signal ('ratio_signal') or previous imf
+        ('ratio_imf') (Default value = 'ratio_imf')
+    mask_freqs : {'zc','if',float,,array_like}
         Define the set of mask frequencies to use. If 'zc' or 'if' are passed,
         the frequency of the first mask is taken from either the zero-crossings
         or instantaneous frequnecy the first IMF of a standard sift on the
@@ -640,7 +656,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         vector is passed, the values in the vector will specify the mask
         frequencies.
     mask_step_factor : scalar
-         Step in frequency between successive masks (Default value = 2)
+        Step in frequency between successive masks (Default value = 2)
     mask_type : {'all','sine','cosine'}
         Which type of masking signal to use. 'sine' or 'cosine' options return
         the average of a +ve and -ve flipped wave. 'all' applies four masks:
@@ -668,6 +684,8 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         Optional dictionary of keyword options to be passed to emd.interp_envelope
     extrema_opts : dict
         Optional dictionary of keyword options to be passed to emd.get_padded_extrema
+    verbose : {None,'CRITICAL','WARNING','INFO','DEBUG'}
+        Option to override the EMD logger level for a call to this function.
 
     Notes
     -----
@@ -737,7 +755,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
             # Should be array_like if not a single number
             amp = mask_amp[imf_layer] * sd
 
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
 
         next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type=mask_type,
                                      imf_opts=imf_opts, envelope_opts=envelope_opts, extrema_opts=extrema_opts)
@@ -877,7 +895,7 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
     elif first_mask_mode < .5:
         z = first_mask_mode
         amp = amp * X.std()
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
         imf = get_next_imf_mask(X, z, amp, mask_type='all',
                                 imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
         zs = [z]
@@ -898,7 +916,7 @@ def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
             # Should be array_like if not a single number
             amp = mask_amp[layer] * sd
 
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
         next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
                                      imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
@@ -1021,7 +1039,7 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
         # Should be array_like if not a single number
         amp = mask_amp[layer] * sd
 
-    logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(1, z, amp))
+    logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(1, z, amp))
 
     imf = get_next_imf_mask(X, z, amp, mask_type='all',
                             imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
@@ -1044,7 +1062,7 @@ def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
             # Should be array_like if not a single number
             amp = mask_amp[layer] * sd
 
-        logging.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
+        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
 
         next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
                                      imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)

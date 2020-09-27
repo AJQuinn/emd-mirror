@@ -22,7 +22,7 @@ import numpy as np
 from scipy import interpolate as interp
 
 from . import spectra, utils, sift
-from .support import ensure_equal_dims, ensure_vector, ensure_2d
+from .support import ensure_equal_dims, ensure_vector, ensure_2d, ensure_1d_with_singleton
 
 # Housekeeping for logging
 import logging
@@ -63,13 +63,23 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
 
     """
 
+    # Preamble
+    ip = ensure_vector([ip], ['ip'], 'bin_by_phase')
+    if weights is not None:
+        weights = ensure_1d_with_singleton([weights], ['weights'], 'bin_by_phase')
+        ensure_equal_dims((ip, x, weights), ('ip', 'x', 'weights'), 'bin_by_phase', dim=0)
+    else:
+        ensure_equal_dims((ip, x), ('ip', 'x'), 'bin_by_phase', dim=0)
+
+    # Main body
+
     if bin_edges is None:
         bin_edges, bin_centres = spectra.define_hist_bins(0, 2 * np.pi, nbins)
     else:
         nbins = len(bin_edges) - 1
         bin_centres = bin_edges[:-1] + np.diff(bin_edges) / 2
 
-    bin_inds = np.digitize(ip, bin_edges)[:, 0]
+    bin_inds = np.digitize(ip, bin_edges)
 
     out_dims = list((nbins, *x.shape[1:]))
     avg = np.zeros(out_dims) * np.nan
@@ -222,12 +232,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     logger.info('STARTED: get cycle indices')
     if mask is not None:
         phase, mask = ensure_2d([phase, mask], ['phase', 'mask'], 'get_cycle_inds')
-        if phase.shape[0] != mask.shape[0]:
-            msg = 'get_cycle_inds input mismatch - phase {0} and mask {1} should '
-            msg += 'have equal number of samples in first dimension'
-            msg = msg.format(phase.shape, mask.shape)
-            logger.error(msg)
-            raise ValueError(msg)
+        ensure_equal_dims((phase, mask), ('phase', 'mask'), 'get_cycle_inds', dim=0)
     else:
         phase = ensure_2d([phase], ['phase'], 'get_cycle_inds')
 
@@ -618,10 +623,10 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         y = y[:, None]
 
     #
-    logging.info('Starting KD-Tree Match')
+    logger.info('Starting KD-Tree Match')
     msg = 'Matching {0} features from y ({1} observations) to x ({2} observations)'
-    logging.info(msg.format(x.shape[1], y.shape[0], x.shape[0]))
-    logging.debug('K: {0}, distance_upper_bound: {1}'.format(K, distance_upper_bound))
+    logger.info(msg.format(x.shape[1], y.shape[0], x.shape[0]))
+    logger.debug('K: {0}, distance_upper_bound: {1}'.format(K, distance_upper_bound))
 
     # Initialise Tree and find nearest neighbours
     from scipy import spatial
@@ -653,7 +658,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         selected.extend(inds[np.where(uni_matches)[0], ii])
 
         msg = '{0} Matches in layer {1}'
-        logging.debug(msg.format(np.sum(uni_matches), ii))
+        logger.debug(msg.format(np.sum(uni_matches), ii))
 
     # Find column index of left-most choice per row (ie closest unique neighbour)
     winner = np.argmax(II, axis=1)
@@ -672,7 +677,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     y_inds = final[x_inds]
 
     #
-    logging.info('Returning {0} matched observations'.format(x_inds.shape[0]))
+    logger.info('Returning {0} matched observations'.format(x_inds.shape[0]))
 
     return x_inds, y_inds
 
