@@ -28,6 +28,7 @@ import numpy as np
 from scipy import signal, sparse
 
 from . import utils
+from .support import ensure_2d, ensure_equal_dims
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -75,6 +76,8 @@ def frequency_stats(imf, sample_rate, method,
 
     """
     logger.info('STARTED: compute frequency stats')
+
+    imf = ensure_2d([imf], ['imf'], 'frequency_stats')
     logger.debug('computing on {0} samples over {1} imfs at sample rate {2}'.format(imf.shape[0],
                                                                                     imf.shape[1],
                                                                                     sample_rate))
@@ -417,15 +420,21 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
 
     """
     logger.info('STARTED: compute Holospectrum')
+
+    out = ensure_2d((infr, infr2, inam2), ('infr', 'infr2', 'inam2'), 'holospectrum')
+    infr, infr2, inam2 = out
+    ensure_equal_dims((infr, infr2, inam2), ('infr', 'infr2', 'inam2'), 'holospectrum', dim=0)
+    ensure_equal_dims((infr, infr2, inam2), ('infr', 'infr2', 'inam2'), 'holospectrum', dim=1)
+
     logger.debug('computing on {0} samples over {1} first-level \
                   IMFs and {2} second level IMFs'.format(infr2.shape[0],
                                                          infr2.shape[1],
                                                          infr2.shape[2]))
     logger.debug('First level freq bins: {0} to {1} in {2} steps'.format(freq_edges[0],
-                                                                         freq_edges[1],
+                                                                         freq_edges[-1],
                                                                          len(freq_edges)))
     logger.debug('Second level freq bins: {0} to {1} in {2} steps'.format(freq_edges2[0],
-                                                                          freq_edges2[1],
+                                                                          freq_edges2[-1],
                                                                           len(freq_edges2)))
 
     if mode == 'energy':
@@ -517,17 +526,14 @@ def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
 
     """
 
-    if infr.ndim == 1:
-        infr = infr[:, np.newaxis]
-
-    if inam.ndim == 1:
-        inam = inam[:, np.newaxis]
+    infr, inam = ensure_2d([infr, inam], ['infr', 'inam'], 'hilberthuang')
+    ensure_equal_dims((infr, inam), ('infr', 'inam'), 'hilberthuang')
 
     logger.info('STARTED: compute Hilbert-Huang Transform')
     logger.debug('computing on {0} samples over {1} IMFs '.format(infr.shape[0],
                                                                   infr.shape[1]))
     logger.debug('Freq bins: {0} to {1} in {2} steps'.format(freq_edges[0],
-                                                             freq_edges[1],
+                                                             freq_edges[-1],
                                                              len(freq_edges)))
 
     if mode == 'energy':

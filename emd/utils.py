@@ -24,7 +24,8 @@ import logging
 import numpy as np
 from scipy import signal
 
-from .sift import interp_envelope
+from .sift import interp_envelope, zero_crossing_count
+from .support import ensure_2d
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -338,3 +339,81 @@ def ar_simulate(freq, sample_rate, seconds, r=.95, noise_std=None, random_seed=N
         np.random.seed()  # restore defaults
 
     return x
+
+
+def is_imf(imf, avg_tol=5e-2, envelope_opts=None, extrema_opts=None):
+    """
+    Run checks to validate whether a signal is a 'true IMF' according to two
+    criteria. Firstly, the number of extrema and number of zero-crossings must
+    differ by zero or one. Secondly,the mean of the upper and lower envelopes
+    must be within a tolerance of zero.
+
+    Parameters
+    ----------
+    imf : 2d array
+        Array of signals to check [nsamples x nimfs]
+    avg_tol : float
+        Tolerance of acceptance for criterion two. The sum-square of the mean
+        of the upper and lower envelope must be below avg_tol of the sum-square
+        of the signal being checked.
+    envelope_opts : dict
+        Dictionary of envelope estimation options, must be identical to options
+        used when estimating IMFs.
+    extrema_opts : dict
+        Dictionary of extrema estimation options, must be identical to options
+        used when estimating IMFs.
+
+    Parameters
+    ----------
+    array [2 x nimfs]
+        Boolean array indicating whether each IMF passed each test.
+
+    Notes
+    -----
+    These are VERY strict criteria to apply to real data. The tests may
+    indicate a fail if the sift doesn't coverge well in a short segment of the
+    signal when the majority of the IMF is well behaved.
+
+    The tests are only valid if called with identical envelope_opts and
+    extrema_opts as were used in the sift estimation.
+
+    """
+
+    imf = ensure_2d([imf], ['imf'], 'is_imf')
+
+    if envelope_opts is None:
+        envelope_opts = {}
+
+    checks = np.zeros((imf.shape[1], 2), dtype=bool)
+
+    for ii in range(imf.shape[1]):
+
+        # Extrema and zero-crossings differ by <=1
+        num_zc = zero_crossing_count(imf[:, ii])
+        num_ext = signal.find_peaks(imf[:, ii])[0].shape[0] + signal.find_peaks(-imf[:, ii])[0].shape[0]
+
+        # Mean of envelopes should be zero
+        upper = interp_envelope(imf[:, ii], mode='upper',
+                                **envelope_opts, extrema_opts=extrema_opts)
+        lower = interp_envelope(imf[:, ii], mode='lower',
+                                **envelope_opts, extrema_opts=extrema_opts)
+
+        # If upper or lower are None we should stop sifting altogether
+        if upper is None or lower is None:
+            logger.debug('IMF-{0} False - no peaks detected')
+            continue
+
+        # Find local mean
+        avg = np.mean([upper, lower], axis=0)[:, None]
+        avg_sum = np.sum(np.abs(avg))
+        imf_sum = np.sum(np.abs(imf[:,  ii]))
+        diff = avg_sum / imf_sum
+
+        checks[ii, 0] = np.abs(np.diff((num_zc, num_ext))) <= 1
+        checks[ii, 1] = diff < avg_tol
+
+        msg = 'IMF-{0} {1} - {2} extrema and {3} zero-crossings. Avg of envelopes is {4:.4}/{5:.4} ({6:.4}%)'
+        msg = msg.format(ii, np.alltrue(checks[ii, :]),  num_ext, num_zc, avg_sum, imf_sum, 100*diff)
+        logger.debug(msg)
+
+    return checks
