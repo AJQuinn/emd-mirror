@@ -290,3 +290,9 @@ html_theme_options = {
 
 html_show_sourcelink = False
 html_copy_source = False
+
+# -- Options for custom CSS
+# https://stackoverflow.com/a/37980230
+
+def setup(app):
+    app.add_css_file('css/emd_custom.css')  # may also be an URL
