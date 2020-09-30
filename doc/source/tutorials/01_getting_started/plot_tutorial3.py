@@ -24,6 +24,8 @@ all the way down to extrema detection.
 # - "envelope" contains arguments for ``emd.sift.interpolate_envelope``
 # - "extrema", "mag_pad" and  "loc_pad" have arguments for extrema detection and padding
 
+# sphinx_gallery_thumbnail_path = '_static/emd_siftconfig_thumb.png'
+
 import emd
 import numpy as np
 

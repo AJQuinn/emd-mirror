@@ -12,6 +12,8 @@ that EMD is properly installed.
 # Firstly, we can use ``emd.support.get_installed_version`` to confirm which
 # version of EMD we have installed.
 
+# sphinx_gallery_thumbnail_path = '_static/emd_pytest_thumb.png'
+
 import emd
 
 print(emd.support.get_installed_version())
