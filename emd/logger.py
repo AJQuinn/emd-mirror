@@ -100,8 +100,9 @@ def set_level(level, handler='console'):
     logger = logging.getLogger('emd')
     for handler in logger.handlers:
         if handler.get_name() == 'console':
+            if level in ['INFO', 'DEBUG']:
+                logger.info("EMD logger: handler '{0}' level set to '{1}'".format(handler.get_name(), level))
             handler.setLevel(getattr(logging, level))
-            logger.info("EMD logger: handler '{0}' level set to '{1}'".format(handler.get_name(), level))
 
 
 def get_level(handler='console'):
