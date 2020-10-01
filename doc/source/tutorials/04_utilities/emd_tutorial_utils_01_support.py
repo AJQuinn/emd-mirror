@@ -1,6 +1,6 @@
 """
-emd.support
-===========
+Check install and run tests
+===========================
 The ``emd.support`` submodule contains a few functions relating to the
 installation and testing of EMD on your system. Most users will not need to
 use these functions most of the time but they can be helpful for checking
