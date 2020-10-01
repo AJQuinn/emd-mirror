@@ -198,7 +198,8 @@ epub_exclude_files = ['search.html']
 
 sphinx_gallery_conf = {
      'examples_dirs': 'tutorials',
-     'gallery_dirs': 'auto_tutorials',  # path to where to save gallery generated output
+     'gallery_dirs': 'emd_tutorials',  # path to where to save gallery generated output
+     'filename_pattern': '/emd_tutorial_',
      'within_subsection_order': FileNameSortKey,
      'capture_repr': ('_repr_html_', '__repr__', '__str__'),
 }
@@ -230,7 +231,7 @@ html_theme_options = {
     'navbar_links': [
         ("Install", "install"),
         ("Quick-Start", "quick_start"),
-        ("Tutorials", "auto_tutorials/index"),
+        ("Tutorials", "emd_tutorials/index"),
         ("Reference", "reference"),
         ("Contribute", "contribute"),
         ("GitLab", "https://gitlab.com/emd-dev/emd", True)

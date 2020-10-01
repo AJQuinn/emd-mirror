@@ -22,7 +22,7 @@ clean:
 	python3 setup.py clean
 	rm -fr build
 	rm -fr doc/build
-	rm -fr doc/source/auto_tutorials
+	rm -fr doc/source/emd_tutorials
 	rm -fr emd.egg-info
 
 all-clean: install-clean

@@ -4,6 +4,6 @@
 .coverage
 build
 doc/build
-doc/source/auto_tutorials/
+doc/source/emd_tutorials/
 sails.egg-info
 
