@@ -121,11 +121,10 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
     x : ndarray
         Input array of observed values to phase align
     cycles : ndarray (optional)
-         Optional set of cycles within IP to use (Default value = None)
+        Optional set of cycles within IP to use (Default value = None)
     npoints : int
         Number of points in the phase cycle to align to (Default = 48)
-    interp_kind : {'linear','nearest','zero','slinear',
-                   'quadratic','cubic','previous', 'next'}
+    interp_kind : {'linear','nearest','zero','slinear', 'quadratic','cubic','previous', 'next'}
         Type of interpolation to perform. Argument is passed onto
         scipy.interpolate.interp1d. (Default = 'linear')
 
@@ -135,6 +134,7 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
         array containing the phase aligned observations
 
     """
+
     # Preamble
     logger.info('STARTED: phase-align cycles')
 
@@ -185,12 +185,12 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     phase : ndarray
         Input vector of Instantaneous Phase values
     return_good : bool
-         Boolean indicating whether 'bad' cycles should be removed (Default value = True)
+        Boolean indicating whether 'bad' cycles should be removed (Default value = True)
     mask : ndarray
-         Vector of mask values that should be ignored (Default value = None)
+        Vector of mask values that should be ignored (Default value = None)
     imf : ndarray
-         Optional array of IMFs to used for control point identification when
-         identifying good/bad cycles (Default value = None)
+        Optional array of IMFs to used for control point identification when
+        identifying good/bad cycles (Default value = None)
     phase_step : scalar
         Minimum value in the differential of the wrapped phase to identify a
         cycle transition (Default value = 1.5*np.pi)
@@ -210,8 +210,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     1 : A strictly positively increasing phase
     2 : A phase starting within phase_step of zero (ie 0 < x < phase_edge)
     3 : A phase ending within phase_step of 2pi (is 2pi-phase_edge < x < 2pi)
-    4 : A set of 4 unique control points
-            (ascending zero, peak, descending zero & trough)
+    4 : A set of 4 unique control points (asc-zero, peak, desc-zero & trough)
 
     Good cycles can be idenfied with:
     >> good_cycles = emd.utils.get_cycle_inds( phase )
