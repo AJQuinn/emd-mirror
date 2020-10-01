@@ -1,4 +1,4 @@
 Utilities
 =========
 
-These tutorials introduce some practical utility functions.
+Practical utility functions in the EMD package.

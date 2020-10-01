@@ -1,4 +1,4 @@
 Spectrum Analysis
 =================
 
-Hilbert-Huang transforms and such
+Introduction to Instantaneous frequency estimation, the Hilbert-Huang transform and the Holospectrum.

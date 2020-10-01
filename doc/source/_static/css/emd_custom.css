@@ -1,3 +1,5 @@
 .reference.download{ background: #f2ebed; border: #FFFFFF}
 
-#.pre{ color: white}
+.reference.download:hover {
+  background-color: #ffebed;
+}

@@ -230,7 +230,6 @@ html_theme_options = {
     # an arbitrary url.
     'navbar_links': [
         ("Install", "install"),
-        ("Quick-Start", "quick_start"),
         ("Tutorials", "emd_tutorials/index"),
         ("Reference", "reference"),
         ("Contribute", "contribute"),
