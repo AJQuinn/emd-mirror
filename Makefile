@@ -22,6 +22,7 @@ clean:
 	python3 setup.py clean
 	rm -fr build
 	rm -fr doc/build
+	rm -fr doc/source/emd_tutorials
 	rm -fr emd.egg-info
 
 all-clean: install-clean
@@ -36,7 +37,7 @@ test:
 doc: doc-html
 
 doc-html:
-	python3 setup.py build_sphinx
+	python3 setup.py build_sphinx -a -E
 
 spell:
 	codespell -s --ignore-words=ignore_words.txt `find . -type f -name \*.py`

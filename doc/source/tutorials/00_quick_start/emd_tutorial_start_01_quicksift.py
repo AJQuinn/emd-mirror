@@ -1,6 +1,6 @@
 """
-Running a simple EMD
-====================
+Quick-Start: Running a simple EMD
+=================================
 This getting started tutorial shows how to use EMD to analyse a synthetic signal.
 
 """

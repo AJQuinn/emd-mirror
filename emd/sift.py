@@ -1627,10 +1627,9 @@ def get_config(siftname='sift'):
 
     Notes
     -----
-
     The sift config acts as a nested dictionary which can be modified to
     specify parameters for different parts of the sift. This is initialised
-    using this function:
+    using this function
 
     config = emd.sift.get_config()
 
@@ -1655,7 +1654,7 @@ def get_config(siftname='sift'):
     Finally, the SiftConfig dictionary should be nested before being passed as
     keyword arguments to a sift function.
 
-    imfs = emd.sift.sift(X, **config.nest())
+    imfs = emd.sift.sift(X, **config)
 
     """
 

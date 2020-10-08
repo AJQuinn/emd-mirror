@@ -1,5 +1,4 @@
 Cycle Analysis
 ==============
 
-These tutorials are designed to help get started with Empirical Mode
-Decomposition analysis using this toolbox.
+How to find and analyse the features of single cycles within Intrinsic Mode Functions.

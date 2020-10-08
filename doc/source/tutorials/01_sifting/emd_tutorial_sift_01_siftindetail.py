@@ -66,12 +66,12 @@ emd.plotting.plot_imfs(imf, cmap=True, scale_y=True)
 
 #%%
 # The options are split into six types. Starting from the lowest level, extrema
-# detection and padding in emd is implemented in the ``emd.sift.find_extrema``
-# function. This is a simple function which identifies extrema using the
-# scipy.signal argrelmin and argrelmax functions.
+# detection and padding in emd is implemented in the ``emd.sift.get_padded_extrema``
+# function. This is a simple function which identifies extrema using
+# scipy.signal
 
-max_locs, max_mag = emd.sift.find_extrema(x)
-min_locs, min_mag = emd.sift.find_extrema(x, ret_min=True)
+max_locs, max_mag = emd.sift.get_padded_extrema(x, pad_width=0, mode='peaks')
+min_locs, min_mag = emd.sift.get_padded_extrema(x, pad_width=0, mode='troughs')
 
 plt.figure(figsize=(12, 3))
 plt.plot(x, 'k')
@@ -85,9 +85,8 @@ plt.legend(['Signal', 'Maxima', 'Minima'])
 # time-series. The ``emd.sift.get_padded_extrema`` function identifies and pads
 # extrema in a time-series. This calls the ``emd.sift.find_extrema`` internally.
 
-max_locs, max_mag = emd.sift.get_padded_extrema(x)
-min_locs, min_mag = emd.sift.get_padded_extrema(-x)
-min_mag = -min_mag
+max_locs, max_mag = emd.sift.get_padded_extrema(x, pad_width=2, mode='peaks')
+min_locs, min_mag = emd.sift.get_padded_extrema(x, pad_width=2, mode='troughs')
 
 plt.figure(figsize=(12, 3))
 plt.plot(x, 'k')
@@ -115,9 +114,8 @@ plt.legend(['Signal', 'Maxima', 'Minima'])
 ext_opts = config['extrema_opts']
 
 # The default options
-max_locs, max_mag = emd.sift.get_padded_extrema(x, **ext_opts)
-min_locs, min_mag = emd.sift.get_padded_extrema(-x, **ext_opts)
-min_mag = -min_mag
+max_locs, max_mag = emd.sift.get_padded_extrema(x, mode='peaks', **ext_opts)
+min_locs, min_mag = emd.sift.get_padded_extrema(x, mode='troughs', **ext_opts)
 
 plt.figure(figsize=(12, 12))
 
@@ -130,9 +128,8 @@ plt.title('Default')
 
 # Increase the pad width to 5 extrema
 ext_opts['pad_width'] = 5
-max_locs, max_mag = emd.sift.get_padded_extrema(x, **ext_opts)
-min_locs, min_mag = emd.sift.get_padded_extrema(-x, **ext_opts)
-min_mag = -min_mag
+max_locs, max_mag = emd.sift.get_padded_extrema(x, mode='peaks', **ext_opts)
+min_locs, min_mag = emd.sift.get_padded_extrema(x, mode='troughs', **ext_opts)
 
 plt.subplot(312)
 plt.plot(x, 'k')
@@ -141,12 +138,12 @@ plt.plot(min_locs, min_mag, 'ob')
 plt.legend(['Signal', 'Maxima', 'Minima'])
 plt.title('Increased pad width')
 
-# Change the y-axis padding to 'reflect' rather than 'median'
+# Change the y-axis padding to 'reflect' rather than 'median' (this option is
+# for illustration and not recommended for actual sifting....)
 ext_opts['mag_pad_opts']['mode'] = 'reflect'
 del ext_opts['mag_pad_opts']['stat_length']
-max_locs, max_mag = emd.sift.get_padded_extrema(x, **ext_opts)
-min_locs, min_mag = emd.sift.get_padded_extrema(-x, **ext_opts)
-min_mag = -min_mag
+max_locs, max_mag = emd.sift.get_padded_extrema(x, mode='peaks', **ext_opts)
+min_locs, min_mag = emd.sift.get_padded_extrema(x, mode='troughs', **ext_opts)
 
 plt.subplot(313)
 plt.plot(x, 'k')

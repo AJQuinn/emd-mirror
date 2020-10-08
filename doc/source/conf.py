@@ -198,7 +198,8 @@ epub_exclude_files = ['search.html']
 
 sphinx_gallery_conf = {
      'examples_dirs': 'tutorials',
-     'gallery_dirs': 'auto_tutorials',  # path to where to save gallery generated output
+     'gallery_dirs': 'emd_tutorials',  # path to where to save gallery generated output
+     'filename_pattern': '/emd_tutorial_',
      'within_subsection_order': FileNameSortKey,
      'capture_repr': ('_repr_html_', '__repr__', '__str__'),
 }
@@ -229,9 +230,10 @@ html_theme_options = {
     # an arbitrary url.
     'navbar_links': [
         ("Install", "install"),
-        ("Quick-Start", "quick_start"),
-        ("Tutorials", "auto_tutorials/index"),
+        ("Tutorials", "emd_tutorials/index"),
         ("Reference", "reference"),
+        ("Contribute", "contribute"),
+        ("GitLab", "https://gitlab.com/emd-dev/emd", True)
     ],
 
     # Render the next and previous page links in navbar. (Default: true)
@@ -288,3 +290,10 @@ html_theme_options = {
 
 html_show_sourcelink = False
 html_copy_source = False
+
+# -- Options for custom CSS
+# https://stackoverflow.com/a/37980230
+
+
+def setup(app):
+    app.add_css_file('css/emd_custom.css')  # may also be an URL

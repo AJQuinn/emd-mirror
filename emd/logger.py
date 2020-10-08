@@ -31,7 +31,7 @@ loggers:
 handlers:
   console:
     class : logging.StreamHandler
-    formatter: default
+    formatter: brief
     level   : INFO
     stream  : ext://sys.stdout
   file:
@@ -44,7 +44,7 @@ handlers:
 formatters:
   brief:
     format: '{prefix} %(message)s'
-  default:
+  detail:
     format: '[%(asctime)s] {prefix} %(levelname)-8s %(funcName)14s : %(message)s'
     datefmt: '%H:%M:%S'
   verbose:
@@ -56,7 +56,7 @@ disable_existing_loggers: true
 """
 
 
-def set_up(prefix='', log_file=''):
+def set_up(prefix='', log_file='', level=None, console_format=None):
     """
     Initialisation for the EMD module logger.
 
@@ -80,9 +80,15 @@ def set_up(prefix='', log_file=''):
 
     # Configure logger with dict
     logging.config.dictConfig(new_config)
+    logger.info('EMD Logger Started')
+
+    # Customise options
+    if level is not None:
+        set_level(level)
+    if console_format is not None:
+        set_format(formatter=console_format, prefix=prefix)
 
     # Print some info
-    logger.info('EMD Logger Started')
     if len(log_file) > 0:
         logger.info('logging to file: {0}'.format(log_file))
     logger.debug('EMD v{0} installed in {1}'.format(get_installed_version(),
@@ -94,6 +100,8 @@ def set_level(level, handler='console'):
     logger = logging.getLogger('emd')
     for handler in logger.handlers:
         if handler.get_name() == 'console':
+            if level in ['INFO', 'DEBUG']:
+                logger.info("EMD logger: handler '{0}' level set to '{1}'".format(handler.get_name(), level))
             handler.setLevel(getattr(logging, level))
 
 
@@ -184,17 +192,21 @@ def wrap_verbose(func):
     # This is the actual decorator
     @wraps(func)
     def inner_verbose(*args, **kwargs):
+        levels = ['CRITICAL', 'WARNING', 'INFO', 'DEBUG']
 
-        if 'verbose' in kwargs:
+        if ('verbose' in kwargs) and (kwargs['verbose'] in levels):
             tmp_level = kwargs['verbose']
             current_level = get_level()
             set_level(level=tmp_level)
+        elif ('verbose' in kwargs):
+            logger.warning("Logger level '{0}' not recognised - level is unchanged".format(kwargs['verbose']))
 
         # Call function itself
         func_output = func(*args, **kwargs)
 
-        if 'verbose' in kwargs:
-            set_level(level=logging._levelToName[current_level])
+        if ('verbose' in kwargs) and (kwargs['verbose'] in levels):
+            if kwargs['verbose'] is not None:
+                set_level(level=logging._levelToName[current_level])
 
         return func_output
     return inner_verbose
