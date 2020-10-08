@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 # Utilities
 
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={}, extrema_opts={}):
+def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=450, stop_method='sd', envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -86,11 +86,12 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
     while continue_imf:
         niters += 1
 
-        if niters == 3*max_iters//4:
-            logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
-        elif niters > max_iters:
-            logger.debug('Sift failed. No covergence after {0} iterations, '.format(niters))
-            return None, False
+        if stop_method != 'fixed':
+            if niters == 3*max_iters//4:
+                logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
+            elif niters > max_iters:
+                logger.debug('Sift failed. No covergence after {0} iterations, '.format(niters))
+                return None, False
 
         upper = interp_envelope(proto_imf, mode='upper',
                                 **envelope_opts, extrema_opts=extrema_opts)
@@ -111,11 +112,18 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
         x1 = proto_imf - avg
 
         # Stop sifting if we pass threshold
-        sd = np.sum((proto_imf - x1)**2) / np.sum(proto_imf**2)
-        if sd < sd_thresh:
+        #sd_tmp = np.sum((proto_imf - x1)**2) / np.sum(proto_imf**2)
+        #if sd < sd_thresh:
+        if stop_method == 'sd':
+            stop, sd = sd_stop(proto_imf, x1, sd=sd_thresh, niters=niters)
+        elif stop_method == 'rilling':
+            stop, sd = rilling_stop(upper, lower, niters=niters)
+        elif stop_method == 'fixed':
+            stop = fixed_stop(niters, max_iters)
+
+        if stop:
             proto_imf = x1
             continue_imf = False
-            logger.debug('Completed in {0} iters with sd {1}'.format(niters, sd))
             continue
 
         proto_imf = proto_imf - (env_step_size*avg)
@@ -123,7 +131,79 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
     if proto_imf.ndim == 1:
         proto_imf = proto_imf[:, None]
 
+    energy_db = energy_difference(X, X-proto_imf)
+    if energy_db > 50:
+        continue_flag = False
+        logger.debug('Finishing sift: energy ratio is {0}'.format(energy_db))
+
     return proto_imf, continue_flag
+
+
+def energy_difference(imf, residue):
+    sumsqr = np.sum(imf**2)
+    imf_energy = 20 * np.log10(sumsqr, where=sumsqr > 0)
+    sumsqr = np.sum(residue ** 2)
+    resid_energy = 20 * np.log10(sumsqr, where=sumsqr > 0)
+    return imf_energy-resid_energy
+
+
+def energy_stop(imf, residue, thresh=50, niters=None):
+    """10.1016/j.ymssp.2007.11.028 3.2.4"""
+
+    diff = energy_difference(imf, residue)
+    if diff > thresh:
+        stop = True,
+    else:
+        stop = False
+
+    if stop:
+        logger.debug('Sift stopped by Energy Ratio in {0} iters with difference of {1}dB'.format(niters, diff))
+
+    return stop, diff
+
+
+def sd_stop(proto_imf, prev_imf, sd=0.2, niters=None):
+
+    metric = np.sum((proto_imf - prev_imf)**2) / np.sum(proto_imf**2)
+
+    stop = metric < sd
+
+    if stop:
+        logger.debug('Sift stopped by SD-thresh in {0} iters with sd {1}'.format(niters, sd))
+
+    return stop, metric
+
+
+def rilling_stop(upper_env, lower_env, sd1=0.05, sd2=0.5, tol=0.05, niters=None):
+
+    avg_env = (upper_env+lower_env)/2
+    amp = np.abs(upper_env-lower_env)/2
+
+    eval_metric = np.abs(avg_env)/amp
+
+    metric = np.mean(eval_metric > sd1)
+    continue1 = metric > tol
+    continue2 = np.any(eval_metric > sd2)
+
+    stop = (continue1 or continue2) is False
+
+    if stop:
+        logger.debug('Sift stopped by Rilling-metric in {0} iters (val={1})'.format(niters, metric))
+
+    return stop, metric
+
+
+def fixed_stop(niters, max_iters):
+
+    if niters == max_iters:
+        stop = True
+    else:
+        stop = False
+
+    if stop:
+        logger.debug('Sift stopped at fixed number of {0} iterations'.format(niters))
+
+    return stop
 
 
 # SIFT implementation
