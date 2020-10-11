@@ -77,10 +77,10 @@ class test_sift_behaviour(unittest.TestCase):
     # Implement the four checks from https://doi.org/10.1016/j.ymssp.2007.11.028
     def test_sift_multiplied_by_constant(self):
         """Test that sifting a scaled signal only changes the scaling of the IMFs"""
-        x2 = self.imf[:, 0] * 3
+        x2 = self.x * 3
         imf2 = sift(x2, imf_opts=self.imf_kwargs)
 
-        tst = self.check_diff(self.get_resid(self.imf[:, 0] * 3, imf2[:, 0]), 1)
+        tst = self.check_diff(self.get_resid(self.imf * 3, imf2), 1)
         assert(tst)
 
     def test_sift_plus_constant(self):
