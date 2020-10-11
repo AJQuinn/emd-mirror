@@ -29,7 +29,7 @@ from scipy import interpolate as interp
 
 from . import spectra
 from .logger import sift_logger, wrap_verbose
-from .support import ensure_1d_with_singleton, ensure_2d
+from .support import ensure_1d_with_singleton, ensure_2d, EMDSiftCovergeError
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 # Utilities
 
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=450, stop_method='sd', envelope_opts={}, extrema_opts={}):
+def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=1000, stop_method='sd', envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -84,14 +84,14 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=450, stop_method='s
     continue_flag = True
     niters = 0
     while continue_imf:
-        niters += 1
 
         if stop_method != 'fixed':
             if niters == 3*max_iters//4:
                 logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
             elif niters > max_iters:
-                logger.debug('Sift failed. No covergence after {0} iterations, '.format(niters))
-                return None, False
+                msg = 'Sift failed. No covergence after {0} iterations'.format(niters)
+                raise EMDSiftCovergeError(msg)
+        niters += 1
 
         upper = interp_envelope(proto_imf, mode='upper',
                                 **envelope_opts, extrema_opts=extrema_opts)
@@ -122,7 +122,7 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=450, stop_method='s
             stop = fixed_stop(niters, max_iters)
 
         if stop:
-            proto_imf = x1
+            proto_imf = x1.copy()
             continue_imf = False
             continue
 
@@ -185,7 +185,7 @@ def rilling_stop(upper_env, lower_env, sd1=0.05, sd2=0.5, tol=0.05, niters=None)
     continue1 = metric > tol
     continue2 = np.any(eval_metric > sd2)
 
-    stop = (continue1 or continue2) is False
+    stop = (continue1 or continue2) == False  # noqa: E712
 
     if stop:
         logger.debug('Sift stopped by Rilling-metric in {0} iters (val={1})'.format(niters, metric))
