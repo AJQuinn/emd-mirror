@@ -46,7 +46,10 @@ plt.figure(figsize=(12, 4))
 plt.plot(x)
 
 #%%
-# We can then estimate the IMFs for the signal:
+# Try changing the values of ``nonlinearity_deg`` and ``nonlinearity_phi`` to
+# create different non-sinusoidal waveform shapes.
+#
+# Next, we can then estimate the IMFs for the signal:
 
 imf = emd.sift.sift(x)
 print(imf.shape)
@@ -78,7 +81,9 @@ emd.plotting.plot_imfs(imf, scale_y=True, cmap=True)
 plt.figure(figsize=(10, 6))
 
 plt.subplot(1, 1, 1)
-plt.pcolormesh(time_vect[:5000], freq_bins, hht[:, :5000], cmap='ocean_r')
+plt.pcolormesh(time_vect[:5000], freq_bins, hht[:, :5000], cmap='Reds')
+cb = plt.colorbar()
+cb.set_label('Power')
 plt.ylabel('Frequency (Hz)')
 plt.xlabel('Time (secs)')
 

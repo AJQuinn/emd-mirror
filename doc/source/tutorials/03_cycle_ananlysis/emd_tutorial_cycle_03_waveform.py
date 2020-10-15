@@ -353,10 +353,10 @@ plt.title('Phase-aligned\nInst. Freq')
 # The phase-alignment makes the waveform of both cycles nearly exactly
 # sinusoidal. Crucially information about the waveform shape of the cycles in
 # the instantaneous frequency is preserved. We can see that at the cycle peak
-# (where phase is pi/2) the nonlinear cyclehas a much higher frequency than the
-# linear cycle. The frequencies of the two cycles are nearly equal just after
-# the ascending zerp-crossing (where phase is pi) and the nonlinear cycle has a
-# much lower frequency around the trough.
+# (where phase is pi/2) the nonlinear cycle has a much higher frequency than
+# the linear cycle. The frequencies of the two cycles are nearly equal just
+# after the ascending zerp-crossing (where phase is pi) and the nonlinear cycle
+# has a much lower frequency around the trough.
 #
 # This presentation of the data makes comparisons across cycles much simpler.
 # We can now discuss differences between the shape of specific parts of a cycle
@@ -519,7 +519,7 @@ ctrl_nonlinear = emd.cycles.get_control_points(imf_nonlinear[:, 2], cycles_nonli
 #%%
 # Next we plot a big summary of the single cycle IMFs. The top row contains
 # each single cycle and the second row contains the average across cycles. As
-# with the simplex oscillation in the first example, we can see by eye that the
+# with the simple oscillation in the first example, we can see by eye that the
 # variability in the signal is shifting the relative timing of the peaks and
 # troughs within each cycle.
 #

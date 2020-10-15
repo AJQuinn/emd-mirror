@@ -107,7 +107,7 @@ imf2 = mask_sift_second_layer(IA, masks, config=config)
 
 #%%
 # We can see that the oscillatory content in the amplitude modulations has been
-# described with ad additional set of IMFs. Here we plot the IMFs for the
+# described with an additional set of IMFs. Here we plot the IMFs for the
 # amplitude modulations of IMFs 1 (as plotted above).
 
 emd.plotting.plot_imfs(imf2[:sample_rate*5, 0, :], scale_y=True, cmap=True)
@@ -150,23 +150,32 @@ sholo = holo
 plt.figure(figsize=(16, 10))
 
 # Plot a section of the time-course
-plt.axes([.1, .55, .6, .4])
+plt.axes([.325, .7, .4, .25])
 plt.plot(t[:sample_rate*5], x[:sample_rate*5], 'k', linewidth=1)
 plt.xlim(0, 5)
 plt.ylim(-2.5, 2.5)
+plt.title('Original Time-series')
+
 
 # Plot a section of the time-course
-plt.axes([.75, .55, .225, .4])
-plt.plot(bins, spec)
+plt.axes([.075, .1, .225, .5])
+plt.plot(spec, bins)
+plt.title('1D HHT Spectrum')
+plt.yscale('log')
+plt.xlabel('Power')
+plt.ylabel('Frequency (Hz)')
+plt.yticks(2**np.arange(7), 2**np.arange(7))
 
 # Plot a section of the Hilbert-Huang transform
-plt.axes([.1, .1, .6, .4])
+plt.axes([.325, .1, .4, .5])
 plt.pcolormesh(t[:sample_rate*5], bins, shht[:, :sample_rate*5], cmap='ocean_r')
 plt.yscale('log')
+plt.title('2-D HHT Spectrum')
+plt.xlabel('Time (seconds)')
+plt.yticks(2**np.arange(7), 2**np.arange(7))
 
 # Plot a the Holospectrum
-plt.axes([.75, .1, .225, .4])
-#plt.pcolormesh(bins2, bins, sholo.T, cmap='ocean_r')
+plt.axes([.75, .1, .225, .5])
 plt.contour(bins2, bins, np.sqrt(sholo.T), 48, cmap='ocean_r')
 plt.yscale('log')
 plt.xscale('log')
@@ -174,3 +183,9 @@ plt.plot((bins2[0], bins2[-1]), (5, 5), 'grey', linewidth=.5)
 plt.plot((bins2[0], bins2[-1]), (37, 37), 'grey', linewidth=.5)
 plt.plot((.5, .5), (bins[0], bins[-1]), 'grey', linewidth=.5)
 plt.plot((5, 5), (bins[0], bins[-1]), 'grey', linewidth=.5)
+plt.title('Holospectrum')
+plt.xlabel('AM Frequency (Hz)')
+plt.yticks(2**np.arange(7), 2**np.arange(7))
+plt.xticks([.1, .5, 1, 2, 4, 8, 16], [.1, .5, 1, 2, 4, 8, 16])
+
+# Make some room for titles and labels

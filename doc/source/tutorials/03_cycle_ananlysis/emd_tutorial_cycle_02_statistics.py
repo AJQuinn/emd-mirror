@@ -20,7 +20,7 @@ peak_freq = 12
 sample_rate = 512
 seconds = 10
 noise_std = .5
-x = emd.utils.ar_simulate(peak_freq, sample_rate, seconds, noise_std=noise_std, random_seed=42, r=.99)
+x = emd.utils.ar_simulate(peak_freq, sample_rate, seconds, noise_std=noise_std, random_seed=42, r=.99) * 1e-4
 t = np.linspace(0, seconds, seconds*sample_rate)
 
 # Plot the first 5 seconds of data
@@ -65,7 +65,7 @@ good_cycles = emd.cycles.get_cycle_inds(IP, return_good=True)
 # cycle detection to a specific period during a task or limit cycle detection
 # to periods where there is a high amplitude oscillation.
 #
-# Here we will apply a low apmlitude threshold to identify good cycles which
+# Here we will apply a low amplitude threshold to identify good cycles which
 # have amplitude values strictly above the 33th percentile of amplitude values
 # in the dataset - excluding the lowest amplitude cycles.
 #
@@ -98,7 +98,7 @@ mask_cycles = emd.cycles.get_cycle_inds(IP, return_good=True, mask=mask)
 # whilst, the compressed form returns a vector containing single values
 # for each cycle in turn.
 #
-# For instance, the following example computeds the maximum instantaneous
+# For instance, the following example computes the maximum instantaneous
 # amplitude for all detected cycles in IMF-2 and returns the result in the
 # full-vector format.
 
@@ -148,14 +148,19 @@ hht = emd.spectra.hilberthuang(IF, IA, edges, mode='amplitude')
 shht = ndimage.gaussian_filter(hht, 1)
 
 # Make a summary plot
-plt.figure()
+plt.figure(figsize=(10, 7))
+plt.subplots_adjust(hspace=.3)
 plt.subplot(211)
 plt.plot(t[:sample_rate*4], imf[:sample_rate*4, 2], 'k')
 plt.plot((0, 4), (thresh, thresh), 'k:')
 plt.xlim(0, 4)
+plt.title('IMF')
 plt.subplot(212)
 plt.pcolormesh(t[:sample_rate*4], edges, shht[:, :sample_rate*4], cmap='hot_r', vmin=0)
 plt.plot(t[:sample_rate*4], cycle_freq[:sample_rate*4], 'k')
+plt.title('Hilbert-Huang Transform')
+plt.xlabel('Time (seconds)')
+plt.ylabel('Frequency (Hz)')
 
 #%%
 # Compressed cycle stats
@@ -176,7 +181,7 @@ plt.plot(t[:sample_rate*4], cycle_freq[:sample_rate*4], 'k')
 all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)[1:]
 mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)[1:]
 
-# Compute cycle freuquency range for all cycles and for masked cycles
+# Compute cycle frequency range for all cycles and for masked cycles
 all_cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)[1:]
 mask_cycle_amp = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)[1:]
 
@@ -282,6 +287,7 @@ for ii, chn in enumerate(chains):
     # Find indices matching on the cycle inds for the current chain
     inds = np.in1d(mask_cycles[:, 2], chn)
     plt.plot(t[inds], imf[inds, 2], linewidth=2)
+plt.xlabel('Time (seconds)')
 
 plt.xlim(0, 3.5)
 plt.legend(['Signal', 'Chain1', 'Chain2', 'Chain3', 'Chain4'])
