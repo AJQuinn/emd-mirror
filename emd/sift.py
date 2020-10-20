@@ -41,7 +41,9 @@ logger = logging.getLogger(__name__)
 
 # Utilities
 
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=1000, stop_method='sd', envelope_opts={}, extrema_opts={}):
+def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
+                 stop_method='sd', sd_thresh=.1, rilling_thresh=(0.05, 0.5, 0.05),
+                 envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -50,13 +52,27 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=1000, stop_method='
     ----------
     X : ndarray [nsamples x 1]
         1D input array containing the time-series data to be decomposed
-    sd_thresh : scalar
-        The threshold at which the sift of each IMF will be stopped. (Default value = .1)
     env_step_size : float
         Scaling of envelope prior to removal at each iteration of sift. The
         average of the upper and lower envelope is muliplied by this value
         before being subtracted from the data. Values should be between
         0 > x >= 1 (Default value = 1)
+    max_iters : int > 0
+        Maximum number of iterations to compute before throwing an error
+    energy_thresh : float > 0
+        Threshold for energy difference (in decibels) between IMF and residual
+        to suggest stopping overall sift. (Default is None, recommended value is 50)
+    stop_method : {'sd','rilling','fixed'}
+        Flag indicating which metric to use to stop sifting and return an IMF.
+    sd_thresh : scalar
+        Used if 'stop_method' is 'sd'. The threshold at which the sift of each
+        IMF will be stopped. (Default value = .1)
+    rilling_thresh : tuple
+        Used if 'stop_method' is 'rilling', needs to contain three values (sd1, sd2, alpha).
+        An evaluation function (E) is defined by dividing the residual by the
+        mode amplitude. The sift continues until E < sd1 for the fraction
+        (1-alpha) of the data, and E < sd2 for the remainder.
+        See section 3.2 of http://perso.ens-lyon.fr/patrick.flandrin/NSIP03.pdf
 
     Returns
     -------
@@ -115,12 +131,13 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=1000, stop_method='
         x1 = proto_imf - avg
 
         # Stop sifting if we pass threshold
-        #sd_tmp = np.sum((proto_imf - x1)**2) / np.sum(proto_imf**2)
-        #if sd < sd_thresh:
         if stop_method == 'sd':
             stop, sd = sd_stop(proto_imf, x1, sd=sd_thresh, niters=niters)
         elif stop_method == 'rilling':
-            stop, sd = rilling_stop(upper, lower, niters=niters)
+            stop, sd = rilling_stop(upper, lower, niters=niters,
+                                    sd1=rilling_thresh[0],
+                                    sd2=rilling_thresh[1],
+                                    tol=rilling_thresh[2])
         elif stop_method == 'fixed':
             stop = fixed_stop(niters, max_iters)
 
@@ -134,10 +151,11 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=1000, stop_method='
     if proto_imf.ndim == 1:
         proto_imf = proto_imf[:, None]
 
-    energy_db = energy_difference(X, X-proto_imf)
-    if energy_db > 50:
-        continue_flag = False
-        logger.debug('Finishing sift: energy ratio is {0}'.format(energy_db))
+    if energy_thresh is not None:
+        energy_db = energy_difference(X, X-proto_imf)
+        if energy_db > energy_thresh:
+            continue_flag = False
+            logger.debug('Finishing sift: energy ratio is {0}'.format(energy_db))
 
     return proto_imf, continue_flag
 
@@ -172,7 +190,7 @@ def sd_stop(proto_imf, prev_imf, sd=0.2, niters=None):
     stop = metric < sd
 
     if stop:
-        logger.debug('Sift stopped by SD-thresh in {0} iters with sd {1}'.format(niters, sd))
+        logger.debug('Sift stopped by SD-thresh in {0} iters with sd {1}'.format(niters, metric))
 
     return stop, metric
 
@@ -213,8 +231,8 @@ def fixed_stop(niters, max_iters):
 
 @wrap_verbose
 @sift_logger('sift')
-def sift(X, sift_thresh=1e-8, max_imfs=None,
-         imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
+         imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     original sift algorithm [1]_.
@@ -378,8 +396,8 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 @wrap_verbose
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
-                  nprocesses=1, sift_thresh=1e-8, max_imfs=None,
-                  imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+                  nprocesses=1, sift_thresh=1e-8, max_imfs=None, verbose=None,
+                  imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -475,8 +493,8 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 @sift_logger('complete_ensemble_sift')
 def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
-                           sift_thresh=1e-8, max_imfs=None,
-                           imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+                           sift_thresh=1e-8, max_imfs=None, verbose=None,
+                           imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -709,12 +727,10 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
 
 @wrap_verbose
 @sift_logger('mask_sift')
-def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
-              mask_freqs='zc', mask_step_factor=2,
-              mask_type='all', ret_mask_freq=False,
-              max_imfs=9, sift_thresh=1e-8,
-              nphases=4, nprocesses=1,
-              imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
+              mask_step_factor=2, ret_mask_freq=False, max_imfs=9, sift_thresh=1e-8,
+              nphases=4, nprocesses=1, verbose=None,
+              imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes [1]_.
@@ -860,6 +876,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         proto_imf = X - imf.sum(axis=1)[:, None]
 
         if max_imfs is not None and imf_layer == max_imfs-1:
+            logger.info('Finishing sift: reached max number of imfs ({0})'.format(imf.shape[1]))
             continue_sift = False
 
         if np.abs(next_imf).sum() < sift_thresh:
