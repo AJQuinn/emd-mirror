@@ -44,8 +44,8 @@ handlers:
 formatters:
   brief:
     format: '{prefix} %(message)s'
-  detail:
-    format: '[%(asctime)s] {prefix} %(levelname)-8s %(funcName)14s : %(message)s'
+  default:
+    format: '[%(asctime)s] {prefix} %(levelname)-8s %(funcName)20s : %(message)s'
     datefmt: '%H:%M:%S'
   verbose:
     format: '[%(asctime)s] {prefix} - %(levelname)s - emd.%(module)s:%(lineno)s - %(funcName)20s() : %(message)s'
