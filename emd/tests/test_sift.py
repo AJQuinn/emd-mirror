@@ -127,13 +127,13 @@ class test_sift_behaviour(unittest.TestCase):
 
         # sift with mask above signal should return zeros
         # mask has to be waaay above signal in a noiseless time-series
-        next_imf = get_next_imf_mask(self.imf[:, 0, None], 0.25, 1)
+        next_imf, continue_flag = get_next_imf_mask(self.imf[:, 0, None], 0.25, 1)
         mask_power = np.sum(np.power(next_imf, 2))
 
         assert(mask_power < 1)
 
         # sift with mask below signal should return original signal
-        next_imf = get_next_imf_mask(self.imf[:, 0, None], 0.0001, 1)
+        next_imf, continue_flag = get_next_imf_mask(self.imf[:, 0, None], 0.0001, 1)
         power = np.sum(np.power(self.imf[:, 0], 2))
         mask_power = np.sum(np.power(next_imf, 2))
 
