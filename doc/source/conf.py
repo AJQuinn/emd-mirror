@@ -299,6 +299,7 @@ html_copy_source = False
 def setup(app):
     app.add_css_file('css/emd_custom.css')  # may also be an URL
 
+
 # --
 # Markdown support
 from recommonmark.parser import CommonMarkParser
