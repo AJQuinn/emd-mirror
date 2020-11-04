@@ -665,7 +665,7 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
 
     X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf_mask')
 
-    logger.info("Defining {0} masks with freq {1} and amp {2}".format(nphases, z, amp))
+    logger.info("Defining masks with freq {0} and amp {1} at {2} phases".format(z, amp, nphases))
 
     # Create normalised freq
     zf = z * 2 * np.pi
