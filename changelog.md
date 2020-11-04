@@ -1,21 +1,26 @@
 # Changelog
-All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Changes and updates to EMD are tracked by version on this page.  The format of
+this changelog is (mostly) based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this the EMD package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Changes should be categorised under the following types:
 
-- Added for new features.
-- Changed for changes in existing functionality.
-- Deprecated for soon-to-be removed features.
-- Removed for now removed features.
-- Fixed for any bug fixes.
-- Security in case of vulnerabilities.
+- **Added** for new features.
+- **Changed** for changes in existing functionality.
+- **Deprecated** for soon-to-be removed features.
+- **Removed** for now removed features.
+- **Fixed** for any bug fixes.
+- **Security** in case of vulnerabilities.
 
-Where appropriate, links to specific Issues & Merge Requests are appreciated.
+Where appropriate, links to specific Issues & Merge Requests on [our gitlab page](https://gitlab.com/emd-dev/emd).
 
-## [Unreleased]
+---
+
+## Development Version
+Work in progress...
+
+    git clone https://gitlab.com/emd-dev/emd.git
 
 ### Added
 - Add input array shape ensurance functions and start to use in sift & cycle submodules  [!26](https://gitlab.com/emd-dev/emd/-/merge_requests/26)
@@ -25,7 +30,14 @@ Where appropriate, links to specific Issues & Merge Requests are appreciated.
 ### Changed
 - Refactor some options extrema detection functions [!29](https://gitlab.com/emd-dev/emd/-/merge_requests/29)
 
-## [0.3.1]
+---
+
+# Stable Versions
+
+## 0.3.1
+
+    pip install emd==0.3.1
+Released 2020-09-06
 
 ### Added
 - This changelog [!18](https://gitlab.com/emd-dev/emd/-/merge_requests/18)
@@ -44,7 +56,12 @@ Where appropriate, links to specific Issues & Merge Requests are appreciated.
 ### Changed
 - get_control_points internal refector [af153ed6](https://gitlab.com/emd-dev/emd/-/commit/af153ed606601f3963c125329c86710e47c06b45)
 
-## [0.3.0] - 2020-07-22
+---
+
+## 0.3.0
+
+    pip install emd==0.3.0
+Released on 2020-07-22
 
 ### Added
 - get_cycle_stat refectored to allow general numpy and user-specified metrics to be computed
@@ -54,7 +71,12 @@ Where appropriate, links to specific Issues & Merge Requests are appreciated.
 ### Changed
 - Major SiftConfig refactor - API & syntax now much cleaner
 
-## [0.2.0] - 2020-06-05
+---
+
+## 0.2.0
+
+    pip install emd==0.2.0
+Released 2020-06-05
 
 ### Added
 - Tutorials on the sift, hilbert-huang and holospectrum analyses.
@@ -70,8 +92,12 @@ Where appropriate, links to specific Issues & Merge Requests are appreciated.
 - Masked sift functions merged into single function
 - get_cycle_chain refactor to cleaner internal syntax
 
+---
 
-## [0.1.0]
+## 0.1.0
+
+    pip install emd==0.1.0
+Released 2019-12-10
 
 ### Added
 - Everything

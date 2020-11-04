@@ -233,6 +233,7 @@ html_theme_options = {
         ("Tutorials", "emd_tutorials/index"),
         ("Reference", "reference"),
         ("Contribute", "contribute"),
+        ("Changes", "changelog"),
         ("GitLab", "https://gitlab.com/emd-dev/emd", True)
     ],
 
@@ -297,3 +298,13 @@ html_copy_source = False
 
 def setup(app):
     app.add_css_file('css/emd_custom.css')  # may also be an URL
+
+# --
+# Markdown support
+from recommonmark.parser import CommonMarkParser
+
+source_parsers = {
+    '.md': CommonMarkParser,
+}
+
+source_suffix = ['.rst', '.md']

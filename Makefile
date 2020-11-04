@@ -23,6 +23,7 @@ clean:
 	rm -fr build
 	rm -fr doc/build
 	rm -fr doc/source/emd_tutorials
+	rm -fr doc/source/changelog.md
 	rm -fr emd.egg-info
 
 all-clean: install-clean
@@ -37,6 +38,7 @@ test:
 doc: doc-html
 
 doc-html:
+	cp changelog.md doc/source/
 	python3 setup.py build_sphinx -a -E
 
 spell:
