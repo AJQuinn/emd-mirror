@@ -38,7 +38,6 @@ test:
 doc: doc-html
 
 doc-html:
-	cp changelog.md doc/source/
 	python3 setup.py build_sphinx -a -E
 
 spell:

@@ -21,6 +21,10 @@ from sphinx_gallery.sorting import FileNameSortKey
 import matplotlib
 matplotlib.use('agg')
 
+# Copy the changelog from package root dir to doc/source
+import shutil
+shutil.copy('../../changelog.md', 'changelog.md')
+
 
 # -- Project information -----------------------------------------------------
 
