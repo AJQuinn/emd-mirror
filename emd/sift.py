@@ -24,6 +24,7 @@ import logging
 import warnings
 import numpy as np
 import collections
+import functools
 from scipy import signal
 from scipy import interpolate as interp
 
@@ -77,6 +78,8 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
     emd.sift.interp_envelope
 
     """
+
+    X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf')
 
     proto_imf = X.copy()
 
@@ -515,7 +518,8 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
 # Utilities
 
-def get_next_imf_mask(X, z, amp, mask_type='all',
+
+def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
                       imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set using the mask sift appraoch. This is
@@ -529,13 +533,21 @@ def get_next_imf_mask(X, z, amp, mask_type='all',
         Mask frequency as a proportion of the sampling rate, values between 0->z->.5
     amp : scalar
         Mask amplitude
-    mask_type : {'all','sine','cosine'}
-         Flag indicating whether to apply sine, cosine or all masks (Default value = 'all')
+    nphases : int > 0
+        The number of separate masks to apply for each IMF, each mask is
+        uniformly spread across a 0<=p<2pi range (Default=4).
+    nprocesses : integer
+         Integer number of parallel processes to compute. Each process computes
+         an IMF from the signal plus a mask. nprocesses should be less than or
+         equal to nphases, no additional benefit from setting nprocesses > nphases
+         (Default value = 1)
 
     Returns
     -------
     proto_imf : ndarray
         1D vector containing the next IMF extracted from X
+    continue_sift : bool
+        Boolean indicating whether the sift can be continued beyond this IMF
 
     Other Parameters
     ----------------
@@ -552,43 +564,38 @@ def get_next_imf_mask(X, z, amp, mask_type='all',
     emd.sift.get_next_imf
 
     """
-    if mask_type not in ['all', 'sine', 'cosine']:
-        raise ValueError("Invalid mask type")
 
-    z = z * 2 * np.pi
+    X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf_mask')
 
-    if mask_type == 'all' or mask_type == 'cosine':
-        mask = amp * np.cos(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_c, continue_sift = get_next_imf(X + mask,
-                                                    envelope_opts=envelope_opts,
-                                                    extrema_opts=extrema_opts,
-                                                    **imf_opts)
-        next_imf_up_c -= mask
-        next_imf_down_c, continue_sift = get_next_imf(X - mask,
-                                                      envelope_opts=envelope_opts,
-                                                      extrema_opts=extrema_opts,
-                                                      **imf_opts)
-        next_imf_down_c += mask
+    logger.info("Defining {0} masks with freq {1} and amp {2}".format(nphases, z, amp))
 
-    if mask_type == 'all' or mask_type == 'sine':
-        mask = amp * np.sin(z * np.arange(X.shape[0]))[:, None]
-        next_imf_up_s, continue_sift = get_next_imf(X + mask,
-                                                    envelope_opts=envelope_opts,
-                                                    extrema_opts=extrema_opts,
-                                                    **imf_opts)
-        next_imf_up_s -= mask
-        next_imf_down_s, continue_sift = get_next_imf(X - mask,
-                                                      envelope_opts=envelope_opts,
-                                                      extrema_opts=extrema_opts,
-                                                      **imf_opts)
-        next_imf_down_s += mask
+    # Create normalised freq
+    zf = z * 2 * np.pi
+    # Create time matrix including mask phase-shifts
+    t = np.repeat(np.arange(X.shape[0])[:, np.newaxis], nphases, axis=1)
+    phases = np.linspace(0, (2*np.pi), nphases+1)[:nphases]
+    # Create masks
+    m = amp * np.cos(zf * t + phases)
 
-    if mask_type == 'all':
-        return (next_imf_up_c + next_imf_down_c + next_imf_up_s + next_imf_down_s) / 4.
-    elif mask_type == 'sine':
-        return (next_imf_up_s + next_imf_down_s) / 2.
-    elif mask_type == 'cosine':
-        return (next_imf_up_c + next_imf_down_c) / 2.
+    # Work with a partial function to make the parallel loop cleaner
+    # This partial function contains all the settings which will be constant across jobs.
+    my_get_next_imf = functools.partial(get_next_imf, **imf_opts)
+
+    args = [[X+m[:, ii, np.newaxis]] for ii in range(nphases)]
+
+    import multiprocessing as mp
+    p = mp.Pool(processes=nprocesses)
+    res = p.starmap(my_get_next_imf, args)
+    p.close()
+
+    # Collate results
+    imfs = [r[0] for r in res]
+    continue_flags = [r[1] for r in res]
+
+    # star map should preserve the order of outputs so we can remove masks easily
+    imfs = np.concatenate(imfs, axis=1) - m
+
+    return imfs.mean(axis=1)[:, np.newaxis], np.any(continue_flags)
 
 
 def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
@@ -626,6 +633,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
               mask_freqs='zc', mask_step_factor=2,
               mask_type='all', ret_mask_freq=False,
               max_imfs=9, sift_thresh=1e-8,
+              nphases=4, nprocesses=1,
               imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
@@ -755,10 +763,14 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
             # Should be array_like if not a single number
             amp = mask_amp[imf_layer] * sd
 
-        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(imf_layer, mask_freqs[imf_layer], amp))
+        logger.info('Sifting IMF-{0}'.format(imf_layer))
 
-        next_imf = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp, mask_type=mask_type,
-                                     imf_opts=imf_opts, envelope_opts=envelope_opts, extrema_opts=extrema_opts)
+        next_imf, continue_sift = get_next_imf_mask(proto_imf, mask_freqs[imf_layer], amp,
+                                                    nphases=nphases,
+                                                    nprocesses=nprocesses,
+                                                    imf_opts=imf_opts,
+                                                    envelope_opts=envelope_opts,
+                                                    extrema_opts=extrema_opts)
 
         if imf_layer == 0:
             imf = next_imf
