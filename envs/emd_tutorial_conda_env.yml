@@ -1,0 +1,9 @@
+name: emd-tutorial
+channels:
+dependencies:
+   - ipython
+   - jupyter
+   - spyder
+   - pip
+   - pip:
+     - emd
