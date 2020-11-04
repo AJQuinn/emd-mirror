@@ -49,6 +49,7 @@ def run_tests():
         else:
             logger.info('EMD package tests passed')
 
+
 # Ensurance Department
 
 
@@ -224,3 +225,18 @@ def ensure_2d(to_check, names, func_name):
         return out_args[0]
     else:
         return out_args
+
+
+# Exceptions & Errors
+
+class EMDSiftCovergeError(Exception):
+    """Exception raised for errors in the input.
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+        logger.exception(self.message)

@@ -143,6 +143,18 @@ def enable():
     logger.info('EMD logging enabled')
 
 
+def is_active():
+    """Return current logging level for EMD module."""
+    logger = logging.getLogger('emd')
+    # Check if we have only a single NullHandler (which is default until set_up
+    # is called)
+    if len(logger.handlers) == 1 and isinstance(logger.handlers[0], logging.NullHandler):
+        return False  # Logger not initialised
+
+    # Or just return the disabled status
+    return logger.disabled is False
+
+
 # ------------------------------------
 
 # Decorator for logging sift function
@@ -192,9 +204,8 @@ def wrap_verbose(func):
     # This is the actual decorator
     @wraps(func)
     def inner_verbose(*args, **kwargs):
-        levels = ['CRITICAL', 'WARNING', 'INFO', 'DEBUG']
 
-        if ('verbose' in kwargs) and (kwargs['verbose'] in levels):
+        if ('verbose' in kwargs) and (kwargs['verbose'] is not None):
             tmp_level = kwargs['verbose']
             current_level = get_level()
             set_level(level=tmp_level)
@@ -204,9 +215,8 @@ def wrap_verbose(func):
         # Call function itself
         func_output = func(*args, **kwargs)
 
-        if ('verbose' in kwargs) and (kwargs['verbose'] in levels):
-            if kwargs['verbose'] is not None:
-                set_level(level=logging._levelToName[current_level])
+        if ('verbose' in kwargs) and (kwargs['verbose'] is not None):
+            set_level(level=logging._levelToName[current_level])
 
         return func_output
     return inner_verbose

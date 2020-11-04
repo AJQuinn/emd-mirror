@@ -30,7 +30,7 @@ from scipy import interpolate as interp
 
 from . import spectra
 from .logger import sift_logger, wrap_verbose
-from .support import ensure_1d_with_singleton, ensure_2d
+from .support import ensure_1d_with_singleton, ensure_2d, EMDSiftCovergeError
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -41,7 +41,9 @@ logger = logging.getLogger(__name__)
 
 # Utilities
 
-def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={}, extrema_opts={}):
+def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
+                 stop_method='sd', sd_thresh=.1, rilling_thresh=(0.05, 0.5, 0.05),
+                 envelope_opts={}, extrema_opts={}):
     """
     Compute the next IMF from a data set. This is a helper function used within
     the more general sifting functions.
@@ -50,13 +52,27 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
     ----------
     X : ndarray [nsamples x 1]
         1D input array containing the time-series data to be decomposed
-    sd_thresh : scalar
-        The threshold at which the sift of each IMF will be stopped. (Default value = .1)
     env_step_size : float
         Scaling of envelope prior to removal at each iteration of sift. The
         average of the upper and lower envelope is muliplied by this value
         before being subtracted from the data. Values should be between
         0 > x >= 1 (Default value = 1)
+    max_iters : int > 0
+        Maximum number of iterations to compute before throwing an error
+    energy_thresh : float > 0
+        Threshold for energy difference (in decibels) between IMF and residual
+        to suggest stopping overall sift. (Default is None, recommended value is 50)
+    stop_method : {'sd','rilling','fixed'}
+        Flag indicating which metric to use to stop sifting and return an IMF.
+    sd_thresh : scalar
+        Used if 'stop_method' is 'sd'. The threshold at which the sift of each
+        IMF will be stopped. (Default value = .1)
+    rilling_thresh : tuple
+        Used if 'stop_method' is 'rilling', needs to contain three values (sd1, sd2, alpha).
+        An evaluation function (E) is defined by dividing the residual by the
+        mode amplitude. The sift continues until E < sd1 for the fraction
+        (1-alpha) of the data, and E < sd2 for the remainder.
+        See section 3.2 of http://perso.ens-lyon.fr/patrick.flandrin/NSIP03.pdf
 
     Returns
     -------
@@ -87,13 +103,14 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
     continue_flag = True
     niters = 0
     while continue_imf:
-        niters += 1
 
-        if niters == 3*max_iters//4:
-            logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
-        elif niters > max_iters:
-            logger.debug('Sift failed. No covergence after {0} iterations, '.format(niters))
-            return None, False
+        if stop_method != 'fixed':
+            if niters == 3*max_iters//4:
+                logger.debug('Sift reached {0} iterations, taking a long time to coverge'.format(niters))
+            elif niters > max_iters:
+                msg = 'Sift failed. No covergence after {0} iterations'.format(niters)
+                raise EMDSiftCovergeError(msg)
+        niters += 1
 
         upper = interp_envelope(proto_imf, mode='upper',
                                 **envelope_opts, extrema_opts=extrema_opts)
@@ -114,11 +131,19 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
         x1 = proto_imf - avg
 
         # Stop sifting if we pass threshold
-        sd = np.sum((proto_imf - x1)**2) / np.sum(proto_imf**2)
-        if sd < sd_thresh:
-            proto_imf = x1
+        if stop_method == 'sd':
+            stop, sd = sd_stop(proto_imf, x1, sd=sd_thresh, niters=niters)
+        elif stop_method == 'rilling':
+            stop, sd = rilling_stop(upper, lower, niters=niters,
+                                    sd1=rilling_thresh[0],
+                                    sd2=rilling_thresh[1],
+                                    tol=rilling_thresh[2])
+        elif stop_method == 'fixed':
+            stop = fixed_stop(niters, max_iters)
+
+        if stop:
+            proto_imf = x1.copy()
             continue_imf = False
-            logger.debug('Completed in {0} iters with sd {1}'.format(niters, sd))
             continue
 
         proto_imf = proto_imf - (env_step_size*avg)
@@ -126,15 +151,88 @@ def get_next_imf(X, sd_thresh=.1, env_step_size=1, max_iters=50, envelope_opts={
     if proto_imf.ndim == 1:
         proto_imf = proto_imf[:, None]
 
+    if energy_thresh is not None:
+        energy_db = energy_difference(X, X-proto_imf)
+        if energy_db > energy_thresh:
+            continue_flag = False
+            logger.debug('Finishing sift: energy ratio is {0}'.format(energy_db))
+
     return proto_imf, continue_flag
+
+
+def energy_difference(imf, residue):
+    sumsqr = np.sum(imf**2)
+    imf_energy = 20 * np.log10(sumsqr, where=sumsqr > 0)
+    sumsqr = np.sum(residue ** 2)
+    resid_energy = 20 * np.log10(sumsqr, where=sumsqr > 0)
+    return imf_energy-resid_energy
+
+
+def energy_stop(imf, residue, thresh=50, niters=None):
+    """10.1016/j.ymssp.2007.11.028 3.2.4"""
+
+    diff = energy_difference(imf, residue)
+    if diff > thresh:
+        stop = True,
+    else:
+        stop = False
+
+    if stop:
+        logger.debug('Sift stopped by Energy Ratio in {0} iters with difference of {1}dB'.format(niters, diff))
+
+    return stop, diff
+
+
+def sd_stop(proto_imf, prev_imf, sd=0.2, niters=None):
+
+    metric = np.sum((proto_imf - prev_imf)**2) / np.sum(proto_imf**2)
+
+    stop = metric < sd
+
+    if stop:
+        logger.debug('Sift stopped by SD-thresh in {0} iters with sd {1}'.format(niters, metric))
+
+    return stop, metric
+
+
+def rilling_stop(upper_env, lower_env, sd1=0.05, sd2=0.5, tol=0.05, niters=None):
+
+    avg_env = (upper_env+lower_env)/2
+    amp = np.abs(upper_env-lower_env)/2
+
+    eval_metric = np.abs(avg_env)/amp
+
+    metric = np.mean(eval_metric > sd1)
+    continue1 = metric > tol
+    continue2 = np.any(eval_metric > sd2)
+
+    stop = (continue1 or continue2) == False  # noqa: E712
+
+    if stop:
+        logger.debug('Sift stopped by Rilling-metric in {0} iters (val={1})'.format(niters, metric))
+
+    return stop, metric
+
+
+def fixed_stop(niters, max_iters):
+
+    if niters == max_iters:
+        stop = True
+    else:
+        stop = False
+
+    if stop:
+        logger.debug('Sift stopped at fixed number of {0} iterations'.format(niters))
+
+    return stop
 
 
 # SIFT implementation
 
 @wrap_verbose
 @sift_logger('sift')
-def sift(X, sift_thresh=1e-8, max_imfs=None,
-         imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
+         imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     original sift algorithm [1]_.
@@ -298,8 +396,8 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 @wrap_verbose
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
-                  nprocesses=1, sift_thresh=1e-8, max_imfs=None,
-                  imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+                  nprocesses=1, sift_thresh=1e-8, max_imfs=None, verbose=None,
+                  imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -395,8 +493,8 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 @sift_logger('complete_ensemble_sift')
 def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
-                           sift_thresh=1e-8, max_imfs=None,
-                           imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+                           sift_thresh=1e-8, max_imfs=None, verbose=None,
+                           imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from an input data vector using the
     complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
@@ -567,7 +665,7 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
 
     X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf_mask')
 
-    logger.info("Defining {0} masks with freq {1} and amp {2}".format(nphases, z, amp))
+    logger.info("Defining masks with freq {0} and amp {1} at {2} phases".format(z, amp, nphases))
 
     # Create normalised freq
     zf = z * 2 * np.pi
@@ -629,12 +727,10 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
 
 @wrap_verbose
 @sift_logger('mask_sift')
-def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
-              mask_freqs='zc', mask_step_factor=2,
-              mask_type='all', ret_mask_freq=False,
-              max_imfs=9, sift_thresh=1e-8,
-              nphases=4, nprocesses=1,
-              imf_opts={}, envelope_opts={}, extrema_opts={}, verbose=None):
+def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
+              mask_step_factor=2, ret_mask_freq=False, max_imfs=9, sift_thresh=1e-8,
+              nphases=4, nprocesses=1, verbose=None,
+              imf_opts={}, envelope_opts={}, extrema_opts={}):
     """
     Compute Intrinsic Mode Functions from a dataset using a set of masking
     signals to reduce mixing of components between modes [1]_.
@@ -780,6 +876,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf',
         proto_imf = X - imf.sum(axis=1)[:, None]
 
         if max_imfs is not None and imf_layer == max_imfs-1:
+            logger.info('Finishing sift: reached max number of imfs ({0})'.format(imf.shape[1]))
             continue_sift = False
 
         if np.abs(next_imf).sum() < sift_thresh:
