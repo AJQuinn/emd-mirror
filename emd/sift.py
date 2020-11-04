@@ -19,6 +19,7 @@ get_next_imf_mask
 """
 
 
+import sys
 import yaml
 import logging
 import warnings
@@ -682,9 +683,8 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
     args = [[X+m[:, ii, np.newaxis]] for ii in range(nphases)]
 
     import multiprocessing as mp
-    p = mp.Pool(processes=nprocesses)
-    res = p.starmap(my_get_next_imf, args)
-    p.close()
+    with mp.Pool(processes=nprocesses) as p:
+        res = p.starmap(my_get_next_imf, args)
 
     # Collate results
     imfs = [r[0] for r in res]
@@ -1521,7 +1521,7 @@ class SiftConfig(collections.abc.MutableMapping):
 
     def __init__(self, name='sift', *args, **kwargs):
         self.store = dict()
-        self.name = name
+        self.sift_type = name
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
@@ -1568,7 +1568,10 @@ class SiftConfig(collections.abc.MutableMapping):
                 for key in self.store[stage].keys():
                     out.append('    {0} : {1}'.format(key, self.store[stage][key]))
 
-        return '%s %s\n%s' % (self.name, self.__class__, '\n'.join(out))
+        return '%s %s\n%s' % (self.sift_type, self.__class__, '\n'.join(out))
+
+    def __repr__(self):
+        return "<{0} ({1})>".format(self.__module__ + '.' + type(self).__name__, self.sift_type)
 
     def __len__(self):
         return len(self.store)
@@ -1585,20 +1588,29 @@ class SiftConfig(collections.abc.MutableMapping):
 
     def _get_yamlsafe_dict(self):
         conf = self.store.copy()
-        return _array_to_list(conf)
+        conf = _array_or_tuple_to_list(conf)
+        return [{'sift_type': self.sift_type}, conf]
 
     def to_yaml_text(self):
         return yaml.dump(self._get_yamlsafe_dict(), sort_keys=False)
 
     def to_yaml_file(self, fname):
         with open(fname, 'w') as f:
-            yaml.dump(self._get_yamlsafe_dict(), f, sort_keys=False)
+            yaml.dump_all(self._get_yamlsafe_dict(), f, sort_keys=False)
+        logger.info("Saved SiftConfig ({0}) to {1}".format(self, fname))
 
     @classmethod
     def from_yaml_file(cls, fname):
         ret = cls()
         with open(fname, 'r') as f:
-            ret.store = yaml.load(f, Loader=yaml.FullLoader)
+            cfg = [d for d in yaml.load_all(f, Loader=yaml.FullLoader)]
+            if len(cfg) == 1:
+                ret.store = cfg[0]
+                ret.sift_type = 'Unknown'
+            else:
+                ret.sift_type = cfg[0]['sift_type']
+                ret.store = cfg[1]
+        logger.info("Loaded SiftConfig ({0}) from {1}".format(ret, fname))
 
         return ret
 
@@ -1635,6 +1647,12 @@ class SiftConfig(collections.abc.MutableMapping):
         else:
             raise TypeError("stage ({}) not recognised, use 'sift', 'imf', 'envelope' or 'extrema'".format(stage))
         return out.copy()
+
+    def get_func(self):
+        """Get a partial-function coded with the options from this config"""
+        mod = sys.modules[__name__]
+        func = getattr(mod, self.sift_type)
+        return functools.partial(func, **self.store)
 
 
 def get_config(siftname='sift'):
@@ -1759,10 +1777,12 @@ def _get_function_opts(func, ignore=None):
     return out
 
 
-def _array_to_list(conf):
+def _array_or_tuple_to_list(conf):
     for key, val in conf.items():
         if isinstance(val, np.ndarray):
             conf[key] = val.tolist()
         elif isinstance(val, dict):
-            conf[key] = _array_to_list(conf[key])
+            conf[key] = _array_or_tuple_to_list(conf[key])
+        elif isinstance(val, tuple):
+            conf[key] = list(val)
     return conf
