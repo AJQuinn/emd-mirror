@@ -19,7 +19,7 @@ peak_freq = 12
 sample_rate = 512
 seconds = 10
 noise_std = .5
-x = emd.utils.ar_simulate(peak_freq, sample_rate, seconds, noise_std=noise_std, random_seed=42, r=.99)
+x = emd.utils.ar_simulate(peak_freq, sample_rate, seconds, noise_std=noise_std, random_seed=42, r=.99) * 1e-4
 t = np.linspace(0, seconds, seconds*sample_rate)
 
 # Plot the first 5 seconds of data
@@ -100,6 +100,7 @@ plt.title('IMF-2')
 plt.subplot(312)
 plt.plot(t[:sample_rate*2], IP[:sample_rate*2, 2])
 plt.title('IMF-2 Instantaneous Phase')
+plt.ylabel('Radians')
 plt.gca().set_xticklabels([])
 plt.subplot(313)
 plt.plot(t[1:sample_rate*2], np.abs(np.diff(IP[:sample_rate*2, 2])))
@@ -139,6 +140,7 @@ plt.figure(figsize=(8, 4))
 plt.subplot(211)
 plt.plot(t[:sample_rate*2], IP[:sample_rate*2, 2])
 plt.legend(['IMF-2 Instantaneous Phase'])
+plt.ylabel('Radians')
 plt.title('Test-1: Check phase is strictly increasing')
 plt.subplot(212)
 plt.plot(t[1:sample_rate*2], unwrapped_phase)
@@ -203,6 +205,7 @@ for ii in range(1, ncycles):
     # Only plot the legend for the first cycle
     if ii == 1:
         plt.legend()
+plt.ylim(-3, 3)
 
 #%%
 # Most of these cycles have the full set of control points present. Only ones
@@ -233,6 +236,7 @@ plt.plot((0, 4), (np.pi*2, np.pi*2), label='2pi')
 plt.plot((0, 4), (np.pi*2-np.pi/12, np.pi*2-np.pi/12), ':', label='Upper Thresh')
 plt.plot((0, 4), (np.pi/12, np.pi/12), ':', label='Lower Thresh')
 plt.title('Instantanous Phase')
+plt.ylabel('Radians')
 plt.subplot(313)
 plt.plot(t[:sample_rate*4], good_cycles[:sample_rate*4, 2])
 plt.title('Good cycles')
@@ -295,6 +299,7 @@ plt.plot((0, .5), (np.pi/12, np.pi/12), ':', label='Lower Thresh')
 
 plt.gca().set_xticklabels([])
 plt.title('Instantanous Phase')
+plt.ylabel('Radians')
 
 plt.subplot(313)
 plt.plot(t[:sample_rate//2], good_cycles[:sample_rate//2, 0])
@@ -306,4 +311,7 @@ plt.xlabel('Time (seconds)')
 # samples for each potential cycle in IMF-1 compared to ~40 for IMF-2. As such,
 # more cycles are showing distortions and failing the quality checks. In this
 # case it is ok as there is no signal in IMF-1 in our simulation. Much of IMF-1
-# is noisy
+# is noisy for this sift. We could potentially improve this by changing the
+# sift parameters to compute more iterations for each IMF. This would increase
+# the number of good cycles in IMF-1 but might lead to over-sifting in other
+# IMFs. These parameters should be tuned for the priorities of each analysis.

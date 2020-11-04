@@ -292,7 +292,7 @@ plt.ylabel('Frequency (Hz)')
 
 #%%
 # This greatly increases the frequency-resolution in the y-axis. This can be
-# tunes to meet your needs depending on the analysis in-hand and computational
+# tuned to meet your needs depending on the analysis in-hand and computational
 # demands. A Hilbert-Huang Transform of a long time-series with very high
 # frequency resolution can create a very large matrix....
 #
@@ -333,9 +333,9 @@ plt.ylabel('Frequency (Hz)')
 
 
 #%%
-# Let zoom back out to a longer section of our simulated time series. Here we
-# plot the IMF, IA and HHT across around 4 seconds of data. We use a relatively
-# high resolution set of frequency bins with a linear spacing.
+# Let us zoom back out to a longer section of our simulated time series. Here
+# we plot the IMF, IA and HHT across around 4 seconds of data. We use a
+# relatively high resolution set of frequency bins with a linear spacing.
 
 # Carrier frequency histogram definition
 freq_edges, freq_centres = emd.spectra.define_hist_bins(1, 25, 24*3, 'linear')

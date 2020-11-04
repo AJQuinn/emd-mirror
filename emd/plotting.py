@@ -74,4 +74,4 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
         if freqs is not None:
             ax.set_title(freqs[ii - 1], fontsize=8)
 
-    fig.subplots_adjust(top=.95, bottom=.05, right=.95)
+    fig.subplots_adjust(top=.95, bottom=.05, left=.2, right=.99)

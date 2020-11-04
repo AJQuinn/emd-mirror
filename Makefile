@@ -23,6 +23,7 @@ clean:
 	rm -fr build
 	rm -fr doc/build
 	rm -fr doc/source/emd_tutorials
+	rm -fr doc/source/changelog.md
 	rm -fr emd.egg-info
 
 all-clean: install-clean

@@ -21,6 +21,10 @@ from sphinx_gallery.sorting import FileNameSortKey
 import matplotlib
 matplotlib.use('agg')
 
+# Copy the changelog from package root dir to doc/source
+import shutil
+shutil.copy('../../changelog.md', 'changelog.md')
+
 
 # -- Project information -----------------------------------------------------
 
@@ -233,6 +237,7 @@ html_theme_options = {
         ("Tutorials", "emd_tutorials/index"),
         ("Reference", "reference"),
         ("Contribute", "contribute"),
+        ("Changes", "changelog"),
         ("GitLab", "https://gitlab.com/emd-dev/emd", True)
     ],
 
@@ -297,3 +302,14 @@ html_copy_source = False
 
 def setup(app):
     app.add_css_file('css/emd_custom.css')  # may also be an URL
+
+
+# --
+# Markdown support
+from recommonmark.parser import CommonMarkParser
+
+source_parsers = {
+    '.md': CommonMarkParser,
+}
+
+source_suffix = ['.rst', '.md']

@@ -41,7 +41,7 @@ print(config)
 #%%
 # The SiftConfig dictionary contains arguments and default values for functions
 # which are called internally within the different sift implementations. The
-# dictionary can be used to viewing and editing the options before they are
+# dictionary can be used for viewing and editing the options before they are
 # passed into the sift function.
 #
 # The SiftConfig dictionary is nested, in that some items in the dictionary
