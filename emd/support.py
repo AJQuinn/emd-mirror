@@ -176,12 +176,18 @@ def ensure_1d_with_singleton(to_check, names, func_name):
     out_args = list(to_check)
     for idx, xx in enumerate(to_check):
 
-        if (xx.ndim > 1) and (xx.shape[1] != 1):
-            msg = "Checking {0} inputs - Second dim of input '{1}' {2} must be singleton (1)"
-            msg = msg.format(func_name, names[idx], xx.shape)
-            logger.error(msg)
+        if (xx.ndim > 2) and np.all(xx.shape[1:] == np.ones_like(xx.shape[1:])):
+            # nd input where all trailing are ones
+            msg = "Checking {0} inputs - Trimming trailing singletons from input '{1}' (input size {2})"
+            logger.debug(msg.format(func_name, names[idx], xx.shape))
+            out_args[idx] = np.squeeze(xx)[:, np.newaxis]
+        if (xx.ndim > 2) and np.all(xx.shape[1:] == np.ones_like(xx.shape[1:])) == False:  # noqa: E712
+            # nd input where some trailing are not one
+            msg = "Checking {0} inputs - trailing dims of input '{1}' {2} must be singletons (length=1)"
+            logger.error(msg.format(func_name, names[idx], xx.shape))
             raise ValueError(msg)
         elif xx.ndim == 1:
+            # Vector input - add a dummy dimension
             msg = "Checking {0} inputs - Adding dummy dimension to input '{1}'"
             logger.debug(msg.format(func_name, names[idx]))
             out_args[idx] = out_args[idx][:, np.newaxis]

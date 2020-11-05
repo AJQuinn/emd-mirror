@@ -25,7 +25,7 @@ import numpy as np
 from scipy import signal
 
 from .sift import interp_envelope, zero_crossing_count
-from .support import ensure_2d
+from .support import ensure_2d, ensure_1d_with_singleton
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -65,6 +65,8 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
 
     """
     logger.info('STARTED: Amplitude-Normalise')
+
+    X = ensure_1d_with_singleton([X], ['X'], 'amplitude_normalise')
 
     if X.ndim == 2:
         logger.debug('Normalising {0} samples across {1} IMFs'.format(*X.shape))
@@ -201,7 +203,7 @@ def est_orthogonality(imf):
     return ortho
 
 
-def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
+def find_extrema_locked_epochs(X, winsize, lock_to='peaks', percentile=None):
     """
     Helper function for defining epochs around peaks or troughs within the data
 
@@ -223,31 +225,29 @@ def find_extrema_locked_epochs(X, winsize, lock_to='max', percentile=None):
         Array of start and end indices for epochs around extrema.
 
     """
-    if lock_to not in ['max', 'min']:
+    if lock_to not in ['peaks', 'troughs', 'combined']:
         raise ValueError("Invalid lock_to value")
 
-    from .sift import find_extrema
-    if lock_to == 'max':
-        locs, pks = find_extrema(X, ret_min=False)
-    else:
-        locs, pks = find_extrema(X, ret_min=True)
+    from .sift import get_padded_extrema
+    locs, pks = get_padded_extrema(X, pad_width=0, mode=lock_to)
 
     if percentile is not None:
-        thresh = np.percentile(pks[:, 0], percentile)
-        locs = locs[pks[:, 0] > thresh]
+        thresh = np.percentile(pks, percentile)
+        locs = locs[pks > thresh]
         pks = pks[pks > thresh]
 
     winstep = int(winsize / 2)
 
+    # Get all trials
     trls = np.r_[np.atleast_2d(locs - winstep), np.atleast_2d(locs + winstep)].T
 
     # Reject trials which start before 0
     inds = trls[:, 0] < 0
-    trls = trls[inds is False, :]
+    trls = trls[inds == False, :]  # noqa: E712
 
     # Reject trials which end after X.shape[0]
     inds = trls[:, 1] > X.shape[0]
-    trls = trls[inds is False, :]
+    trls = trls[inds == False, :]  # noqa: E712
 
     return trls
 
