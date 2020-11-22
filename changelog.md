@@ -28,10 +28,12 @@ Work in progress...
   - Rilling et al and fixed iterations IMF stopping criteria
   - Energy threshold sift stopping criterion
 
+
 ### Changed
 - Refactor some options extrema detection functions [!29](https://gitlab.com/emd-dev/emd/-/merge_requests/29)
 - Sift throws an error if an IMF doesn't converge after a specified maximum number of iterations.
 - Refactor mask generation in mask sift. Now specifies N masks of different phases and has options for parallel processing.
+- 18% increase in testing coverage (to 75% total) [!30](https://gitlab.com/emd-dev/emd/-/merge_requests/30)
 
 ---
 

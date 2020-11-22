@@ -91,6 +91,17 @@ class test_cycles(unittest.TestCase):
         chain = get_cycle_chain(cycles, min_chain=3)
         assert(np.all(chain == np.array([3, 4, 5, 6, 7])))
 
+    def test_cycle_control_points(self):
+        from ..cycles import get_control_points
+
+        x = np.sin(2*np.pi*np.linspace(0, 1, 1280))
+        cycles = np.ones_like(x, dtype=int)
+        ctrl = get_control_points(x, cycles)
+
+        # We accept a 1 sample error in ctrl point location...
+        ref = 1280*np.linspace(0, 1, 5)
+        assert(np.abs(ctrl-ref).max())
+
 
 class test_kdt_match(unittest.TestCase):
 

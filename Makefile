@@ -34,6 +34,7 @@ install-clean: clean
 
 test:
 	python3 -m pytest emd
+	coverage html
 
 doc: doc-html
 

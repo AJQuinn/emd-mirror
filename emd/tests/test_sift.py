@@ -1,10 +1,11 @@
 
 import unittest
+import pytest
 
 import numpy as np
 
 from ..sift import sift, ensemble_sift, complete_ensemble_sift, \
-                   mask_sift, get_config
+                   mask_sift, get_config, is_imf
 from ..utils import abreu2010
 
 
@@ -41,6 +42,43 @@ class test_sift_defaults(unittest.TestCase):
         """Check adaptive mask sift runs with some simple settings"""
         imf = mask_sift(self.x[:200], max_imfs=5, mask_freqs='zc')
         assert(imf.shape[0] == self.x[:200].shape[0])  # just checking that it ran
+
+
+class test_sift_ensurance(unittest.TestCase):
+
+    def setUp(self):
+
+        # Create core signal
+        seconds = 5.1
+        sample_rate = 2000
+        f1 = 2
+        f2 = 18
+        time_vect = np.linspace(0, seconds, int(seconds * sample_rate))
+
+        x = abreu2010(f1, .2, 0, sample_rate, seconds)
+        self.x = x + np.cos(2.3 * np.pi * f2 * time_vect) + np.linspace(-.5, 1, len(time_vect))
+
+    def test_get_next_imf_ensurance(self):
+        from ..sift import get_next_imf
+
+        # Check that various inputs to get_next_imf work or don't work
+
+        # check 1d input ok
+        imf, _ = get_next_imf(self.x)
+        assert(imf.shape == (self.x.shape[0], 1))
+
+        # check 1d+singleton is ok
+        imf, _ = get_next_imf(self.x[:, np.newaxis])
+        assert(imf.shape == (self.x.shape[0], 1))
+
+        # check nd trailing singletons is ok
+        imf, _ = get_next_imf(self.x[:, np.newaxis, np.newaxis])
+        assert(imf.shape == (self.x.shape[0], 1))
+
+        # check 3d raises error
+        with pytest.raises(ValueError):
+            xx = np.tile(self.x[:, np.newaxis, np.newaxis], (1, 2, 3))
+            imf, _ = get_next_imf(xx)
 
 
 class test_sift_behaviour(unittest.TestCase):
@@ -165,3 +203,56 @@ class test_sift_config(unittest.TestCase):
         assert(conf['max_imfs'] is None)
         assert(conf['extrema_opts/pad_width'] == 2)
         assert(conf['extrema_opts/loc_pad_opts/mode'] == 'reflect')
+
+    def test_sift_config_saveload_yaml(self):
+        import tempfile
+        from ..sift import SiftConfig
+
+        # Get sift config
+        config = get_config('mask_sift')
+
+        config_file = tempfile.NamedTemporaryFile(prefix="ExampleSiftConfig_").name
+
+        # Save the config into yaml format
+        config.to_yaml_file(config_file)
+
+        # Load the config back into a SiftConfig object for use in a script
+        new_config = SiftConfig.from_yaml_file(config_file)
+
+        assert(new_config.sift_type == 'mask_sift')
+
+
+class test_is_imf(unittest.TestCase):
+
+    def setUp(self):
+
+        # Create core signal
+        seconds = 5.1
+        sample_rate = 2000
+        f1 = 2
+        f2 = 18
+        time_vect = np.linspace(0, seconds, int(seconds * sample_rate))
+
+        x = abreu2010(f1, .2, 0, sample_rate, seconds)
+        self.x = x + np.cos(2.3 * np.pi * f2 * time_vect) + np.linspace(-.5, 1, len(time_vect))
+
+        self.y = np.sin(2 * np.pi * 5 * time_vect)
+
+    def test_is_imf_on_sinusoid(self):
+        out = is_imf(self.y)
+
+        # Should be true on both criteria
+        assert(np.all(out))
+
+    def test_is_imf_on_abreu(self):
+        imf = sift(self.x)
+        out = is_imf(imf)
+
+        # Should be true on both criteria
+        assert(np.all(out[0, :]))
+
+        # Should be true on both criteria
+        assert(np.all(out[1, :]))
+
+        # Trend is not an IMF, should be false on both criteria
+        assert(np.all(out[2, :] == False))  # noqa: E712

@@ -22,7 +22,6 @@ get_next_imf_mask
 import sys
 import yaml
 import logging
-import warnings
 import numpy as np
 import collections
 import functools
@@ -890,305 +889,6 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
         return imf
 
 
-@sift_logger('mask_sift_adaptive')
-def mask_sift_adaptive(X, sift_thresh=1e-8, max_imfs=None,
-                       mask_amp=1, mask_amp_mode='ratio_imf',
-                       mask_step_factor=2, ret_mask_freq=False,
-                       first_mask_mode='if',
-                       imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Compute Intrinsic Mode Functions from a dataset using a set of masking
-    signals to reduce mixing of components between modes.
-
-    The simplest masking signal approach uses single mask for each IMF after
-    the first is computed as normal [1]_. This has since been expanded to the
-    complete mask sift which uses a set of positive and negative sign sine and
-    cosine signals as masks for each IMF. The mean of the four is taken as the
-    IMF.
-
-    Parameters
-    ----------
-    X : ndarray
-        1D input array containing the time-series data to be decomposed
-    sd_thresh : scalar
-         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
-    sift_thresh : scalar
-         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
-    max_imfs : int
-         The maximum number of IMFs to compute. (Default value = None)
-    mask_amp : scalar or array_like
-         Amplitude of mask signals as specified by mask_amp_mode. If scalar the
-         same value is applied to all IMFs, if an array is passed each value is
-         applied to each IMF in turn (Default value = 1)
-    mask_amp_mode : {'abs','imf_ratio','sig_ratio'}
-         Method for computing mask amplitude. Either in absolute units ('abs'), or as a
-         ratio of the amplitude of the input signal ('ratio_signal') or previous imf
-         ('ratio_imf') (Default value = 'ratio_imf')
-    mask_step_factor : scalar
-         Step in frequency between successive masks (Default value = 2)
-    ret_mask_freq : bool
-         Boolean flag indicating whether mask frequencies are returned (Default value = False)
-    mask_initial_freq : scalar
-         Frequency of initial mask as a proportion of the sampling frequency (Default value = None)
-    interp_method : {'mono_pchip','splrep','pchip'}
-         The interpolation method used when computing upper and lower envelopes (Default value = 'mono_pchip')
-
-    Returns
-    -------
-    imf : ndarray
-        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
-    mask_freqs : ndarray
-        1D array of mask frequencies, if ret_mask_freq is set to True.
-
-    Other Parameters
-    ----------------
-    imf_opts : dict
-        Optional dictionary of keyword arguments to be passed to emd.get_next_imf
-    envelope_opts : dict
-        Optional dictionary of keyword options to be passed to emd.interp_envelope
-    extrema_opts : dict
-        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
-
-    References
-    ----------
-    .. [1] Ryan Deering, & James F. Kaiser. (2005). The Use of a Masking Signal
-       to Improve Empirical Mode Decomposition. In Proceedings. (ICASSP ’05). IEEE
-       International Conference on Acoustics, Speech, and Signal Processing, 2005.
-       IEEE. https://doi.org/10.1109/icassp.2005.1416051
-
-    """
-
-    warnings.warn("'emd.sift.mask_sift_adaptive' is deprecated and will be \
-                   removed in the next version of EMD.\nPlease switch to use \
-                   'emd.sift.mask_sift' to remove this warning", DeprecationWarning)
-
-    if X.ndim == 1:
-        # add dummy dimension
-        X = X[:, None]
-
-    continue_sift = True
-    layer = 0
-
-    # Initialise mask amplitudes
-    if mask_amp_mode == 'ratio_imf':
-        sd = X.std()  # Take ratio of input signal for first IMF
-    elif mask_amp_mode == 'ratio_sig':
-        sd = X.std()
-    elif mask_amp_mode == 'abs':
-        sd = 1
-
-    if isinstance(mask_amp, int) or isinstance(mask_amp, float):
-        amp = mask_amp * sd
-    else:
-        # Should be array_like if not a single number
-        amp = mask_amp[layer] * sd
-
-    if (first_mask_mode == 'zc') or (first_mask_mode == 'if'):
-        logger.info('Sift IMF-{0} with no mask'.format(layer))
-        # First IMF is computed normally
-        imf, _ = get_next_imf(X, **imf_opts)
-
-    # Compute first mask frequency from first IMF
-    if first_mask_mode == 'zc':
-        num_zero_crossings = zero_crossing_count(imf)[0, 0]
-        w = X.shape[0] / (num_zero_crossings / 2)
-        z = num_zero_crossings / imf.shape[0] / 4
-        zs = [z]
-    elif first_mask_mode == 'if':
-        _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'nht',
-                                            smooth_phase=3)
-        w = np.average(IF, weights=IA)
-        z = 2 * np.pi * w / mask_step_factor
-        z = w / 2
-        zs = [z]
-    elif first_mask_mode < .5:
-        z = first_mask_mode
-        amp = amp * X.std()
-        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
-        imf = get_next_imf_mask(X, z, amp, mask_type='all',
-                                imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
-        zs = [z]
-        z = z / mask_step_factor
-        zs.append(z)
-
-    layer = 1
-    proto_imf = X.copy() - imf
-    while continue_sift:
-
-        # Update mask amplitude if needed
-        if mask_amp_mode == 'ratio_imf':
-            sd = imf[:, -1].std()
-
-        if isinstance(mask_amp, int) or isinstance(mask_amp, float):
-            amp = mask_amp * sd
-        else:
-            # Should be array_like if not a single number
-            amp = mask_amp[layer] * sd
-
-        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
-
-        next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
-                                     imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
-
-        imf = np.concatenate((imf, next_imf), axis=1)
-
-        proto_imf = X - imf.sum(axis=1)[:, None]
-
-        z = z / mask_step_factor
-        zs.append(z)
-        layer += 1
-
-        if max_imfs is not None and layer == max_imfs:
-            continue_sift = False
-
-    if ret_mask_freq:
-        return imf, np.array(zs)
-    else:
-        return imf
-
-
-@sift_logger('mask_sift_specified')
-def mask_sift_specified(X, sd_thresh=.1, max_imfs=None,
-                        mask_amp=1, mask_amp_mode='ratio_imf',
-                        mask_step_factor=2, ret_mask_freq=False,
-                        mask_initial_freq=None, mask_freqs=None,
-                        mask_amps=None,
-                        imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Compute Intrinsic Mode Functions from a dataset using a set of masking
-    signals to reduce mixing of components between modes.
-
-    The simplest masking signal approach uses single mask for each IMF after
-    the first is computed as normal [1]_. This has since been expanded to the
-    complete mask sift which uses a set of positive and negative sign sine and
-    cosine signals as masks for each IMF. The mean of the four is taken as the
-    IMF.
-
-    Parameters
-    ----------
-    X : ndarray
-        1D input array containing the time-series data to be decomposed
-    sd_thresh : scalar
-         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
-    sift_thresh : scalar
-         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
-    max_imfs : int
-         The maximum number of IMFs to compute. (Default value = None)
-    mask_amp : scalar or array_like
-         Amplitude of mask signals as specified by mask_amp_mode. If scalar the
-         same value is applied to all IMFs, if an array is passed each value is
-         applied to each IMF in turn (Default value = 1)
-    mask_amp_mode : {'abs','imf_ratio','sig_ratio'}
-         Method for computing mask amplitude. Either in absolute units ('abs'), or as a
-         ratio of the amplitude of the input signal ('ratio_signal') or previous imf
-         ('ratio_imf') (Default value = 'ratio_imf')
-    mask_step_factor : scalar
-         Step in frequency between successive masks (Default value = 2)
-    ret_mask_freq : bool
-         Boolean flag indicating whether mask frequencies are returned (Default value = False)
-    mask_initial_freq : scalar
-         Frequency of initial mask as a proportion of the sampling frequency (Default value = None)
-    mask_freqs : array_like
-         1D array, list or tuple of mask frequencies as a proportion of the
-         sampling frequency (Default value = None)
-    interp_method : {'mono_pchip','splrep','pchip'}
-         The interpolation method used when computing upper and lower envelopes (Default value = 'mono_pchip')
-
-    Returns
-    -------
-    imf : ndarray
-        2D array [samples x nimfs] containing he Intrisic Mode Functions from the decomposition of X.
-    mask_freqs : ndarray
-        1D array of mask frequencies, if ret_mask_freq is set to True.
-
-    Other Parameters
-    ----------------
-    imf_opts : dict
-        Optional dictionary of keyword arguments to be passed to emd.get_next_imf
-    envelope_opts : dict
-        Optional dictionary of keyword options to be passed to emd.interp_envelope
-    extrema_opts : dict
-        Optional dictionary of keyword options to be passed to emd.get_padded_extrema
-
-    References
-    ----------
-    .. [1] Ryan Deering, & James F. Kaiser. (2005). The Use of a Masking Signal
-       to Improve Empirical Mode Decomposition. In Proceedings. (ICASSP ’05). IEEE
-       International Conference on Acoustics, Speech, and Signal Processing, 2005.
-       IEEE. https://doi.org/10.1109/icassp.2005.1416051
-
-    """
-
-    warnings.warn("'emd.sift.mask_sift_specified' is deprecated and will be \
-                   removed in the next version of EMD.\nPlease switch to use \
-                   'emd.sift.mask_sift' to remove this warning", DeprecationWarning)
-
-    if X.ndim == 1:
-        # add dummy dimension
-        X = X[:, None]
-
-    continue_sift = True
-    layer = 0
-
-    # First sift
-    z = mask_freqs[0]
-    zs = [z]  # Store mask freqs for return later
-
-    # Initialise mask amplitudes
-    if mask_amp_mode == 'ratio_imf':
-        sd = X.std()  # Take ratio of input signal for first IMF
-    elif mask_amp_mode == 'ratio_sig':
-        sd = X.std()
-    elif mask_amp_mode == 'abs':
-        sd = 1
-
-    if isinstance(mask_amp, int) or isinstance(mask_amp, float):
-        amp = mask_amp * sd
-    else:
-        # Should be array_like if not a single number
-        amp = mask_amp[layer] * sd
-
-    logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(1, z, amp))
-
-    imf = get_next_imf_mask(X, z, amp, mask_type='all',
-                            imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
-
-    layer = 1
-    proto_imf = X.copy() - imf
-    while continue_sift:
-
-        z = mask_freqs[layer]
-        zs.append(z)
-        layer += 1
-
-        # Update mask amplitudes if needed
-        if mask_amp_mode == 'ratio_imf':
-            sd = imf[:, -1].std()
-
-        if isinstance(mask_amp, int) or isinstance(mask_amp, float):
-            amp = mask_amp * sd
-        else:
-            # Should be array_like if not a single number
-            amp = mask_amp[layer] * sd
-
-        logger.info('Sift IMF-{0} with mask-freq {1} and amp {2}'.format(layer, z, amp))
-
-        next_imf = get_next_imf_mask(proto_imf, z, amp, mask_type='all',
-                                     imf_opts=imf_opts, envelope_opts=extrema_opts, extrema_opts=extrema_opts)
-
-        imf = np.concatenate((imf, next_imf), axis=1)
-
-        proto_imf = X - imf.sum(axis=1)[:, None]
-
-        if max_imfs is not None and layer == max_imfs:
-            continue_sift = False
-
-    if ret_mask_freq:
-        return imf, np.array(zs)
-    else:
-        return imf
-
-
 ##################################################################
 # Second Layer SIFT
 
@@ -1509,6 +1209,85 @@ def zero_crossing_count(X):
     return (np.diff(np.sign(X), axis=0) != 0).sum(axis=0)
 
 
+def is_imf(imf, avg_tol=5e-2, envelope_opts=None, extrema_opts=None):
+    """
+    Run checks to validate whether a signal is a 'true IMF' according to two
+    criteria. Firstly, the number of extrema and number of zero-crossings must
+    differ by zero or one. Secondly,the mean of the upper and lower envelopes
+    must be within a tolerance of zero.
+
+    Parameters
+    ----------
+    imf : 2d array
+        Array of signals to check [nsamples x nimfs]
+    avg_tol : float
+        Tolerance of acceptance for criterion two. The sum-square of the mean
+        of the upper and lower envelope must be below avg_tol of the sum-square
+        of the signal being checked.
+    envelope_opts : dict
+        Dictionary of envelope estimation options, must be identical to options
+        used when estimating IMFs.
+    extrema_opts : dict
+        Dictionary of extrema estimation options, must be identical to options
+        used when estimating IMFs.
+
+    Parameters
+    ----------
+    array [2 x nimfs]
+        Boolean array indicating whether each IMF passed each test.
+
+    Notes
+    -----
+    These are VERY strict criteria to apply to real data. The tests may
+    indicate a fail if the sift doesn't coverge well in a short segment of the
+    signal when the majority of the IMF is well behaved.
+
+    The tests are only valid if called with identical envelope_opts and
+    extrema_opts as were used in the sift estimation.
+
+    """
+
+    imf = ensure_2d([imf], ['imf'], 'is_imf')
+
+    if envelope_opts is None:
+        envelope_opts = {}
+
+    checks = np.zeros((imf.shape[1], 2), dtype=bool)
+
+    for ii in range(imf.shape[1]):
+
+        # Extrema and zero-crossings differ by <=1
+        num_zc = zero_crossing_count(imf[:, ii])
+        num_ext = signal.find_peaks(imf[:, ii])[0].shape[0] + signal.find_peaks(-imf[:, ii])[0].shape[0]
+
+        # Mean of envelopes should be zero
+        upper = interp_envelope(imf[:, ii], mode='upper',
+                                **envelope_opts, extrema_opts=extrema_opts)
+        lower = interp_envelope(imf[:, ii], mode='lower',
+                                **envelope_opts, extrema_opts=extrema_opts)
+
+        # If upper or lower are None we should stop sifting altogether
+        if upper is None or lower is None:
+            logger.debug('IMF-{0} False - no peaks detected')
+            continue
+
+        # Find local mean
+        avg = np.mean([upper, lower], axis=0)[:, None]
+        avg_sum = np.sum(np.abs(avg))
+        imf_sum = np.sum(np.abs(imf[:,  ii]))
+        diff = avg_sum / imf_sum
+
+        # TODO: Could probably add a Rilling-like criterion here. ie - is_imf
+        # is true if (1-alpha)% of time is within some thresh
+        checks[ii, 0] = np.abs(np.diff((num_zc, num_ext))) <= 1
+        checks[ii, 1] = diff < avg_tol
+
+        msg = 'IMF-{0} {1} - {2} extrema and {3} zero-crossings. Avg of envelopes is {4:.4}/{5:.4} ({6:.4}%)'
+        msg = msg.format(ii, np.alltrue(checks[ii, :]),  num_ext, num_zc, avg_sum, imf_sum, 100*diff)
+        logger.debug(msg)
+
+    return checks
+
 ##################################################################
 # SIFT Config Utilities
 
@@ -1619,34 +1398,6 @@ class SiftConfig(collections.abc.MutableMapping):
         ret = cls()
         ret.store = yaml.load(stream, Loader=yaml.FullLoader)
         return ret
-
-    def to_opts(self, stage='sift'):
-
-        if stage == 'sift':
-            out = self.store['sift']
-            out['imf_opts'] = self.store['imf']
-            out['imf_opts']['envelope_opts'] = self.store['envelope']
-            out['imf_opts']['envelope_opts']['extrema_opts'] = self.store['extrema']
-            out['imf_opts']['envelope_opts']['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
-            out['imf_opts']['envelope_opts']['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
-        elif stage == 'imf':
-            out = self.store['imf']
-            out['envelope_opts'] = self.store['envelope']
-            out['envelope_opts']['extrema_opts'] = self.store['extrema']
-            out['envelope_opts']['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
-            out['envelope_opts']['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
-        elif stage == 'envelope':
-            out = self.store['envelope']
-            out['extrema_opts'] = self.store['extrema']
-            out['extrema_opts']['mag_pad_opts'] = self.store['mag_pad']
-            out['extrema_opts']['loc_pad_opts'] = self.store['loc_pad']
-        elif stage == 'extrema':
-            out = self.store['extrema']
-            out['mag_pad_opts'] = self.store['mag_pad']
-            out['loc_pad_opts'] = self.store['loc_pad']
-        else:
-            raise TypeError("stage ({}) not recognised, use 'sift', 'imf', 'envelope' or 'extrema'".format(stage))
-        return out.copy()
 
     def get_func(self):
         """Get a partial-function coded with the options from this config"""
