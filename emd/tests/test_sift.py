@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 
 from ..sift import sift, ensemble_sift, complete_ensemble_sift, \
-                   mask_sift, get_config
+                   mask_sift, get_config, is_imf
 from ..utils import abreu2010
 
 
@@ -220,3 +220,39 @@ class test_sift_config(unittest.TestCase):
         new_config = SiftConfig.from_yaml_file(config_file)
 
         assert(new_config.sift_type == 'mask_sift')
+
+
+class test_is_imf(unittest.TestCase):
+
+    def setUp(self):
+
+        # Create core signal
+        seconds = 5.1
+        sample_rate = 2000
+        f1 = 2
+        f2 = 18
+        time_vect = np.linspace(0, seconds, int(seconds * sample_rate))
+
+        x = abreu2010(f1, .2, 0, sample_rate, seconds)
+        self.x = x + np.cos(2.3 * np.pi * f2 * time_vect) + np.linspace(-.5, 1, len(time_vect))
+
+        self.y = np.sin(2 * np.pi * 5 * time_vect)
+
+    def test_is_imf_on_sinusoid(self):
+        out = is_imf(self.y)
+
+        # Should be true on both criteria
+        assert(np.all(out))
+
+    def test_is_imf_on_abreu(self):
+        imf = sift(self.x)
+        out = is_imf(imf)
+
+        # Should be true on both criteria
+        assert(np.all(out[0, :]))
+
+        # Should be true on both criteria
+        assert(np.all(out[1, :]))
+
+        # Trend is not an IMF, should be false on both criteria
+        assert(np.all(out[2, :] == False))  # noqa: E712

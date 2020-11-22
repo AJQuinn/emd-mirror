@@ -80,6 +80,23 @@ class test_spectra(unittest.TestCase):
         spec = hilberthuang_1d(IF, IA, edges, mode='energy')
         assert(np.all(spec[:, 0] == [12, 12, 12, 12]))
 
+    def test_hilberthuang(self):
+        from ..spectra import hilberthuang
+
+        IF = np.linspace(0, 12, 13)[:, None]
+        IA = np.ones_like(IF)
+        edges = np.linspace(0, 13, 3)
+
+        hht = hilberthuang(IF, IA, edges)
+
+        # Check total amplitude is equal in HHT and IA
+        assert(hht.sum() == IA.sum())
+
+        assert(np.all(hht[0, :7] == np.array([1., 1., 1., 1., 1., 1., 1.])))
+        assert(np.all(hht[1, :7] == np.array([0., 0., 0., 0., 0., 0., 0.])))
+        assert(np.all(hht[1, 7:] == np.array([1., 1., 1., 1., 1., 1.])))
+        assert(np.all(hht[0, 7:] == np.array([0., 0., 0., 0., 0., 0.])))
+
 
 class test_hists(unittest.TestCase):
 
