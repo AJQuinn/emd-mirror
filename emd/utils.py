@@ -25,7 +25,6 @@ import numpy as np
 from scipy import signal
 
 from .sift import interp_envelope
-from .support import ensure_1d_with_singleton
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
