@@ -89,7 +89,7 @@ def frequency_transform(imf, sample_rate, method,
     """
     logger.info('STARTED: compute frequency stats')
 
-    imf = ensure_2d([imf], ['imf'], 'frequency_stats')
+    imf = ensure_2d([imf], ['imf'], 'frequency_transform')
     logger.debug('computing on {0} samples over {1} imfs at sample rate {2}'.format(imf.shape[0],
                                                                                     imf.shape[1],
                                                                                     sample_rate))

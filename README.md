@@ -57,7 +57,7 @@ imf = emd.sift.sift( x )
 Compute instantaneous frequency, phase and amplitude using the Normalised Hilbert Transform Method.
 
 ```python
-IP,IF,IA = emd.spectra.frequency_stats( imf, sample_rate, 'nht' )
+IP,IF,IA = emd.spectra.frequency_transform( imf, sample_rate, 'nht' )
 ```
 Compute Hilbert-Huang spectrum
 

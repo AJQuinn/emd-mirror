@@ -53,7 +53,7 @@ config['mask_freqs'] = 50/sample_rate
 config['mask_amp_mode'] = 'ratio_sig'
 config['imf_opts/sd_thresh'] = 0.05
 imf = emd.sift.mask_sift(x, **config)
-IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
+IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 
 # Visualise the IMFs
 emd.plotting.plot_imfs(imf[:sample_rate*5, :], cmap=True, scale_y=True)
@@ -116,7 +116,7 @@ emd.plotting.plot_imfs(imf2[:sample_rate*5, 0, :], scale_y=True, cmap=True)
 # We can compute the frequency stats for the second level IMFs using the same
 # options as for the first levels.
 
-IP2, IF2, IA2 = emd.spectra.frequency_stats(imf2, sample_rate, 'nht')
+IP2, IF2, IA2 = emd.spectra.frequency_transform(imf2, sample_rate, 'nht')
 
 #%%
 # Finally, we want to visualise our results. We first define two sets of

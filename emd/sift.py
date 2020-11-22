@@ -709,8 +709,8 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
         z = num_zero_crossings / imf.shape[0] / 4
         logger.info('Found first mask frequency of {0}'.format(z))
     elif first_mask_mode == 'if':
-        _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'nht',
-                                            smooth_phase=3)
+        _, IF, IA = spectra.frequency_transform(imf[:, 0, None], 1, 'nht',
+                                                smooth_phase=3)
         z = np.average(IF, weights=IA)
         logger.info('Found first mask frequency of {0}'.format(z))
     elif first_mask_mode < .5:

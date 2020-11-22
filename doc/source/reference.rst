@@ -19,7 +19,7 @@ SIFT Functions
 Frequency Functions
 *********************
 
-.. autofunction:: emd.spectra.frequency_stats
+.. autofunction:: emd.spectra.frequency_transform
 .. autofunction:: emd.spectra.quadrature_transform
 .. autofunction:: emd.spectra.phase_from_complex_signal
 .. autofunction:: emd.spectra.freq_from_phase

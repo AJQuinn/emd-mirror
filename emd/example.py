@@ -41,6 +41,6 @@ def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi / 4,
 
     imf = sift.sift(x)
 
-    IP, IF, IA = spectra.frequency_stats(imf, sample_rate, 'quad', smooth_phase=31)
+    IP, IF, IA = spectra.frequency_transform(imf, sample_rate, 'quad', smooth_phase=31)
 
     return imf, time_vect, IP, IF, IA

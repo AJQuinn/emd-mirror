@@ -29,7 +29,7 @@ and used to decompose and describe non-linear timeseries.::
     emd.plotting.plot_imfs( imf, scale_y=True, cmap=True )
 
     # Compute instantaneous spectral stats
-    IP,IF,IA = emd.spectra.frequency_stats( imf, sample_rate ,'nht' )
+    IP,IF,IA = emd.spectra.frequency_transform( imf, sample_rate ,'nht' )
 
     # Compute Hilbert-Huang transform
     edges,centres = emd.spectra.define_hist_bins(0,10,32)

@@ -20,7 +20,7 @@ class test_amplitude_normalise(unittest.TestCase):
     def test_amplitude_normalise(self):
         from ..utils import amplitude_normalise
 
-        amp_norm = amplitude_normalise(self.x)
+        amp_norm = amplitude_normalise(self.x[:, np.newaxis])
 
         # start signal should range between +/- 2
         assert(2 - np.max(self.x) < 1e-2)

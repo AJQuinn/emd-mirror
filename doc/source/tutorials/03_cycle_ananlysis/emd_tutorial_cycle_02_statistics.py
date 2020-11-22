@@ -51,7 +51,7 @@ emd.plotting.plot_imfs(imf[:sample_rate*4, :], cmap=True, scale_y=True)
 # 'good' cycles based on the cycle validation check from the previous tutorial.
 
 # Extract frequency information
-IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
+IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 
 # Extract cycle locations
 all_cycles = emd.cycles.get_cycle_inds(IP, return_good=False)
