@@ -40,6 +40,7 @@ doc: doc-html
 
 doc-html:
 	python3 setup.py build_sphinx -a -E
+	cp doc/source/emd_tutorials/*/*ipynb doc/source/_notebooks/
 
 spell:
 	codespell -s --ignore-words=ignore_words.txt `find . -type f -name \*.py`
