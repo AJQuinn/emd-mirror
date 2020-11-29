@@ -8,7 +8,7 @@ carrier wave and the frequency of any amplitude modulations
 """
 
 #%%
-# Simulating and exploring amplitude modulations
+# Simulating a signal with amplitude modulations
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # First of all, we import EMD alongside numpy and matplotlib. We will also use
 # scipy's ndimage module to smooth our results for visualisation later.
@@ -53,12 +53,14 @@ config['mask_freqs'] = 50/sample_rate
 config['mask_amp_mode'] = 'ratio_sig'
 config['imf_opts/sd_thresh'] = 0.05
 imf = emd.sift.mask_sift(x, **config)
-IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
+IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 
 # Visualise the IMFs
 emd.plotting.plot_imfs(imf[:sample_rate*5, :], cmap=True, scale_y=True)
 
 #%%
+# Second-layer sift
+# ^^^^^^^^^^^^^^^^^
 # The first IMF contains the 30Hz oscillation and the fourth captures the 8Hz
 # oscillation. Their amplitude modulations are described in the IA
 # (Instantaneous Amplitude) variable.
@@ -113,10 +115,14 @@ imf2 = mask_sift_second_layer(IA, masks, config=config)
 emd.plotting.plot_imfs(imf2[:sample_rate*5, 0, :], scale_y=True, cmap=True)
 
 #%%
+# The Holospectrum
+#^^^^^^^^^^^^^^^^^
+
+#%%
 # We can compute the frequency stats for the second level IMFs using the same
 # options as for the first levels.
 
-IP2, IF2, IA2 = emd.spectra.frequency_stats(imf2, sample_rate, 'nht')
+IP2, IF2, IA2 = emd.spectra.frequency_transform(imf2, sample_rate, 'nht')
 
 #%%
 # Finally, we want to visualise our results. We first define two sets of
@@ -138,14 +144,10 @@ shht = ndimage.gaussian_filter(hht, 2)
 # Compute the 3d Holospectrum transform (power over time x carrier frequency x AM frequency)
 # Here we return the time averaged Holospectrum (power over carrier frequency x AM frequency)
 holo = emd.spectra.holospectrum(IF[:, :], IF2[:, :, :], IA2[:, :, :], edges, edges2)
-sholo = holo
+sholo = ndimage.gaussian_filter(holo, 1)
 
 #%%
 # We summarise the results with a four part figure:
-# - top-left shows a segment of our original signal
-# - top-right shows the 1D Hilbert-Huang power spectrum
-# - bottom-left shows a segment of the 2D Hilbert-Huang transform
-# - bottom-right shows the Holospectrum summed over the time dimension
 
 plt.figure(figsize=(16, 10))
 
@@ -156,27 +158,34 @@ plt.xlim(0, 5)
 plt.ylim(-2.5, 2.5)
 plt.title('Original Time-series')
 
-
-# Plot a section of the time-course
+# Plot the 1d Hilbert-Huang Transform
 plt.axes([.075, .1, .225, .5])
 plt.plot(spec, bins)
+plt.plot((0, spec.max()*1.05), (5, 5), 'grey', linewidth=.5)
+plt.text(spec.max()/2, 5.5, '5 Hz', verticalalignment='bottom')
+plt.plot((0, spec.max()*1.05), (37, 37), 'grey', linewidth=.5)
+plt.text(spec.max()/2, 41, '37 Hz', verticalalignment='bottom')
 plt.title('1D HHT Spectrum')
 plt.yscale('log')
 plt.xlabel('Power')
 plt.ylabel('Frequency (Hz)')
 plt.yticks(2**np.arange(7), 2**np.arange(7))
+plt.ylim(bins[0], bins[-1])
+plt.xlim(0, spec.max()*1.05)
 
 # Plot a section of the Hilbert-Huang transform
 plt.axes([.325, .1, .4, .5])
-plt.pcolormesh(t[:sample_rate*5], bins, shht[:, :sample_rate*5], cmap='ocean_r')
+plt.pcolormesh(t[:sample_rate*5], bins, shht[:, :sample_rate*5], cmap='ocean_r', shading='nearest')
 plt.yscale('log')
+plt.plot((0, t[sample_rate*5]), (5, 5), 'grey', linewidth=.5)
+plt.plot((0, t[sample_rate*5]), (37, 37), 'grey', linewidth=.5)
 plt.title('2-D HHT Spectrum')
 plt.xlabel('Time (seconds)')
 plt.yticks(2**np.arange(7), 2**np.arange(7))
 
 # Plot a the Holospectrum
 plt.axes([.75, .1, .225, .5])
-plt.contour(bins2, bins, np.sqrt(sholo.T), 48, cmap='ocean_r')
+plt.pcolormesh(bins2, bins, sholo.T, cmap='ocean_r', shading='nearest')
 plt.yscale('log')
 plt.xscale('log')
 plt.plot((bins2[0], bins2[-1]), (5, 5), 'grey', linewidth=.5)
@@ -188,4 +197,55 @@ plt.xlabel('AM Frequency (Hz)')
 plt.yticks(2**np.arange(7), 2**np.arange(7))
 plt.xticks([.1, .5, 1, 2, 4, 8, 16], [.1, .5, 1, 2, 4, 8, 16])
 
-# Make some room for titles and labels
+#%%
+# The four panels of the figure show:
+# - top-left shows a segment of our original signal
+# - top-right shows the 1D Hilbert-Huang power spectrum
+# - bottom-left shows a segment of the 2D Hilbert-Huang transform
+# - bottom-right shows the Holospectrum summed over the time dimension
+#
+# We can see prominent peaks at 5Hz and at 37Hz in the 1D Hilbert-Huang
+# spectrum. The 2D Hilbert-Huang spectrum extends this over time showing
+# fluctuations in both of these oscillations. Finall, the Holospectrum reveals
+# that these fluctuations in power are themselves oscillating. The 5Hz rhythm
+# has ampltude modulations of 0.5Hz and the 37Hz rhythm has ampltiude
+# modulations of 5Hz.
+
+#%%
+# Finally we can quantify the phase-amplitude coupling in our signal. We do
+# this by splitting the phase of the 5Hz signal into bins and computing the
+# average of the 2D Hilbert-Huang spectrum for each bin. This is implemented in
+# the ``emd.cycles.bin_by_phase`` function.
+
+hht_by_phase, _, _ = emd.cycles.bin_by_phase(IP[:, 3], hht.T)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(121)
+plt.pcolormesh(bins2, bins, sholo.T, cmap='ocean_r', shading='nearest')
+plt.yscale('log')
+plt.xscale('log')
+plt.title('Holospectrum')
+plt.xlabel('AM Frequency (Hz)')
+plt.ylabel('Frequency (Hz)')
+plt.yticks(2**np.arange(7), 2**np.arange(7))
+plt.xticks([.1, .5, 1, 2, 4, 8, 16], [.1, .5, 1, 2, 4, 8, 16])
+
+plt.subplot(122)
+plt.pcolormesh(np.linspace(-np.pi, np.pi, 24), edges, hht_by_phase.T, cmap='ocean_r', shading='auto')
+plt.yscale('log')
+plt.yticks(2**np.arange(7), 2**np.arange(7))
+plt.xticks(np.linspace(-np.pi, np.pi, 5), ['Asc', 'Peak', 'Desc', 'Trough', 'Asc'])
+plt.xlabel('Theta Phase')
+plt.colorbar()
+plt.title('HHT by 5Hz Phase')
+
+#%%
+# The summary figure shows the Holospectrum alongside the power in the HHT
+# across phase bins with carrier frequency in the y-axis and phase in the
+# x-axis. This plot is sometime known as a comodulogram. We see that power in
+# the 37Hz oscillation peaks around the peak of the 5Hz cycle confirming the
+# presence of phase-ampltiude coupling between these two signals.
+#
+# The 5Hz power is visible as a flat line across all phase. This indicates that
+# neither the power or the frequency of this signal is changing within the
+# cycle.

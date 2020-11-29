@@ -58,7 +58,7 @@ print(imf.shape)
 # and, from the IMFs, compute the instantaneous frequency, phase and amplitude
 # using the Normalised Hilbert Transform Method:
 
-IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
+IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 
 #%%
 # From the instantaneous frequency and amplitude, we can compute the Hilbert-Huang spectrum:

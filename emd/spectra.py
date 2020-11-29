@@ -8,7 +8,7 @@ compute frequency or time frequency spectra.
 
 Routines:
 
-frequency_stats
+frequency_transform
 quadrature_transform
 phase_from_complex_signal
 freq_from_phase
@@ -24,6 +24,7 @@ define_hist_bins_from_data
 """
 
 import logging
+import warnings
 import numpy as np
 from scipy import signal, sparse
 
@@ -36,8 +37,19 @@ logger = logging.getLogger(__name__)
 ##
 
 
-def frequency_stats(imf, sample_rate, method,
-                    smooth_phase=31):
+def frequency_stats(*args, **kwargs):
+    msg = "WARNING: 'emd.spectra.frequency_stats' is deprecated and " + \
+          "will be removed in a future version of EMD. Please change to use " + \
+          "'emd.spectra.frequency_transform' to remove this warning and " + \
+          "future-proof your code"
+
+    warnings.warn(msg)
+    logger.warning(msg)
+    return frequency_transform(*args, **kwargs)
+
+
+def frequency_transform(imf, sample_rate, method,
+                        smooth_phase=5):
     """
     Compute instantaneous phase, frequency and amplitude from a set of IMFs.
     Several approaches are implemented from [1]_ and [2]_.
@@ -77,7 +89,7 @@ def frequency_stats(imf, sample_rate, method,
     """
     logger.info('STARTED: compute frequency stats')
 
-    imf = ensure_2d([imf], ['imf'], 'frequency_stats')
+    imf = ensure_2d([imf], ['imf'], 'frequency_transform')
     logger.debug('computing on {0} samples over {1} imfs at sample rate {2}'.format(imf.shape[0],
                                                                                     imf.shape[1],
                                                                                     sample_rate))

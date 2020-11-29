@@ -18,20 +18,20 @@ class test_spectra(unittest.TestCase):
         self.x1 = np.cos(2 * np.pi * self.f1 * time_vect)[:, None]
         self.x2 = 2 * np.cos(2 * np.pi * self.f2 * time_vect)[:, None]
 
-    def test_frequency_stats(self):
-        from ..spectra import frequency_stats
+    def test_frequency_transform(self):
+        from ..spectra import frequency_transform
 
         tol = 1e-3  # Relatively generous tol due to edge effects
 
         # Check first signal
-        IP, IF, IA = frequency_stats(self.x1, self.sample_rate, 'hilbert')
+        IP, IF, IA = frequency_transform(self.x1, self.sample_rate, 'hilbert')
         assert(IP.max() - (2 * np.pi) < tol)
         assert(IP.min() < tol)
         assert(IA.mean() - 1 < tol)
         assert(IF.mean() - self.f1 < tol)
 
         # Check second signal
-        IP, IF, IA = frequency_stats(self.x2, self.sample_rate, 'hilbert')
+        IP, IF, IA = frequency_transform(self.x2, self.sample_rate, 'hilbert')
         assert(IP.max() - (2 * np.pi) < tol)
         assert(IP.min() < tol)
         assert(IA.mean() - 2 < tol)

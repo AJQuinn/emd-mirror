@@ -55,7 +55,7 @@ emd.plotting.plot_imfs(imf[:sample_rate*4, :], cmap=True, scale_y=True)
 #
 # Will will run through some examples of these in the next couple of sections.
 # First, we compute the instantaneous phase of our IMFs using the
-# ``frequency_stats`` function before detecting cycle indices from the IP
+# ``frequency_transform`` function before detecting cycle indices from the IP
 # using ``get_cycle_inds``.
 #
 # The detection is based on finding large jumps in the instantaneous phase of
@@ -68,7 +68,7 @@ emd.plotting.plot_imfs(imf[:sample_rate*4, :], cmap=True, scale_y=True)
 # this later, for now we will run the function to get ``all_cycles``.
 
 # Compute frequency domain features using the normalised-Hilbert transform
-IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
+IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 
 # Extract cycle locations
 all_cycles = emd.cycles.get_cycle_inds(IP, return_good=False)

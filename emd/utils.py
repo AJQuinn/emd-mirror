@@ -25,7 +25,6 @@ import numpy as np
 from scipy import signal
 
 from .sift import interp_envelope
-from .support import ensure_1d_with_singleton
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -65,8 +64,6 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
 
     """
     logger.info('STARTED: Amplitude-Normalise')
-
-    X = ensure_1d_with_singleton([X], ['X'], 'amplitude_normalise')
 
     if X.ndim == 2:
         logger.debug('Normalising {0} samples across {1} IMFs'.format(*X.shape))
