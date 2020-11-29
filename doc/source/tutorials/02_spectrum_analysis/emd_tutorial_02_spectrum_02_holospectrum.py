@@ -8,7 +8,7 @@ carrier wave and the frequency of any amplitude modulations
 """
 
 #%%
-# Simulating and exploring amplitude modulations
+# Simulating a signal with amplitude modulations
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # First of all, we import EMD alongside numpy and matplotlib. We will also use
 # scipy's ndimage module to smooth our results for visualisation later.
@@ -59,6 +59,8 @@ IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 emd.plotting.plot_imfs(imf[:sample_rate*5, :], cmap=True, scale_y=True)
 
 #%%
+# Second-layer sift
+# ^^^^^^^^^^^^^^^^^
 # The first IMF contains the 30Hz oscillation and the fourth captures the 8Hz
 # oscillation. Their amplitude modulations are described in the IA
 # (Instantaneous Amplitude) variable.
@@ -113,6 +115,10 @@ imf2 = mask_sift_second_layer(IA, masks, config=config)
 emd.plotting.plot_imfs(imf2[:sample_rate*5, 0, :], scale_y=True, cmap=True)
 
 #%%
+# The Holospectrum
+#^^^^^^^^^^^^^^^^^
+
+#%%
 # We can compute the frequency stats for the second level IMFs using the same
 # options as for the first levels.
 
@@ -138,7 +144,7 @@ shht = ndimage.gaussian_filter(hht, 2)
 # Compute the 3d Holospectrum transform (power over time x carrier frequency x AM frequency)
 # Here we return the time averaged Holospectrum (power over carrier frequency x AM frequency)
 holo = emd.spectra.holospectrum(IF[:, :], IF2[:, :, :], IA2[:, :, :], edges, edges2)
-sholo = holo
+sholo = ndimage.gaussian_filter(holo, 1)
 
 #%%
 # We summarise the results with a four part figure:
@@ -213,21 +219,33 @@ plt.xticks([.1, .5, 1, 2, 4, 8, 16], [.1, .5, 1, 2, 4, 8, 16])
 
 hht_by_phase, _, _ = emd.cycles.bin_by_phase(IP[:, 3], hht.T)
 
-plt.figure(figsize=(6, 8))
+plt.figure(figsize=(8, 8))
+plt.subplot(121)
+plt.pcolormesh(bins2, bins, sholo.T, cmap='ocean_r', shading='nearest')
+plt.yscale('log')
+plt.xscale('log')
+plt.title('Holospectrum')
+plt.xlabel('AM Frequency (Hz)')
+plt.ylabel('Frequency (Hz)')
+plt.yticks(2**np.arange(7), 2**np.arange(7))
+plt.xticks([.1, .5, 1, 2, 4, 8, 16], [.1, .5, 1, 2, 4, 8, 16])
+
+plt.subplot(122)
 plt.pcolormesh(np.linspace(-np.pi, np.pi, 24), edges, hht_by_phase.T, cmap='ocean_r', shading='auto')
 plt.yscale('log')
 plt.yticks(2**np.arange(7), 2**np.arange(7))
 plt.xticks(np.linspace(-np.pi, np.pi, 5), ['Asc', 'Peak', 'Desc', 'Trough', 'Asc'])
+plt.xlabel('Theta Phase')
 plt.colorbar()
 plt.title('HHT by 5Hz Phase')
 
 #%%
-# The summary figure shows the power in the HHT across phase bins with carrier
-# frequency in the y-axis and phase in the x-axis. This plot is sometime known
-# as a comodulogram. We see that power in the 37Hz oscillation peaks around the
-# peak of the 5Hz cycle confirming the presence of phase-ampltiude coupling
-# between these two signals.
+# The summary figure shows the Holospectrum alongside the power in the HHT
+# across phase bins with carrier frequency in the y-axis and phase in the
+# x-axis. This plot is sometime known as a comodulogram. We see that power in
+# the 37Hz oscillation peaks around the peak of the 5Hz cycle confirming the
+# presence of phase-ampltiude coupling between these two signals.
 #
-# The 5Hz power is viisble as a flat line across all phase. This indicates that
+# The 5Hz power is visible as a flat line across all phase. This indicates that
 # neither the power or the frequency of this signal is changing within the
 # cycle.
