@@ -22,6 +22,15 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+---
+
+# Stable Versions
+
+## 0.3.2
+
+    pip install emd==0.3.2
+Released 2020-11-29
+
 ### Added
 - Add input array shape ensurance functions and start to use in sift & cycle submodules  [!26](https://gitlab.com/emd-dev/emd/-/merge_requests/26)
 - Add more stopping criteria to sift module [!27](https://gitlab.com/emd-dev/emd/-/merge_requests/26)
@@ -40,8 +49,6 @@ Work in progress...
 - emd.spectra.frequency_stats renamed to emd.spectra.frequency_transform. Original func kept for now.
 
 ---
-
-# Stable Versions
 
 ## 0.3.1
 
