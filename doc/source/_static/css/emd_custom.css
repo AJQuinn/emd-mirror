@@ -3,3 +3,8 @@
 .reference.download:hover {
   background-color: #ffebed;
 }
+
+
+.function{ background-color: #F2FAFF; padding: 15px; border-radius: 20px }
+.sig-name { padding: 0px}
+.sig-prename { padding: 0px}

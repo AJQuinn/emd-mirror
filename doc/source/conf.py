@@ -120,7 +120,8 @@ html_static_path = ['_static']
 # html_sidebars = {}
 
 # Sidebars for tutorial pages only
-html_sidebars = {'emd_tutorials/*/emd_tutorial*': ['localtoc.html']}
+html_sidebars = {'emd_tutorials/*/emd_tutorial*': ['localtoc.html'],
+                 'reference*': ['localtoc.html']}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
