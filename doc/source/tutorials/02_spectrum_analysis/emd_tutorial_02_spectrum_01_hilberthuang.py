@@ -46,7 +46,7 @@ emd.plotting.plot_imfs(imf[:2000, :], cmap=True, scale_y=True)
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #%%
-# Next we use ``emd.spectra.frequency_stats`` to compute the frequency content
+# Next we use ``emd.spectra.frequency_transform`` to compute the frequency content
 # of the IMFs.  This function returns the instantaneous phase, frequency and
 # amplitude of each IMF. It takes a set of intrinsic mode functions, the sample
 # rate and a mode as input arguments. The mode determines the algorithm which
@@ -55,7 +55,7 @@ emd.plotting.plot_imfs(imf[:2000, :], cmap=True, scale_y=True)
 # a good general purpose choice which should work well in most circumstances.
 
 # Compute frequency statistics
-IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
+IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 
 #%%
 # The Hilbert-Huang transform can be thought of as an amplitude-weighted

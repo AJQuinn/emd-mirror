@@ -57,7 +57,7 @@ def nonlinear_system(x, K, eta=.43, power=2):
 seconds = 10
 f = 2
 sample_rate = 512
-emd.spectra.frequency_stats
+emd.spectra.frequency_transform
 t = np.linspace(0, seconds, seconds*sample_rate)
 x = np.cos(2*np.pi*f*t)
 
@@ -120,8 +120,8 @@ emd.plotting.plot_imfs(imf_nonlinear[:sample_rate*4, :], cmap=True, scale_y=True
 # Next, we compute the instantanous frequency metrics from our linear and
 # non-linear IMFs.
 
-IP_linear, IF_linear, IA_linear = emd.spectra.frequency_stats(imf_linear, sample_rate, 'nht')
-IP_nonlinear, IF_nonlinear, IA_nonlinear = emd.spectra.frequency_stats(imf_nonlinear, sample_rate, 'nht')
+IP_linear, IF_linear, IA_linear = emd.spectra.frequency_transform(imf_linear, sample_rate, 'nht')
+IP_nonlinear, IF_nonlinear, IA_nonlinear = emd.spectra.frequency_transform(imf_nonlinear, sample_rate, 'nht')
 
 #%%
 # We can now start to look at how a non-sinusoidal waveform is represented in
@@ -413,8 +413,8 @@ emd.plotting.plot_imfs(imf_nonlinear[:sample_rate*4, :], cmap=True, scale_y=True
 # instantanous frequency metrics for the linear and nonlinear IMFs using the
 # Normalise Hilbert Transform.
 
-IP_linear, IF_linear, IA_linear = emd.spectra.frequency_stats(imf_linear, sample_rate, 'nht')
-IP_nonlinear, IF_nonlinear, IA_nonlinear = emd.spectra.frequency_stats(imf_nonlinear, sample_rate, 'nht')
+IP_linear, IF_linear, IA_linear = emd.spectra.frequency_transform(imf_linear, sample_rate, 'nht')
+IP_nonlinear, IF_nonlinear, IA_nonlinear = emd.spectra.frequency_transform(imf_nonlinear, sample_rate, 'nht')
 
 #%%
 # We next compare the spectral content of the signal using the EMD based

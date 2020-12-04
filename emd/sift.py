@@ -709,8 +709,8 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
         z = num_zero_crossings / imf.shape[0] / 4
         logger.info('Found first mask frequency of {0}'.format(z))
     elif first_mask_mode == 'if':
-        _, IF, IA = spectra.frequency_stats(imf[:, 0, None], 1, 'nht',
-                                            smooth_phase=3)
+        _, IF, IA = spectra.frequency_transform(imf[:, 0, None], 1, 'nht',
+                                                smooth_phase=3)
         z = np.average(IF, weights=IA)
         logger.info('Found first mask frequency of {0}'.format(z))
     elif first_mask_mode < .5:
@@ -747,9 +747,9 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
         same value is applied to all IMFs, if an array is passed each value is
         applied to each IMF in turn (Default value = 1)
     mask_amp_mode : {'abs','ratio_imf','ratio_sig'}
-        Method for computing mask amplitude. Either in absolute units ('abs'), or as a
-        ratio of the amplitude of the input signal ('ratio_signal') or previous imf
-        ('ratio_imf') (Default value = 'ratio_imf')
+        Method for computing mask amplitude. Either in absolute units ('abs'),
+        or as a ratio of the standard deviation of the input signal
+        ('ratio_sig') or previous imf ('ratio_imf') (Default value = 'ratio_imf')
     mask_freqs : {'zc','if',float,,array_like}
         Define the set of mask frequencies to use. If 'zc' or 'if' are passed,
         the frequency of the first mask is taken from either the zero-crossings

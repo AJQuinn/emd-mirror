@@ -153,7 +153,7 @@ def my_analysis(x):
     imf = emd.sift.mask_sift(x, verbose='DEBUG')
 
     # Compute frequency stats
-    IP, IF, IA = emd.spectra.frequency_stats(imf, sample_rate, 'nht')
+    IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
     logger.info('Avg frequency of IMF-2 is {0:2f}Hz'.format(np.average(IF[:, 2], weights=IA[:, 2])))
 
     # Find cycles in IMF-2

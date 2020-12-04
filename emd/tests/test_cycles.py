@@ -18,7 +18,7 @@ class test_cycles(unittest.TestCase):
 
     def cycle_generator(self, f, phase=0, distort=None):
         from ..cycles import get_cycle_inds
-        from ..spectra import frequency_stats
+        from ..spectra import frequency_transform
 
         x = np.sin(2 * np.pi * f * self.time_vect + phase)[:, None]
 
@@ -27,7 +27,7 @@ class test_cycles(unittest.TestCase):
             x[distort - 25:distort + 25, 0] += np.linspace(-.1, .1, 50)
 
         # This is a perfect sin so we can use normal hilbert
-        IP, IF, IA = frequency_stats(x, self.sample_rate, 'hilbert')
+        IP, IF, IA = frequency_transform(x, self.sample_rate, 'hilbert')
         # Find good cycles
         cycles = get_cycle_inds(IP, return_good=True)[:, 0]
 

@@ -22,6 +22,15 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+---
+
+# Stable Versions
+
+## 0.3.2
+
+    pip install emd==0.3.2
+Released 2020-11-29
+
 ### Added
 - Add input array shape ensurance functions and start to use in sift & cycle submodules  [!26](https://gitlab.com/emd-dev/emd/-/merge_requests/26)
 - Add more stopping criteria to sift module [!27](https://gitlab.com/emd-dev/emd/-/merge_requests/26)
@@ -33,11 +42,13 @@ Work in progress...
 - Refactor some options extrema detection functions [!29](https://gitlab.com/emd-dev/emd/-/merge_requests/29)
 - Sift throws an error if an IMF doesn't converge after a specified maximum number of iterations.
 - Refactor mask generation in mask sift. Now specifies N masks of different phases and has options for parallel processing.
+- SiftConfig yaml file also stores which type of sift the config is for [!35](https://gitlab.com/emd-dev/emd/-/merge_requests/35)
 - 18% increase in testing coverage (to 75% total) [!30](https://gitlab.com/emd-dev/emd/-/merge_requests/30)
 
----
+### Deprecated
+- emd.spectra.frequency_stats renamed to emd.spectra.frequency_transform. Original func kept for now.
 
-# Stable Versions
+---
 
 ## 0.3.1
 
