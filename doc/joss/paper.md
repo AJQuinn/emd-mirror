@@ -13,7 +13,7 @@ authors:
   - name: David Dupret
     affiliation: 2
   - name: Anna Christina Nobre
-    affiliation: 1,3
+    affiliation: "1,3"
   - name: Mark W. Woolrich
     affiliation: 1
 affiliations:
