@@ -1,7 +1,7 @@
 EMD Tutorials
 =============
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gl/emd-dev%2Femd/32-bump-to-v0-3-1?filepath=doc%2Fsource%2F_notebooks
+ :target: https://hub.gke2.mybinder.org/user/emd-dev-emd-xh74cvy1/tree/doc/source/_notebooks
 
 Guides to help get you started with data analysis using the EMD toolbox.
 
