@@ -667,19 +667,19 @@ plt.grid(True)
 # will phase align the IMF and the instantaneous frequency values for the
 # linear and non linear systems.
 
-pa_waveform_linear = emd.cycles.phase_align(IP_linear[:, 2, None],
+pa_waveform_linear = emd.cycles.phase_align(IP_linear[:, 2],
                                             imf_linear[:, 2],
-                                            cycles=cycles_linear[:, 2, None])
-pa_waveform_nonlinear = emd.cycles.phase_align(IP_nonlinear[:, 2, None],
+                                            cycles=cycles_linear[:, 2])
+pa_waveform_nonlinear = emd.cycles.phase_align(IP_nonlinear[:, 2],
                                                imf_nonlinear[:, 2],
-                                               cycles=cycles_nonlinear[:, 2, None])
+                                               cycles=cycles_nonlinear[:, 2])
 
-pa_if_linear = emd.cycles.phase_align(IP_linear[:, 2, None],
+pa_if_linear = emd.cycles.phase_align(IP_linear[:, 2],
                                       IF_linear[:, 2],
-                                      cycles=cycles_linear[:, 2, None])
-pa_if_nonlinear = emd.cycles.phase_align(IP_nonlinear[:, 2, None],
+                                      cycles=cycles_linear[:, 2])
+pa_if_nonlinear = emd.cycles.phase_align(IP_nonlinear[:, 2],
                                          IF_nonlinear[:, 2],
-                                         cycles=cycles_nonlinear[:, 2, None])
+                                         cycles=cycles_nonlinear[:, 2])
 
 phase_template = np.linspace(0, np.pi*2, 48)
 
