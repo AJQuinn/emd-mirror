@@ -22,6 +22,11 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+### Changed
+- Major updates to tutorials
+  - Binder notebooks added
+  - New sifting tutorials added
+
 ---
 
 # Stable Versions
