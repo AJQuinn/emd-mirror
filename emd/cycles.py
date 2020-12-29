@@ -534,13 +534,13 @@ def get_control_points(x, good_cycles):
 def get_control_point_metrics(ctrl, normalise=True):
 
     # Peak to trough ratio
-    p2t = (ctrl[:,2] - (ctrl[:,4]-ctrl[:,2]) )
+    p2t = (ctrl[:, 2] - (ctrl[:, 4]-ctrl[:, 2]))
     # Ascending to Descending ratio
-    a2d = (ctrl[:,1]+(ctrl[:,4]-ctrl[:,3])) - (ctrl[:,3]-ctrl[:,1])
+    a2d = (ctrl[:, 1]+(ctrl[:, 4]-ctrl[:, 3])) - (ctrl[:, 3]-ctrl[:, 1])
 
     if normalise:
-        p2t = p2t / ctrl[:,4]
-        a2d = a2d / ctrl[:,4]
+        p2t = p2t / ctrl[:, 4]
+        a2d = a2d / ctrl[:, 4]
 
     return p2t, a2d
 
