@@ -137,7 +137,7 @@ def frequency_transform(imf, sample_rate, method,
                 good_cycles = cycles.get_cycle_inds_from_waveform(imf[:, ii, jj], cycle_start='asc')
                 ctrl = cycles.get_control_points(imf[:, ii, jj], good_cycles)
                 iphase[:, ii, jj] = phase_from_control_points(ctrl, good_cycles)
-                iphase[:, ii, jj] = np.unwrap(iphase[:,ii, jj])
+                iphase[:, ii, jj] = np.unwrap(iphase[:, ii, jj])
 
         # Estimate inst amplitudes with spline interpolation
         iamp = np.zeros_like(imf)
@@ -184,7 +184,7 @@ def frequency_transform(imf, sample_rate, method,
         logger.error("Method '{0}' not recognised".format(method))
         raise ValueError("Method '{0}' not recognised\nPlease use one of 'hilbert','nht' or 'quad'".format(method))
 
-    if method is not 'ctrl':
+    if method != 'ctrl':
         # Compute unwrapped phase for frequency estimation
         iphase = phase_from_complex_signal(
             analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped')
@@ -361,7 +361,7 @@ def phase_from_control_points(ctrl, cycles):
 
     for jj in range(1, cycles.max() + 1):
 
-        if np.any(np.isnan(ctrl[jj-1,:])):
+        if np.any(np.isnan(ctrl[jj-1, :])):
             continue
 
         f = interp.interp1d(ctrl[jj-1, :], phase_y, kind='linear')
