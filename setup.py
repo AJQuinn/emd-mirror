@@ -60,6 +60,8 @@ setup(
                       'scipy',
                       'matplotlib',
                       'numpydoc',
+                      'pyyaml',
+                      'pytest'
                       'sphinx_rtd_theme'],
 
     extras_require={
