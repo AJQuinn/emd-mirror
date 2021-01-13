@@ -261,10 +261,12 @@ plt.legend(['All-cycles', 'Masked-cycles'])
 #%%
 # Cycle chains
 #^^^^^^^^^^^^^
-# Finally, we will detect continuous chains of osccillations in the data.
-# Sometimes we may want to restrict data analysis to oscillatory cycles which
-# occur only within continuous periods of osillation rather than single cycles
-# occurring in noise.
+
+#%%
+# In this section, we will detect continuous chains of oscillations in the
+# data.  Sometimes we may want to restrict data analysis to oscillatory cycles
+# which occur only within continuous periods of osillation rather than single
+# cycles occurring in noise.
 #
 # ``emd.cycles.get_cycle_chain`` takes a set of cycle indices (from the output
 # of ``emd.cycles.get_cycle_inds`` and returns a list of continuous chains of
@@ -300,3 +302,32 @@ chains = emd.cycles.get_cycle_chain(mask_cycles[:, 2], min_chain=3)
 
 for ii, chn in enumerate(chains):
     print('Chain {0:2d}: {1}'.format(ii, chn))
+
+#%%
+# Finally, we can summarise our cycle-level statistics to create chain-level
+# statistics using ``emd.cycle.get_chain_stat``. This takes a set of chains as
+# defined in the previous section and a vector containing a single stat for
+# each cycle (created using the 'compressed' output in
+# ``emd.cycles.get_cycle_stat``). We can also pass in a custom function to
+# create our chain stats using the ``func`` argument.
+#
+# Here we compute the maximum amplitude and average frequency of each chain
+# from the previous section before making a summary figure.
+
+mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
+mask_cycle_amp = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)
+
+chain_amp = emd.cycles.get_chain_stat(chains, mask_cycle_amp, func=np.max)
+chain_freq = emd.cycles.get_chain_stat(chains, mask_cycle_freq, func=np.mean)
+
+chain_len = [len(x) for x in chains]
+
+plt.figure(figsize=(10,5))
+plt.subplot(121)
+plt.plot(chain_len, chain_amp, 'o')
+plt.xlabel('Chain Length')
+plt.ylabel('Chain Maximum Amplitude')
+plt.subplot(122)
+plt.plot(chain_len, chain_freq, 'o')
+plt.xlabel('Chain Length')
+plt.ylabel('Chain Average IF')
