@@ -397,7 +397,7 @@ def get_chain_stat(chains, var, func=np.mean):
     chains : list
         Nested list of cycle indices. Output of emd.get_cycle_chain().
     var : ndarray
-        1d array properties across all good cycles. Compressed output 
+        1d array properties across all good cycles. Compressed output
         of emd.cycles_get_cycle_stat()
     func : function
         Function to call on the data in values for each cycle (Default
@@ -410,8 +410,16 @@ def get_chain_stat(chains, var, func=np.mean):
         1D array of evaluated function on property var across each chain.
 
     """
+    # Preamble
+    logger.info('STARTED: get cycle stats')
+
+    logger.debug('computing stats for {0} cycles over {1} chains'.format(len(var), len(chains)))
+    logger.debug('computing metric {0}'.format(func))
+
+    # Actual computation
     stat = np.array([func(var[x]) for x in chains])
-    
+
+    logger.info('COMPLETED: get chain stat')
     return stat
 
 
@@ -697,7 +705,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
            (inds[ii, winner[ii]] < y.shape[0]):
             final[ii] = inds[ii, winner[ii]]
         else:
-            final[ii] = -1  #  No good match
+            final[ii] = -1  # No good match
 
     # Remove failed matches
     uni, cnt = np.unique(final, return_counts=True)
