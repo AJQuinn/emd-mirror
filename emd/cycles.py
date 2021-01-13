@@ -392,13 +392,12 @@ def get_chain_stat(chains, var, func=np.mean):
     Compute a given function for observations across each chain of cycles.
 
     Parameters
-
     ----------
     chains : list
-        Nested list of cycle indices. Output of emd.get_cycle_chain().
+        Nested list of cycle indices. Output of emd.cycles.get_cycle_chain.
     var : ndarray
         1d array properties across all good cycles. Compressed output
-        of emd.cycles_get_cycle_stat()
+        of emd.cycles.get_cycle_stat
     func : function
         Function to call on the data in values for each cycle (Default
         np.mean). This can be any function, built-in or user defined, that
