@@ -22,6 +22,9 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+### Added
+- New function for computing summary stats from chains of cycles (from marcoFabus) [!46](https://gitlab.com/emd-dev/emd/-/merge_requests/46)
+
 ### Changed
 - Major updates to tutorials
   - Binder notebooks added
