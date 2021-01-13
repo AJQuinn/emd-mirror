@@ -322,7 +322,7 @@ chain_freq = emd.cycles.get_chain_stat(chains, mask_cycle_freq, func=np.mean)
 
 chain_len = [len(x) for x in chains]
 
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 plt.subplot(121)
 plt.plot(chain_len, chain_amp, 'o')
 plt.xlabel('Chain Length')
