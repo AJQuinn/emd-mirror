@@ -11,6 +11,7 @@ bin_by_phase
 phase_align
 get_cycle_inds
 get_cycle_stat
+get_chain_stat
 get_control_points
 get_cycle_chain
 mean_vector
@@ -386,6 +387,41 @@ def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
     return out
 
 
+def get_chain_stat(chains, var, func=np.mean):
+    """
+    Compute a given function for observations across each chain of cycles.
+
+    Parameters
+    ----------
+    chains : list
+        Nested list of cycle indices. Output of emd.cycles.get_cycle_chain.
+    var : ndarray
+        1d array properties across all good cycles. Compressed output
+        of emd.cycles.get_cycle_stat
+    func : function
+        Function to call on the data in values for each cycle (Default
+        np.mean). This can be any function, built-in or user defined, that
+        processes a single vector of data returning a single value.
+
+    Returns
+    -------
+    stat : ndarray
+        1D array of evaluated function on property var across each chain.
+
+    """
+    # Preamble
+    logger.info('STARTED: get cycle stats')
+
+    logger.debug('computing stats for {0} cycles over {1} chains'.format(len(var), len(chains)))
+    logger.debug('computing metric {0}'.format(func))
+
+    # Actual computation
+    stat = np.array([func(var[x]) for x in chains])
+
+    logger.info('COMPLETED: get chain stat')
+    return stat
+
+
 def get_control_points(x, good_cycles):
     """
     Identify sets of control points from identified cycles. The control points
@@ -668,7 +704,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
            (inds[ii, winner[ii]] < y.shape[0]):
             final[ii] = inds[ii, winner[ii]]
         else:
-            final[ii] = -1  #  No good match
+            final[ii] = -1  # No good match
 
     # Remove failed matches
     uni, cnt = np.unique(final, return_counts=True)
