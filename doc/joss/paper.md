@@ -56,8 +56,10 @@ The sift algorithm is implemented in the `emd.sift` module, including the
 classic sift (`emd.sift.sift`; @Huang1998), the Ensemble EMD
 (`emd.sift.ensemble_sift`; @Wu2009), Masked EMD (`emd.sift.mask_sift`;
 @Deering2005) and the second-level sift (`emd.sift.sift_second_layer`;
-@Huang2016). An example set of Instrinsic Mode Functions isolated by a
-Masked-Sift is shown in Figure 1. The sift functions rest upon a range of
+@Huang2016). The emsemble and masked sift variants can be optionally
+accelerated by parallel processing (though this is not possible in all variants
+of the sift algorithm). An example set of Instrinsic Mode Functions isolated by
+a Masked-Sift is shown in Figure 1. The sift functions rest upon a range of
 lower-level utility functions which can be customised and used directly if
 needed. All levels of the sift computation are customisable from the top-level
 sift functions. Users can configure these sift options using a dictionary-like
@@ -147,11 +149,11 @@ guidelines](https://emd.readthedocs.io/en/latest/contributing.html).
 
 ![A simulated signal with an oscillatory component (black line - top panel) with a set of intrinsic mode functions estimated using a mask sift EMD (coloured lines - lower panels)](figures/emd_joss_example1_sift.png)
 
-![A segment of a simulated signal with its instantaneous amplitude and cycle-maxiumu amplitude time-series](figures/emd_joss_example2_amp.png)
+![A segment of a simulated signal with its instantaneous amplitude and cycle-maxiumum amplitude time-series](figures/emd_joss_example2_amp.png)
 
-![Top panel: An Instrinsic Mode function from a simulated signal (black line) an an amplitude threshold (dotted line). Bottom Panel: 2D Hilbert-Huang Transform. Darker colours indicate greater power and the black lines indicate cycle average instantaneous frequency of large amplitude cycles. ](figures/emd_joss_example3_hht.png)
+![Top panel: An Instrinsic Mode function from a simulated signal (black line) and an amplitude threshold (dotted line). Bottom Panel: 2D Hilbert-Huang Transform. Darker colours indicate greater power and the black lines indicate cycle average instantaneous frequency of large amplitude cycles. ](figures/emd_joss_example3_hht.png)
 
-![Top panel: A segment of a simulated signal. Bottom left: The 1D Hilbert-Huang transform of this signal. Bottom Center: The 2D Hilbert-Huang transform. Bottom Right: The Holospectrum.](figures/emd_joss_example4_holo.png)
+![Top panel: A segment of a simulated containing two nested oscillations and white noise. One 5Hz oscillation with 0.5Hz amplitude modulation and a 37Hz signal whose amplitude is modulated by the lower-frequency 5Hz oscillation. Bottom left: The 1D Hilbert-Huang transform of this signal. Bottom Center: The 2D Hilbert-Huang transform. Bottom Right: The Holospectrum.](figures/emd_joss_example4_holo.png)
 
 \pagebreak
 
