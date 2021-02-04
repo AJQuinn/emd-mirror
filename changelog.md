@@ -22,17 +22,28 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
-### Added
-- New function for computing summary stats from chains of cycles (from marcoFabus) [!46](https://gitlab.com/emd-dev/emd/-/merge_requests/46)
-
-### Changed
-- Major updates to tutorials
-  - Binder notebooks added
-  - New sifting tutorials added
 
 ---
 
 # Stable Versions
+
+## 0.3.3
+
+    pip install emd==0.3.3
+Released 2021-02-04
+
+### Added
+- New function for computing summary stats from chains of cycles (from marcoFabus) [!46](https://gitlab.com/emd-dev/emd/-/merge_requests/46)
+
+### Changed
+- Major updates to tutorials [!40](https://gitlab.com/emd-dev/emd/-/merge_requests/40)
+  - Binder notebooks added
+  - New sifting tutorials added
+
+### Fixed
+- Replaced missing dependencies in setup.py [!42](https://gitlab.com/emd-dev/emd/-/merge_requests/42)
+
+---
 
 ## 0.3.2
 
