@@ -178,12 +178,12 @@ plt.ylabel('Frequency (Hz)')
 # amplitude and frequency.
 
 # Compute cycle average frequency for all cycles and masked cycles
-all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)[1:]
-mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)[1:]
+all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
+mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
 
 # Compute cycle frequency range for all cycles and for masked cycles
-all_cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)[1:]
-mask_cycle_amp = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)[1:]
+all_cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)
+mask_cycle_amp = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)
 
 # Make a summary figures
 plt.figure()
@@ -226,8 +226,8 @@ plt.legend(['All-cycles', 'Masked-cycles', 'Amp thresh'])
 # separately and plot the results as a function of cycle average frequency
 
 # Compute cycle average frequency for all cycles and masked cycles
-all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)[1:]
-mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)[1:]
+all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
+mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
 
 
 # Define a simple function to compute the range of a set of values
@@ -238,10 +238,10 @@ def degree_nonlinearity(x):
 # Compute cycle freuquency range for all cycles and for masked cycles
 all_cycle_freq_don = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2],
                                                mode='compressed',
-                                               func=degree_nonlinearity)[1:]
+                                               func=degree_nonlinearity)
 cycle_freq_don = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2],
                                            mode='compressed',
-                                           func=degree_nonlinearity)[1:]
+                                           func=degree_nonlinearity)
 
 # Make a summary figures
 plt.figure()
