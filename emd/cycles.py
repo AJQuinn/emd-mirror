@@ -18,6 +18,7 @@ Routines:
 
 
 """
+import re
 import logging
 import numpy as np
 from scipy import interpolate as interp
@@ -154,8 +155,8 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
     logger.debug(msg.format(cycles.max(), npoints, interp_kind))
 
     ncycles = cycles.max()
-    avg = np.zeros((npoints, ncycles))
-    for ii in range(1, ncycles + 1):
+    avg = np.zeros((npoints, ncycles+1))
+    for ii in range(ncycles+1):
 
         phase_data = ip[cycles[:] == ii]
         x_data = x[cycles[:] == ii]
@@ -163,7 +164,7 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
         f = interp.interp1d(phase_data, x_data, kind=interp_kind,
                             bounds_error=False, fill_value='extrapolate')
 
-        avg[:, ii - 1] = f(phase_bins)
+        avg[:, ii] = f(phase_bins)
 
     logger.info('COMPLETED: phase-align cycles')
     return avg
@@ -241,7 +242,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
         print('Wrapping phase')
         phase = utils.wrap_phase(phase)
 
-    cycles = np.zeros_like(phase, dtype=int)
+    cycles = np.zeros_like(phase, dtype=int) - 1
 
     for ii in range(phase.shape[1]):
 
@@ -261,7 +262,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
 
         unwrapped = np.unwrap(phase[:, ii], axis=0)
 
-        count = 1
+        count = 0
         for jj in range(len(inds) - 1):
 
             if mask is not None:
@@ -407,7 +408,7 @@ def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
     elif mode == 'full':
         out = np.zeros_like(values) * np.nan
 
-    for cind in range(1, cycles.max() + 1):
+    for cind in range(0, cycles.max() + 1):
         stat = func(values[cycles == cind])
 
         if mode == 'compressed':
@@ -420,7 +421,8 @@ def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
     # confusing overall - should probably rethink this whether this makes any
     # sense
     if mode == 'compressed':
-        out[0] = func(values[cycles == 0])
+        #out[0] = func(values[cycles == 0])[1:]
+        out = out
 
     logger.info('COMPLETED: get cycle stats')
     return out
@@ -579,13 +581,13 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     chains = list()
     chn = None
     # get diff to next cycle for each cycle
-    for ii in range(1, cycles.max() + 1):
+    for ii in range(cycles.max()+1):
 
         if chn is None:
             chn = [ii]  # Start new chain if there isn't one
         else:
             # We're currently in a chain - test whether current cycle is directly after previous cycle
-            if cycles[np.where(cycles == ii)[0][0] - 1][0] == 0:
+            if cycles[np.where(cycles == ii)[0][0] - 1][0] == -1:
                 # Start of new chain - store previous chain and start new one
                 if len(chn) >= min_chain:  # Drop chains which are too short
                     if drop_first > 0:
@@ -783,3 +785,219 @@ def _unique_inds(ar):
     ar_inds = [np.where(ar == ii)[0] for ii in ar[mask]]
 
     return ar[mask], ar_inds
+
+
+def is_good(phase, waveform=None, ret_all_checks=False, phase_edge=np.pi/12):
+
+    cycle_checks = np.zeros((4,), dtype=bool)
+
+    # Check for postively increasing phase
+    if all(np.diff(phase) > 0):
+        cycle_checks[0] = True
+
+    # Check that start of cycle is close to 0
+    if (phase[0] >= 0 and phase[0] <= phase_edge):
+        cycle_checks[1] = True
+
+    # Check that end of cycle is close to pi
+    if (phase[- 1] <= 2 * np.pi) and (phase[- 1] >= 2 * np.pi - phase_edge):
+        cycle_checks[2] = True
+
+    if waveform is not None:
+        # Check we find 5 sensible control points if imf is provided
+        try:
+            # Should extend this to cope with multiple peaks etc
+            ctrl = (0, sift._find_extrema(waveform)[0][0],
+                    np.where(np.gradient(np.sign(waveform)) == -1)[0][0],
+                    sift._find_extrema(-waveform)[0][0],
+                    len(waveform))
+            if len(ctrl) == 5 and np.all(np.sign(np.diff(ctrl))):
+                cycle_checks[3] = True
+        except IndexError:
+            # Sometimes we don't find any candidate for a control point
+            cycle_checks[3] = False
+    else:
+        # No time-series so assume everything is fine
+        cycle_checks[3] = True
+
+    if ret_all_checks:
+        return cycle_checks
+    else:
+        return np.all(cycle_checks)
+
+
+def get_chain_position(chains, mode='compressed', cycles=None):
+    cp = np.concatenate([np.arange(len(c)) for c in chains])
+    if mode == 'compressed':
+        return cp
+    elif mode == 'full':
+        return _map_cycles_to_samples(cp, cycles)
+
+
+def _map_cycles_to_samples(cycle_stats, cycles):
+    """
+    Move from vector of len(cycles) to vector of length(samples)
+    """
+    full = np.zeros_like(cycles, dtype=float) - 1
+    for ii in range(len(cycle_stats)):
+        full[cycles == ii] = cycle_stats[ii]
+    return full
+
+
+def _map_chains_to_cycles(chain_stats, chains, cycles):
+    """
+    Move from vector of len(chains) to vector of length(cycles)
+    """
+    out = np.zeros((cycles.max(),))
+    for ii in range(len(chains)):
+        out[chains[ii]] = chain_stats[ii]
+    return out
+
+
+def _map_chains_to_samples(chain_stats, chains, cycles):
+    """
+    Move from vector of len(chains) to vector of length(samples)
+    """
+    cycle_stats = _map_chains_to_cycles(chain_stats, chains, cycles)
+    return _map_cycles_to_samples(cycle_stats, cycles)
+
+
+class Cycles:
+    """
+    Class defining Cycle analysis API. Some rules:
+
+    A set of cycles for a time series is defined by a vector with the following properties.
+    1) cycle vector is same length as time series
+    2) cycle vector contains integer denoting which cycle each sample belongs to
+    3) cycle vector has -1 for samples with no cycle OR an excluded cycle
+    4) integer values in cycle vector are sequential
+
+    So,
+    get_cycle_stat should drop -1 automatically. Then values in cycle vector match indices into compressed cycle stat.
+    _map_cycles_to_samples can map between the two.
+    """
+
+    def __init__(self, IP):
+
+        self._all_cycles = get_cycle_inds(IP, return_good=False)
+
+        self._metrics = dict()
+        self.add_cycle_stat('is_good', IP, is_good)
+
+    @property
+    def _good_cycles(self):
+        return _map_cycles_to_samples(self._metrics['is_good'], self._all_cycles)
+
+    def get_all(self):
+        return self._all_cycles
+
+    def get_good_vect(self):
+        out = self._all_cycles * self._good_cycles
+        return self._shakedown(out)
+
+    def get_subset(self, conditions):
+
+        vect = self._get_vect(conditions)
+        d = self._get_metrics(conditions=conditions)
+
+        return vect, d
+
+    def get_dataframe(self):
+        import pandas as pd
+        return pd.DataFrame.from_dict(self._metrics)
+
+    def get_full_metric(self, name):
+        return _map_cycles_to_samples(self._metrics[name], self._all_cycles)
+
+    def _get_vect(self, conditions):
+        """
+        Get standalone cycles vector for cycles meeting specified conditions.
+        Non-cycle samples are set to -1.
+        """
+        inds = self.get_cycle_inds(conditions)
+        out = self._all_cycles.copy()
+        for ii in range(len(inds)):
+            if inds[ii] == False:  # noqa: E712
+                out[self._all_cycles == ii] = -1
+        return self._shakedown(out)
+
+    def _get_metrics(self, conditions=None):
+        """
+        Get standalone dataframe of cycle metrics for cycles meeting specified conditions.
+        """
+        import pandas as pd
+        d = pd.DataFrame.from_dict(self._metrics)
+
+        if conditions is not None:
+            inds = self.get_cycle_inds(conditions).astype(float)
+            d = d.drop(np.where(inds == 0)[0])
+            d = d.reset_index()
+
+        return d
+
+    def add_cycle_stat(self, name, X, func):
+        vals = get_cycle_stat(self._all_cycles, X,
+                              mode='compressed',
+                              func=func)
+        self._metrics[name] = vals
+
+    def add_metric(self, name, metric):
+        if len(metric) != len(self._metrics['is_good']):
+            raise ValueError
+        else:
+            self._metrics[name] = metric
+
+    def _parse_condition(self, cond):
+        name = re.split(r'[=<>!]', cond)[0]
+        comp = cond[len(name):]
+
+        if comp[:2] == '==':
+            func = np.equal
+        elif comp[:2] == '!=':
+            func = np.not_equal
+        elif comp[:2] == '<=':
+            func = np.less_equal
+        elif comp[:2] == '>=':
+            func = np.greater_equal
+        elif comp[0] == '<':
+            func = np.less
+        elif comp[0] == '>':
+            func = np.greater
+        else:
+            print('Comparator not recognised!')
+
+        val = float(comp.lstrip('!=<>'))
+
+        return (name, func, val)
+
+    def get_cycle_inds(self, conditions, ret_separate=False):
+
+        out = np.zeros((len(self._metrics['is_good']), len(conditions)))
+        for idx, c in enumerate(conditions):
+            name, func, val = self._parse_condition(c)
+            out[:, idx] = func(self._metrics[name], val)
+
+        if ret_separate:
+            return out
+        else:
+            return np.all(out, axis=1)
+
+    def _sanitise(self, cycles):
+        """
+        replace any nans with zeros
+        """
+        cycles[np.isnan(cycles)] = 0
+        return cycles.astype(int)
+
+    def _shakedown(self, cycles):
+        """
+        Make cycle inds properly sequential again
+        """
+        out = self._sanitise(cycles)
+        cycles_in = np.unique(cycles)
+        if not np.in1d(-1, cycles_in):
+            cycles_in = np.r_[-1, cycles_in]
+        cycles_out = np.arange(-1, len(cycles_in)-1)
+        for ii in range(len(cycles_in)):
+            out[cycles == cycles_in[ii]] = cycles_out[ii]
+        return out
