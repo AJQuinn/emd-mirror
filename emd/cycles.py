@@ -909,9 +909,18 @@ class Cycles:
         return ret
 
     def compute_timing_metrics(self):
-        self.add_cycle_stat('start_sample', np.arange(len(self._all_cycles)), _get_start_sample)
-        self.add_cycle_stat('stop_sample', np.arange(len(self._all_cycles)), _get_stop_sample)
-        self.add_cycle_stat('duration', self._all_cycles, len)
+        self.add_cycle_stat('start_sample',
+                            np.arange(len(self._all_cycles)),
+                            _get_start_sample,
+                            dtype=int)
+        self.add_cycle_stat('stop_sample',
+                            np.arange(len(self._all_cycles)),
+                            _get_stop_sample,
+                            dtype=int)
+        self.add_cycle_stat('duration',
+                            self._all_cycles,
+                            len,
+                            dtype=int)
 
     def get_subset(self, conditions=None):
         """
@@ -953,7 +962,7 @@ class Cycles:
 
         return d
 
-    def add_cycle_stat(self, name, X, func):
+    def add_cycle_stat(self, name, X, func, dtype=None):
         """
         Compute a statistic for all cycles and store the result in the Cycle
         object for later use.
@@ -961,6 +970,10 @@ class Cycles:
         vals = get_cycle_stat(self._all_cycles, X,
                               mode='compressed',
                               func=func)
+
+        if dtype is not None:
+            vals = vals.astype(dtype)
+
         self._metrics[name] = vals
 
     def add_cycle_metric(self, name, metric):
