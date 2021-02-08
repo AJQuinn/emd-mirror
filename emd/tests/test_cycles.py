@@ -37,24 +37,24 @@ class test_cycles(unittest.TestCase):
 
         # Test basic cycle detection
         uni_cycles = np.unique(self.cycle_generator(4))
-        assert(np.all(uni_cycles == np.arange(-1,8)))
+        assert(np.all(uni_cycles == np.arange(-1, 8)))
 
         uni_cycles = np.unique(self.cycle_generator(5, phase=1.5 * np.pi))
         print(uni_cycles)
-        assert(np.all(uni_cycles == np.arange(-1,10)))
+        assert(np.all(uni_cycles == np.arange(-1, 10)))
 
     def test_cycle_count_with_bad_start_and_end(self):
 
         # Test basic cycle detection
         cycles = self.cycle_generator(4, phase=0)
         uni_cycles = np.unique(cycles)
-        assert(np.all(uni_cycles == np.arange(-1,8)))
+        assert(np.all(uni_cycles == np.arange(-1, 8)))
         assert(cycles[50] == -1)
         assert(cycles[2150] == -1)
 
         cycles = self.cycle_generator(5, phase=0)
         uni_cycles = np.unique(cycles)
-        assert(np.all(uni_cycles == np.arange(-1,10)))
+        assert(np.all(uni_cycles == np.arange(-1, 10)))
         assert(cycles[50] == -1)
         assert(cycles[2150] == -1)
 
@@ -62,7 +62,7 @@ class test_cycles(unittest.TestCase):
 
         cycles = self.cycle_generator(4, phase=1.5 * np.pi, distort=1100)
         uni_cycles = np.unique(cycles)
-        assert(np.all(uni_cycles == np.arange(-1,7)))
+        assert(np.all(uni_cycles == np.arange(-1, 7)))
         assert(cycles[1100] == -1)
 
     def test_cycle_chain(self):
