@@ -187,15 +187,15 @@ markers = ['og', '^b', 'oc', 'vb', 'or']
 label = ['Asc-Start', 'Peak', 'Desc', 'Trough', 'Asc-End']
 
 # Plot the first 10 cycles with control points
-ncycles = 21
+ncycles = 20
 start = 0
 
 plt.figure()
 plt.plot(111)
 plt.title('Test 4: Control points')
-for ii in range(1, ncycles):
+for ii in range(ncycles):
     print('Cycle {0:2d} - {1}'.format(ii, ctrl[ii, :]))
-    cycle = imf[all_cycles[:, 2] == ii + 1, 2]
+    cycle = imf[all_cycles[:, 2] == ii, 2]
     plt.plot(np.arange(len(cycle))+start, cycle, 'k', label='Cycle')
     for jj in range(5):
         if np.isfinite(ctrl[ii, jj]):
