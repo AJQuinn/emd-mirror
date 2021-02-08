@@ -492,7 +492,7 @@ def get_control_points(x, good_cycles):
     # Main Body
 
     ctrl = list()
-    for ii in range(1, good_cycles.max() + 1):
+    for ii in range(good_cycles.max() + 1):
         cycle = x[good_cycles == ii]
 
         # Peak
@@ -848,7 +848,7 @@ def _map_chains_to_cycles(chain_stats, chains, cycles):
     """
     Move from vector of len(chains) to vector of length(cycles)
     """
-    out = np.zeros((cycles.max(),))
+    out = np.zeros((cycles.max()+1,))
     for ii in range(len(chains)):
         out[chains[ii]] = chain_stats[ii]
     return out
@@ -877,77 +877,107 @@ class Cycles:
     _map_cycles_to_samples can map between the two.
     """
 
-    def __init__(self, IP):
+    def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12):
+        IP = ensure_1d_with_singleton([IP], ['IP'], 'Cycles')
 
-        self._all_cycles = get_cycle_inds(IP, return_good=False)
+        self._all_cycles = get_cycle_inds(IP, return_good=False, phase_step=phase_step, phase_edge=phase_edge)
 
         self._metrics = dict()
         self.add_cycle_stat('is_good', IP, is_good)
 
-    @property
-    def _good_cycles(self):
-        return _map_cycles_to_samples(self._metrics['is_good'], self._all_cycles)
+    @classmethod
+    def load(cls, cycle_vect, metrics_dataframe):
+        """
+        Load cycle stats from an existing analyses into a new Cycles instance.
+        """
 
-    def get_all(self):
-        return self._all_cycles
+        ret = cls()
+        ret._all_cycles = cycle_vect
+        ret._metric = metrics_dataframe.to_dict('list')
 
-    def get_good_vect(self):
-        out = self._all_cycles * self._good_cycles
-        return self._shakedown(out)
+        return ret
 
-    def get_subset(self, conditions):
+    def get_subset(self, conditions=None):
+        """
+        Return the cycle vector and metrics dataframe for a subset of cycles
+        defined by a set of specified conditions.
+        """
 
-        vect = self._get_vect(conditions)
-        d = self._get_metrics(conditions=conditions)
-
+        vect = self.get_cycle_vector(conditions=conditions)
+        d = self.get_metric_dataframe(conditions=conditions)
         return vect, d
 
-    def get_dataframe(self):
-        import pandas as pd
-        return pd.DataFrame.from_dict(self._metrics)
-
-    def get_full_metric(self, name):
-        return _map_cycles_to_samples(self._metrics[name], self._all_cycles)
-
-    def _get_vect(self, conditions):
+    def get_cycle_vector(self, conditions=None):
         """
         Get standalone cycles vector for cycles meeting specified conditions.
         Non-cycle samples are set to -1.
         """
-        inds = self.get_cycle_inds(conditions)
-        out = self._all_cycles.copy()
-        for ii in range(len(inds)):
-            if inds[ii] == False:  # noqa: E712
-                out[self._all_cycles == ii] = -1
-        return self._shakedown(out)
+        if conditions is None:
+            return self._all_cycles
+        else:
+            inds = self.get_cycle_index(conditions)
+            out = self._all_cycles.copy()
+            for ii in range(len(inds)):
+                if inds[ii] == False:  # noqa: E712
+                    out[self._all_cycles == ii] = -1
+            return self._shakedown(out)
 
-    def _get_metrics(self, conditions=None):
+    def get_metric_dataframe(self, conditions=None):
         """
         Get standalone dataframe of cycle metrics for cycles meeting specified conditions.
+        This method requires that pandas is installed.
         """
         import pandas as pd
         d = pd.DataFrame.from_dict(self._metrics)
 
         if conditions is not None:
-            inds = self.get_cycle_inds(conditions).astype(float)
+            inds = self.get_cycle_index(conditions).astype(float)
             d = d.drop(np.where(inds == 0)[0])
             d = d.reset_index()
 
         return d
 
     def add_cycle_stat(self, name, X, func):
+        """
+        Compute a statistic for all cycles and store the result in the Cycle
+        object for later use.
+        """
         vals = get_cycle_stat(self._all_cycles, X,
                               mode='compressed',
                               func=func)
         self._metrics[name] = vals
 
-    def add_metric(self, name, metric):
+    def add_cycle_metric(self, name, metric):
+        """
+        Store a precomuted metric for all cycle
+        """
         if len(metric) != len(self._metrics['is_good']):
             raise ValueError
         else:
             self._metrics[name] = metric
 
+    def get_cycle_index(self, conditions, ret_separate=False):
+        """
+        Return the indices for a subset of cycles defined by the specified conditions
+        """
+
+        if isinstance(conditions, str):
+            conditions = [conditions]
+
+        out = np.zeros((len(self._metrics['is_good']), len(conditions)))
+        for idx, c in enumerate(conditions):
+            name, func, val = self._parse_condition(c)
+            out[:, idx] = func(self._metrics[name], val)
+
+        if ret_separate:
+            return out
+        else:
+            return np.all(out, axis=1)
+
     def _parse_condition(self, cond):
+        """
+        Helper method to parse strings defining conditional statements.
+        """
         name = re.split(r'[=<>!]', cond)[0]
         comp = cond[len(name):]
 
@@ -969,18 +999,6 @@ class Cycles:
         val = float(comp.lstrip('!=<>'))
 
         return (name, func, val)
-
-    def get_cycle_inds(self, conditions, ret_separate=False):
-
-        out = np.zeros((len(self._metrics['is_good']), len(conditions)))
-        for idx, c in enumerate(conditions):
-            name, func, val = self._parse_condition(c)
-            out[:, idx] = func(self._metrics[name], val)
-
-        if ret_separate:
-            return out
-        else:
-            return np.all(out, axis=1)
 
     def _sanitise(self, cycles):
         """
