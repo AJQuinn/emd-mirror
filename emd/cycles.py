@@ -814,6 +814,14 @@ def _map_chains_to_samples(chain_stats, chains, cycles):
     return _map_cycles_to_samples(cycle_stats, cycles)
 
 
+def _get_start_sample(x):
+    return x[0]
+
+
+def _get_stop_sample(x):
+    return x[-1]
+
+
 class Cycles:
     """
     Class defining Cycle analysis API. Some rules:
@@ -829,13 +837,16 @@ class Cycles:
     _map_cycles_to_samples can map between the two.
     """
 
-    def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12):
+    def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12, compute_timings=False):
         IP = ensure_1d_with_singleton([IP], ['IP'], 'Cycles')
 
         self._all_cycles = get_cycle_inds(IP, return_good=False, phase_step=phase_step, phase_edge=phase_edge)
 
         self._metrics = dict()
         self.add_cycle_stat('is_good', IP, is_good)
+
+        if compute_timings:
+            self.compute_timing_metrics()
 
     @classmethod
     def load(cls, cycle_vect, metrics_dataframe):
@@ -848,6 +859,11 @@ class Cycles:
         ret._metric = metrics_dataframe.to_dict('list')
 
         return ret
+
+    def compute_timing_metrics(self):
+        self.add_cycle_stat('start_sample', np.arange(len(self._all_cycles)), _get_start_sample)
+        self.add_cycle_stat('stop_sample', np.arange(len(self._all_cycles)), _get_stop_sample)
+        self.add_cycle_stat('duration', self._all_cycles, len)
 
     def get_subset(self, conditions=None):
         """
