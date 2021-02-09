@@ -851,6 +851,10 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
     # if first mask is if or zc - compute first imf as normal and get freq
     if isinstance(mask_freqs, (list, tuple, np.ndarray)):
         logger.info('Using user specified masks')
+        if len(mask_freqs) < max_imfs:
+            max_imfs = len(mask_freqs)
+            logger.info("Reducing max_imfs to {0} as len(mask_freqs) < max_imfs".format(max_imfs))
+
     elif mask_freqs in ['zc', 'if'] or isinstance(mask_freqs, float):
         z = get_mask_freqs(X, mask_freqs, imf_opts=imf_opts)
         mask_freqs = np.array([z/mask_step_factor**ii for ii in range(max_imfs)])
