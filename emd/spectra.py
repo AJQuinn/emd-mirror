@@ -6,20 +6,23 @@
 Compute instantanous spectral metrics (Phase,Amplitude and Frequency) and
 compute frequency or time frequency spectra.
 
-Routines:
+Frequency Transform Routines:
+  frequency_transform
+  quadrature_transform
+  phase_from_complex_signal
+  freq_from_phase
+  phase_from_freq
+  phase_angle
 
-frequency_transform
-quadrature_transform
-phase_from_complex_signal
-freq_from_phase
-phase_from_freq
-direct_quadrature
-phase_angle
-holospectrum
-hilberthuang
-hilberthuang_1d
-define_hist_bins
-define_hist_bins_from_data
+Power Spectra:
+  holospectrum
+  hilberthuang
+  hilberthuang_1d
+
+Power Spectra Helpers:
+  define_hist_bins
+  define_hist_bins_from_data
+
 
 """
 

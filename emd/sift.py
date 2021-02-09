@@ -3,18 +3,34 @@
 # vim: set expandtab ts=4 sw=4:
 
 """
-Implementations of the SIFT algorithm for Empirical Mode Decomposition.
+Implementations of the sift algorithm for Empirical Mode Decomposition.
 
-Routines:
+Main Routines:
+  sift                    - The classic sift algorithm
+  ensemble_sift           - Noise-assisted sift algorithm
+  complete_ensemble_sift  - Adapeted noise-assisted sift algorithm
+  mask_sift               - Sift with masks to separate very sparse or nonlinear components
+  sift_second_layer       - Apply sift to amplitude envlope of a set of IMFs
 
-sift
-ensemble_sift
-complete_ensemble_sift
-sift_second_layer
-mask_sift_adaptive
-mask_sift_specified
-get_next_imf
-get_next_imf_mask
+Sift Helper Routines:
+  get_next_imf
+  get_next_imf_mask
+  get_mask_freqs
+  energy_difference
+  energy_stop
+  sd_stop
+  rilling_stop
+  fixed_stop
+  get_padded_extrema
+  compute_parabolic_extrema
+  interp_envelope
+  zero_crossing_count
+  is_imf
+
+Sift Config:
+  get_config
+  SiftConfig
+
 
 """
 
@@ -632,8 +648,9 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
     amp : scalar
         Mask amplitude
     nphases : int > 0
-        The number of separate masks to apply for each IMF, each mask is
-        uniformly spread across a 0<=p<2pi range (Default=4).
+        The number of separate sinusoidal masks to apply for each IMF, the
+        phase of masks are uniformly spread across a 0<=p<2pi range
+        (Default=4).
     nprocesses : integer
          Integer number of parallel processes to compute. Each process computes
          an IMF from the signal plus a mask. nprocesses should be less than or
@@ -765,6 +782,10 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
         the average of a +ve and -ve flipped wave. 'all' applies four masks:
         sine and cosine with +ve and -ve sign and returns the average of all
         four.
+    nphases : int > 0
+        The number of separate sinusoidal masks to apply for each IMF, the
+        phase of masks are uniformly spread across a 0<=p<2pi range
+        (Default=4).
     ret_mask_freq : bool
          Boolean flag indicating whether mask frequencies are returned (Default value = False)
     max_imfs : int
@@ -959,7 +980,7 @@ def get_padded_extrema(X, pad_width=2, mode='peaks', parabolic_extrema=False,
         Input signal
     pad_width : int >= 0
         Number of additional extrema to add to the start and end
-    ext_mode : {'peaks', 'troughs', 'abs_peaks'}
+    mode : {'peaks', 'troughs', 'abs_peaks'}
         Switch between detecting peaks, troughs or peaks in the abs signal
     parabolic_extrema : bool
         Flag indicating whether extrema positions should be refined by parabolic interpolation
