@@ -6,16 +6,16 @@
 Identification and analysis of cycles in an oscillatory signal.
 
 Routines:
+  bin_by_phase
+  phase_align
+  get_cycle_inds
+  get_cycle_stat
+  get_chain_stat
+  get_control_points
+  get_cycle_chain
+  mean_vector
+  basis_project
 
-bin_by_phase
-phase_align
-get_cycle_inds
-get_cycle_stat
-get_chain_stat
-get_control_points
-get_cycle_chain
-mean_vector
-kdt_match
 
 """
 
