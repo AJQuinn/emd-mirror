@@ -6,17 +6,14 @@
 Support functions.
 
 Routines:
+  amplitude_normalise
+  abreu2010
+  est_orthogonality
+  find_extrema_locked_epochs
+  apply_epochs
+  wrap_phase
+  ar_simulate
 
-amplitude_normalise
-get_padded_extrema
-interp_envelope
-find_extrema
-zero_crossing_count
-abreu2010
-est_orthogonality
-find_extrema_locked_epochs
-apply_epochs
-wrap_phase
 
 """
 

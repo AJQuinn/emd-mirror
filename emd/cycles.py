@@ -6,16 +6,16 @@
 Identification and analysis of cycles in an oscillatory signal.
 
 Routines:
+  bin_by_phase
+  phase_align
+  get_cycle_inds
+  get_cycle_stat
+  get_chain_stat
+  get_control_points
+  get_cycle_chain
+  mean_vector
+  basis_project
 
-bin_by_phase
-phase_align
-get_cycle_inds
-get_cycle_stat
-get_chain_stat
-get_control_points
-get_cycle_chain
-mean_vector
-kdt_match
 
 """
 
@@ -327,6 +327,51 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     return cycles
 
 
+def get_cycle_inds_from_waveform(imf, cycle_start='peaks'):
+    """
+    ASSUMING LOCALLY SYMMETRICAL SIGNALS!!
+    """
+    imf = ensure_1d_with_singleton([imf], ['imf'], 'get_cycle_inds_from_waveform')
+
+    if cycle_start == 'desc':
+        print("'desc' is Not implemented yet")
+        raise ValueError
+
+    cycles = np.zeros_like(imf)
+    for ii in range(imf.shape[1]):
+        peak_loc, peak_mag = sift._find_extrema(imf[:, ii])
+        trough_loc, trough_mag = sift._find_extrema(-imf[:, ii])
+        trough_mag = -trough_mag
+
+        for jj in range(len(peak_loc)-1):
+            if cycle_start == 'peaks':
+                start = peak_loc[jj]
+                cycles[peak_loc[jj]:peak_loc[jj+1], ii] = jj+1
+            elif cycle_start == 'asc':
+                pk = peak_loc[jj]
+                tr_ind = np.where(trough_loc - peak_loc[jj] < 0)[0][-1]
+                tr = trough_loc[tr_ind]
+                if (imf[tr, ii] > 0) or (imf[pk, ii] < 0):
+                    continue
+                start = np.where(np.diff(np.sign(imf[tr:pk, ii])) == 2)[0][0] + tr
+
+                pk = peak_loc[jj+1]
+                tr_ind = np.where(trough_loc - peak_loc[jj+1] < 0)[0][-1]
+                tr = trough_loc[tr_ind]
+                if (imf[tr, ii] > 0) or (imf[pk, ii] < 0):
+                    continue
+                stop = np.where(np.diff(np.sign(imf[tr:pk, ii])) == 2)[0][0] + tr
+
+                cycles[start:stop, ii] = jj+1
+            elif cycle_start == 'troughs':
+                start = trough_loc[jj]
+                cycles[trough_loc[jj]:trough_loc[jj+1], ii] = jj+1
+            elif cycle_start == 'desc':
+                pass
+
+    return cycles.astype(int)
+
+
 def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
     """
     Compute the average of a set of observations for each cycle.
@@ -424,7 +469,7 @@ def get_chain_stat(chains, var, func=np.mean):
     return stat
 
 
-def get_control_points(x, good_cycles):
+def get_control_points(x, good_cycles, interp=False):
     """
     Identify sets of control points from identified cycles. The control points
     are the ascending zero, peak, descending zero & trough.
@@ -459,11 +504,17 @@ def get_control_points(x, good_cycles):
         cycle = x[good_cycles == ii]
 
         # Peak
-        pk = sift._find_extrema(cycle)[0]
+        pk = sift._find_extrema(cycle, parabolic_extrema=interp)[0]
         # Ascending-zero crossing
         asc = np.where(np.diff(np.sign(cycle)) == -2)[0]
+        if interp:  # Note sure what's going wrong in the indexing here, need a cleaner solution
+            aa = asc.copy()
+            asc = []
+            for idx, a in enumerate(aa):
+                interp_ind = np.argmin(np.abs(np.linspace(cycle[a], cycle[a+1], 1000)))
+                asc.append(a + np.linspace(0, 1, 1000)[interp_ind])
         # Trough
-        tr = sift._find_extrema(-cycle)[0]
+        tr = sift._find_extrema(-cycle, parabolic_extrema=interp)[0]
 
         # Replace values with nan if more or less than 1 ctrl point is found
         if len(pk) == 1:
@@ -486,6 +537,20 @@ def get_control_points(x, good_cycles):
 
     # Return as array
     return np.array(ctrl)
+
+
+def get_control_point_metrics(ctrl, normalise=True):
+
+    # Peak to trough ratio
+    p2t = (ctrl[:, 2] - (ctrl[:, 4]-ctrl[:, 2]))
+    # Ascending to Descending ratio
+    a2d = (ctrl[:, 1]+(ctrl[:, 4]-ctrl[:, 3])) - (ctrl[:, 3]-ctrl[:, 1])
+
+    if normalise:
+        p2t = p2t / ctrl[:, 4]
+        a2d = a2d / ctrl[:, 4]
+
+    return p2t, a2d
 
 
 def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
