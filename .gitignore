@@ -1,9 +1,10 @@
 *.pyc
 *.swo
 *.swp
+*.egg-info
+.vscode
 .coverage
 build
 doc/build
 doc/source/changelog.md
 doc/source/emd_tutorials/
-sails.egg-info
