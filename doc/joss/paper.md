@@ -35,7 +35,7 @@ package contains Python (>=3.5) functions for analysis of non-linear and
 non-stationary oscillatory time series. `EMD` implements a family of sifting
 algorithms, instantaneous frequency transformations, power spectrum
 construction and single-cycle feature analysis. These implementations are
-supported by online documentation containing a range of practical tutorials,
+supported by online documentation containing a range of practical tutorials.
 
 # Statement of Need
 
@@ -45,7 +45,7 @@ interest but can be challenging to isolate and quantify. The Empirical Mode
 Decomposition offers a potential solution defined by the sift-algorithm; a
 data-adaptive decomposition that separates a signal into a set of Intrinsic
 Mode Functions (IMFs) that permit physically interpretable Hilbert transforms
-[@Huang1998] and subsequent analysis of instantaneous frequency. Crucially the
+[@Huang1998] and subsequent analysis of instantaneous frequency. Crucially, the
 sift is able to efficiently isolate and describe non-linear and non-stationary
 signal features as it works on adaptive, local data segments without
 prescribing that features remain consistent across the entire signal.
@@ -58,7 +58,7 @@ classic sift (`emd.sift.sift`; @Huang1998), the Ensemble EMD
 @Deering2005) and the second-level sift (`emd.sift.sift_second_layer`;
 @Huang2016). The emsemble and masked sift variants can be optionally
 accelerated by parallel processing (though this is not possible in all variants
-of the sift algorithm). An example set of Instrinsic Mode Functions isolated by
+of the sift algorithm). An example set of Intrinsic Mode Functions isolated by
 a Masked-Sift is shown in Figure 1. The sift functions rest upon a range of
 lower-level utility functions which can be customised and used directly if
 needed. All levels of the sift computation are customisable from the top-level
@@ -76,7 +76,7 @@ amplitude modulation frequency and time [@Huang2016]. The frequency transforms a
 implemented in the `emd.spectra` submodule. `emd.spectra.frequency_stats`
 implements a set of methods for computing instantaneous frequency, phase and
 amplitude from a set of IMFs. These can be used as inputs to the
-`emd.spectra.hilberthuang` or `emd.spectra.holospectrum` to energy
+`emd.spectra.hilberthuang` or `emd.spectra.holospectrum` to obtain(?) energy
 distributions across time and frequency (see examples in Figures 3 and 4). The
 Hilbert-Huang and Holospectrum computations can be very large so these
 functions use an efficient sparse array implementation.
@@ -103,7 +103,7 @@ are available on [PyPI](https://pypi.org/project/emd/).
 # Target Audience
 
 Since its initial publication in 1998, the EMD approach has had a wide impact
-across science and engineering, finding applications in turbulance, fluid
+across science and engineering, finding applications in turbulence, fluid
 dynamics, geology, biophysics and neuroscience amongst many others. The `EMD`
 toolbox will be of interest to scientists, engineers and applied mathematicians
 looking to characterise signals with rich dynamics with a high temporal and
@@ -111,7 +111,7 @@ spectral resolution.
 
 # State of the field
 
-The popularity of the EMD algorithm has lead to several existing
+The popularity of the EMD algorithm has lead to several
 implementations which offer overlapping functionality. Here, we include an
 incomplete list of these toolboxes providing sift, ensemble sift and HHT
 implementations. In Python, there are two substantial EMD implementations
@@ -121,7 +121,7 @@ implements a family of sifting routines and frequency transforms. Another
 implementation of EMD in Matlab and C is available from [Patrick
 Flandarin](http://perso.ens-lyon.fr/patrick.flandrin/emd.html). This provides a
 wide range of sift functions but limited frequency transform or spectrum
-computations. Finally, the basic EMD algorithm and HHT is implemented the
+computations. Finally, the basic EMD algorithm and HHT is implemented in the
 [MatLab signal processing
 toolbox](https://uk.mathworks.com/help/signal/ref/emd.html) (versions >
 R2018a).
@@ -130,7 +130,7 @@ The `EMD` toolbox covers much of the functionality in these packages within a
 single computational framework. Beyond these methods, we add fully-featured
 implementations of masked sift and second-level sift routines as well as the
 first Python implementation of higher-level Holospectrum analyses. Finally, we
-offer a suite a tools designed for analysis of single-cycles of an Intinsic
+offer a suite of tools designed for analysis of single-cycles of an Intrinsic
 Mode Function.
 
 # Installation & Contribution
@@ -139,7 +139,7 @@ The `EMD` package is implemented in Python (>=3.5) and is freely available
 under a GPL-3 license. The stable version of the package can be installed from
 from PyPI.org using ```pip install emd```. Users and developers can also
 install from source from [gitlab](https://gitlab.com/emd-dev/emd). Our
-[documenatation](https://emd.readthedocs.io) provides detailed instructions on
+[documentation](https://emd.readthedocs.io) provides detailed instructions on
 [installation](https://emd.readthedocs.io/en/latest/install.html) and a range
 of practical
 [tutorials](https://emd.readthedocs.io/en/latest/emd_tutorials/index.html).
