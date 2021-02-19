@@ -918,7 +918,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
 # Second Layer SIFT
 
 
-@sift_logger('second_layer_sift')
+@sift_logger('second_layer')
 def sift_second_layer(IA, sift_func=sift, sift_args=None):
     """
     Compute second layer IMFs from the amplitude envelopes of a set of first
@@ -928,12 +928,10 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
     ----------
     IA : ndarray
         Input array containing a set of first layer IMFs
-    sd_thresh : scalar
-         The threshold at which the sift of each IMF will be stopped. (Default value = .1)
-    sift_thresh : scalar
-         The threshold at which the overall sifting process will stop. (Default value = 1e-8)
-    max_imfs : int
-         The maximum number of IMFs to compute. (Default value = None)
+    sift_func : function
+        Sift function to apply
+    sift_args : dict
+        Dictionary of sift options to be passed into sift_func
 
     Returns
     -------
@@ -965,6 +963,54 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
         tmp = sift_func(IA[:, ii], **sift_args)
         imf2[:, ii, :tmp.shape[1]] = tmp
 
+    return imf2
+
+
+@sift_logger('mask_sift_second_layer')
+def mask_sift_second_layer(IA, mask_freqs, sift_args=None):
+    """
+    Compute second layer IMFs from the amplitude envelopes of a set of first
+    layer IMFs [1]_. A single set of masks is applied across all IMFs with the
+    highest frequency mask dropped for each successive first level IMF.
+
+    Parameters
+    ----------
+    IA : ndarray
+        Input array containing a set of first layer IMFs
+    mask_freqs : function
+        Sift function to apply
+    sift_args : dict
+        Dictionary of sift options to be passed into sift_func
+
+    Returns
+    -------
+    imf2 : ndarray
+        3D array [samples x first layer imfs x second layer imfs ] containing
+        the second layer IMFs
+
+    References
+    ----------
+    .. [1] Huang, N. E., Hu, K., Yang, A. C. C., Chang, H.-C., Jia, D., Liang,
+       W.-K., … Wu, Z. (2016). On Holo-Hilbert spectral analysis: a full
+       informational spectral representation for nonlinear and non-stationary
+       data. Philosophical Transactions of the Royal Society A: Mathematical,
+       Physical and Engineering Sciences, 374(2065), 20150206.
+       https://doi.org/10.1098/rsta.2015.0206
+
+    """
+    IA = ensure_2d([IA], ['IA'], 'sift_second_layer')
+
+    if (sift_args is None):
+        sift_args = {'max_imfs': IA.shape[1]}
+    elif ('max_imfs' not in sift_args):
+        sift_args['max_imfs'] = IA.shape[1]
+
+    imf2 = np.zeros((IA.shape[0], IA.shape[1], sift_args['max_imfs']))
+
+    for ii in range(IA.shape[1]):
+        sift_args['mask_freqs'] = mask_freqs[ii:]
+        tmp = mask_sift(IA[:, ii], **sift_args)
+        imf2[:, ii, :tmp.shape[1]] = tmp
     return imf2
 
 
