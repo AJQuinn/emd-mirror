@@ -199,9 +199,9 @@ plt.xticks([.1, .5, 1, 2, 4, 8, 16], [.1, .5, 1, 2, 4, 8, 16])
 
 #%%
 # The four panels of the figure show:
-# - top-left shows a segment of our original signal
-# - top-right shows the 1D Hilbert-Huang power spectrum
-# - bottom-left shows a segment of the 2D Hilbert-Huang transform
+# - top-center shows a segment of our original signal
+# - bottom-leftshows the 1D Hilbert-Huang power spectrum
+# - bottom-center shows a segment of the 2D Hilbert-Huang transform
 # - bottom-right shows the Holospectrum summed over the time dimension
 #
 # We can see prominent peaks at 5Hz and at 37Hz in the 1D Hilbert-Huang

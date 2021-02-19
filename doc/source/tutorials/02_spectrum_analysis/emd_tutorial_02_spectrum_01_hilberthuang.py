@@ -166,7 +166,7 @@ plt.legend(['IMF-1', 'IMF-2', 'IMF-3', 'IMF-4', 'IMF-5'])
 #%%
 # The frequency content of all IMFs are visible in the unweighted HHT. We can
 # see that each IMF contains successively slower dynamics and that the high
-# frequnecy IMFs tend to have wider frequency distributions.
+# frequency IMFs tend to have wider frequency distributions.
 #
 # All but IMF-3 are greatly reduced in the weighted HHT. This tells us that the
 # frequency content in the other IMFs occurred at relatively low power - as we

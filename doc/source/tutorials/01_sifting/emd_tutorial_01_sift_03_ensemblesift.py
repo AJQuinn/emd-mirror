@@ -72,7 +72,7 @@ emd.plotting.plot_imfs(imf, cmap=True, scale_y=True)
 
 #%%
 # One solution to these issues is to try and normalise the amount of noise
-# through a signal by adding a small amount of white noise to he signal before
+# through a signal by adding a small amount of white noise to the signal before
 # sifting. We do this many times, creating an ensemble of sift processes each
 # with a separate white noise added. The final set of IMFs is taken to be the
 # average across the whole ensemble.
@@ -165,7 +165,7 @@ plt.plot(imf[:, 1:].mean(axis=1))
 #
 # Next, we call ``emd.sift.ensemble_sift`` to run through a whole sift of our signal.
 #
-# Note that is is ofen a good idea to limit the total number of IMFs in an
+# Note that it is ofen a good idea to limit the total number of IMFs in an
 # ensemble_sift. If we allow the sift to compute all possible IMFs then there
 # is a chance that some processes in the ensemble might complete with one more
 # or one less IMF than the others - this will break the averaging so here, we

@@ -215,8 +215,9 @@ plt.legend(['All-cycles', 'Masked-cycles', 'Amp thresh'])
 
 #%%
 # We can include more complicated metrics in user-specified functions. Here we
-# compute the degree of non-linearity of each cycle as an indication of the
-# extent to which a cycle contains non-sinudoisal content.
+# compute the Degree of Non-linearity (DoN;
+# https://doi.org/10.1371/journal.pone.0168108) of each cycle as
+# an indication of the extent to which a cycle contains non-sinudoisal content.
 #
 # Note that the original DoN uses the zero-crossing frequency rather than
 # mean frequency as a normalising factor. These factors are highly
@@ -263,10 +264,10 @@ plt.legend(['All-cycles', 'Masked-cycles'])
 #^^^^^^^^^^^^^
 
 #%%
-# In this section, we will detect continuous chains of oscillations in the
-# data.  Sometimes we may want to restrict data analysis to oscillatory cycles
-# which occur only within continuous periods of osillation rather than single
-# cycles occurring in noise.
+# In this section, we will detect chains of oscillatory cycles in the data.
+# Sometimes we may want to restrict data analysis to oscillatory cycles which
+# occur only within continuous periods of osillation rather than single cycles
+# occurring in noise.
 #
 # ``emd.cycles.get_cycle_chain`` takes a set of cycle indices (from the output
 # of ``emd.cycles.get_cycle_inds`` and returns a list of continuous chains of

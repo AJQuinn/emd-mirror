@@ -204,7 +204,7 @@ plt.ylim(-1, 1)
 # 30Hz.
 #
 # The flexibility provided by masked sifting overcomes several issue with
-# convential sifting but this flexibility can also lead to problems. If you do
+# conventional sifting but this flexibility can also lead to problems. If you do
 # use a highly tuned set of masks for an analysis, we recommend careful
 # checking of the IMFs before proceeding to the main analysis. You should
 # ensure that the IMFs are well separated - the components should have low
