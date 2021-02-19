@@ -35,7 +35,7 @@ plt.plot(t[:sample_rate*4], x[:sample_rate*4], 'k')
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^
 # We next run a mask sift with the default parameters to isolate the 12Hz
 # oscillation. There is only one clear oscillatory signal in this simulation.
-# This is extracted in IMF-2 whilst the remaining IMFs contain low-amplitude
+# This is extracted in IMF-3 whilst the remaining IMFs contain low-amplitude
 # noise.
 
 # Run a mask sift
@@ -99,7 +99,7 @@ mask_cycles = emd.cycles.get_cycle_inds(IP, return_good=True, mask=mask)
 # for each cycle in turn.
 #
 # For instance, the following example computes the maximum instantaneous
-# amplitude for all detected cycles in IMF-2 and returns the result in the
+# amplitude for all detected cycles in IMF-3 and returns the result in the
 # full-vector format.
 
 cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], mode='full', func=np.max)
@@ -109,7 +109,7 @@ plt.figure(figsize=(10, 4))
 plt.plot(t[:sample_rate*4], imf[:sample_rate*4, 2], 'k')
 plt.plot(t[:sample_rate*4], IA[:sample_rate*4, 2], 'b')
 plt.plot(t[:sample_rate*4], cycle_amp[:sample_rate*4], 'r')
-plt.legend(['IMF-2', 'Instantaneous Amplitude', 'Cycle-max Amplitude'])
+plt.legend(['IMF-3', 'Instantaneous Amplitude', 'Cycle-max Amplitude'])
 
 #%%
 # We can see that the original IMF in black and its instantaneous amplitude in

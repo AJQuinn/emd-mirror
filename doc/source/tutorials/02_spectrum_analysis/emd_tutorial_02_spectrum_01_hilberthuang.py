@@ -66,7 +66,7 @@ IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
 # built-in ``hist`` function. We do this twice, once as a standard count and
 # once by weighting the observations by their amplitude.
 #
-# We will concentrate on IMF-2 from now as it contains our 12Hz oscillation.
+# We will concentrate on IMF-3 from now as it contains our 12Hz oscillation.
 
 plt.figure(figsize=(8, 4))
 

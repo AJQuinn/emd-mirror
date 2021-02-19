@@ -34,7 +34,7 @@ plt.plot(t[:sample_rate*3], x[:sample_rate*3], 'k')
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^
 # We next run a mask sift with the default parameters to isolate the 12Hz
 # oscillation. There is only one clear oscillatory signal in this simulation.
-# This is extracted in IMF-2 whilst the remaining IMFs contain low-amplitude
+# This is extracted in IMF-3 whilst the remaining IMFs contain low-amplitude
 # noise.
 
 # Run a mask sift
@@ -89,25 +89,25 @@ print('Input all_cycles shape is - {0}'.format(all_cycles.shape))
 
 # Firstly, cycles  are detected by looking for phase 'jumps' where the phase
 # resets between cycles.  The default threshold for a jump is 1.5*pi. Let's
-# take a look at this in IMF-2
+# take a look at this in IMF-3
 
 plt.figure(figsize=(8, 6))
 plt.subplots_adjust(hspace=0.3)
 plt.subplot(311)
 plt.plot(t[:sample_rate*2], imf[:sample_rate*2, 2])
 plt.gca().set_xticklabels([])
-plt.title('IMF-2')
+plt.title('IMF-3')
 plt.subplot(312)
 plt.plot(t[:sample_rate*2], IP[:sample_rate*2, 2])
-plt.title('IMF-2 Instantaneous Phase')
+plt.title('IMF-3 Instantaneous Phase')
 plt.ylabel('Radians')
 plt.gca().set_xticklabels([])
 plt.subplot(313)
 plt.plot(t[1:sample_rate*2], np.abs(np.diff(IP[:sample_rate*2, 2])))
 plt.plot((0, 2), (1.5*np.pi, 1.5*np.pi), 'k:')
 plt.xlabel('Time (seconds)')
-plt.title('IMF-2 Instantaneous Phase Abs-Differential')
-plt.legend(['IMF-2 IP Differential', 'Jump threshold'], loc='upper right')
+plt.title('IMF-3 Instantaneous Phase Abs-Differential')
+plt.legend(['IMF-3 IP Differential', 'Jump threshold'], loc='upper right')
 
 #%%
 # We can see that the large phase jumps occur at the ascending zero-crossing of
@@ -130,7 +130,7 @@ plt.legend(['IMF-2 IP Differential', 'Jump threshold'], loc='upper right')
 # 3. A phase ending within phase_step of 2pi the highest value of IP must be between 2pi and 2pi-phase_step
 # 4. A set of 4 unique control points (ascending zero, peak, descending zero & trough)
 #
-# Lets take a look at these checks in IMF-2. Firstly, we run test 1:
+# Lets take a look at these checks in IMF-3. Firstly, we run test 1:
 
 # We use the unwrapped phased so we don't have to worry about jumps between cycles
 unwrapped_phase = np.diff(np.unwrap(IP[:sample_rate*2, 2]))
@@ -139,14 +139,14 @@ unwrapped_phase = np.diff(np.unwrap(IP[:sample_rate*2, 2]))
 plt.figure(figsize=(8, 4))
 plt.subplot(211)
 plt.plot(t[:sample_rate*2], IP[:sample_rate*2, 2])
-plt.legend(['IMF-2 Instantaneous Phase'])
+plt.legend(['IMF-3 Instantaneous Phase'])
 plt.ylabel('Radians')
 plt.title('Test-1: Check phase is strictly increasing')
 plt.subplot(212)
 plt.plot(t[1:sample_rate*2], unwrapped_phase)
 plt.plot((0, 2), (0, 0), 'k:')
 plt.ylim(-.2, .4)
-plt.legend(['IMF-2 Instantaneous Phase Differential'])
+plt.legend(['IMF-3 Instantaneous Phase Differential'])
 
 #%%
 # We can see that the instantaneous phase of most cycles is positive throughout
@@ -227,7 +227,7 @@ plt.subplots_adjust(hspace=.3)
 plt.subplot(311)
 plt.plot(t[:sample_rate*4], imf[:sample_rate*4, 2], 'k')
 plt.gca().set_xticklabels([])
-plt.title('IMF-2')
+plt.title('IMF-3')
 plt.subplot(312)
 plt.plot(t[:sample_rate*4], IP[:sample_rate*4, 2], 'b')
 plt.gca().set_xticklabels([])
@@ -264,18 +264,18 @@ for ii in range(all_cycles.shape[1]):
                                                                                   percent))
 
 #%%
-# IMF-2 contains our simulated oscillation with a spectral peak around 12Hz.
+# IMF-3 contains our simulated oscillation with a spectral peak around 12Hz.
 # As we would expect, the cycle detection finds around 120-130 cycles in this
 # 10 second segment. Most of these cycles (94.4%) pass our cycle-quality checks
 # indicating that they have well behaved instantaneous phase profiles that can
 # be interpreted in detail.
 #
-# The lower frequency cycles (IMF 3+) have fewer and fewer cycles reflecting
+# The lower frequency cycles (IMF 4+) have fewer and fewer cycles reflecting
 # their slowing frequency content (each successive IMF extracts slower dynamics
 # than the previous one). Again, most of these cycles pass the quality checks
 # on their instantaneous phase.
 # However, we also see that the the
-# higher frequency IMFs  0 and 1 seem to contain fewer cycles than IMF-2. We
+# higher frequency IMFs  0 and 1 seem to contain fewer cycles than IMF-3. We
 # would expect these IMFs to capture faster dynamics with more cycles in each
 # IMF - so why are there fewer here?
 #
@@ -308,7 +308,7 @@ plt.xlabel('Time (seconds)')
 
 #%%
 # The oscillations here are much faster than in IMF2. We only have a handful of
-# samples for each potential cycle in IMF-1 compared to ~40 for IMF-2. As such,
+# samples for each potential cycle in IMF-1 compared to ~40 for IMF-3. As such,
 # more cycles are showing distortions and failing the quality checks. In this
 # case it is ok as there is no signal in IMF-1 in our simulation. Much of IMF-1
 # is noisy for this sift. We could potentially improve this by changing the
