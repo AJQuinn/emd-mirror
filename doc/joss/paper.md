@@ -145,7 +145,7 @@ of practical
 [tutorials](https://emd.readthedocs.io/en/latest/emd_tutorials/index.html).
 Finally, users wishing to submit bug reports or merge-requests are able to do
 so on our gitlab page following our [contribution
-guidelines](https://emd.readthedocs.io/en/latest/contributing.html).
+guidelines](https://emd.readthedocs.io/en/latest/contribute.html).
 
 ![A simulated signal with an oscillatory component (black line - top panel) with a set of intrinsic mode functions estimated using a mask sift EMD (coloured lines - lower panels)](figures/emd_joss_example1_sift.png)
 
