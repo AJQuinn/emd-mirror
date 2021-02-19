@@ -21,6 +21,7 @@ Routines:
 import re
 import logging
 import numpy as np
+from functools import partial
 from scipy import interpolate as interp
 from scipy import spatial
 
@@ -394,35 +395,28 @@ def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
     """
     # Preamble
     logger.info('STARTED: get cycle stats')
-    out = ensure_vector([cycles, values], ['cycles', 'values'], 'get_cycle_stat')
-    cycles, values = out
-    ensure_equal_dims([cycles, values], ['cycles', 'values'], 'get_cycle_stat')
+    cycles = _ensure_cycle_inputs(cycles)
+    values = ensure_vector([values], ['values'], 'get_cycle_stat')
 
-    logger.debug('computing stats for {0} cycles over {1} samples'.format(cycles.max(), cycles.shape[0]))
+    if cycles.nsamples != values.shape[0]:
+        raise ValueError("Mismatched inputs between 'cycles' and 'values'")
+
+    logger.debug('computing stats for {0} cycles over {1} samples'.format(cycles.ncycles, values.shape[0]))
     logger.debug('computing metric {0} and returning {1}-array'.format(func, mode))
 
     # Main Body
 
     if mode == 'compressed':
-        out = np.zeros((cycles.max() + 1, )) * np.nan
+        out = np.zeros((cycles.ncycles, )) * np.nan
     elif mode == 'full':
         out = np.zeros_like(values) * np.nan
 
-    for cind in range(0, cycles.max() + 1):
-        stat = func(values[cycles == cind])
-
+    for cind, cycle_inds in cycles:
+        stat = func(values[cycle_inds])
         if mode == 'compressed':
             out[cind] = stat
         elif mode == 'full':
-            out[cycles == cind] = stat
-
-    # Currently including the first value as the stat for 'non-cycles' in
-    # compressed mode for backwards compatibility with earlier work, might be
-    # confusing overall - should probably rethink this whether this makes any
-    # sense
-    if mode == 'compressed':
-        #out[0] = func(values[cycles == 0])[1:]
-        out = out
+            out[cycle_inds] = stat
 
     logger.info('COMPLETED: get cycle stats')
     return out
@@ -463,7 +457,7 @@ def get_chain_stat(chains, var, func=np.mean):
     return stat
 
 
-def get_control_points(x, good_cycles):
+def get_control_points(x, cycles):
     """Identify sets of control points from identified cycles.
 
     The control points are the ascending zero, peak, descending zero & trough.
@@ -482,18 +476,17 @@ def get_control_points(x, good_cycles):
 
     """
     # Preamble
-    x, good_cycles = ensure_vector((x, good_cycles),
-                                   ('x', 'good_cycles'),
-                                   'get_control_points')
-    ensure_equal_dims((x, good_cycles),
-                      ('x', 'good_cycles'),
-                      'get_control_points')
+    x = ensure_vector([x], ['x'], 'get_control_points')
+    cycles = _ensure_cycle_inputs(cycles)
+
+    if cycles.nsamples != x.shape[0]:
+        raise ValueError("Mismatched inputs between 'cycles' and 'values'")
 
     # Main Body
 
     ctrl = list()
-    for ii in range(good_cycles.max() + 1):
-        cycle = x[good_cycles == ii]
+    for cind, cycle_inds in cycles:
+        cycle = x[cycle_inds]
 
         # Peak
         pk = sift._find_extrema(cycle, parabolic_extrema=interp)[0]
@@ -787,16 +780,94 @@ def _unique_inds(ar):
     return ar[mask], ar_inds
 
 
-def is_good(phase, waveform=None, ret_all_checks=False, phase_edge=np.pi/12):
+# ------------------------------------------------
+
+def _ensure_cycle_inputs(cycles):
+    """Take a variable and return a valid iterable cycles class if possible"""
+    if isinstance(cycles, np.ndarray):
+        cycles = ensure_vector([cycles], ['cycles'], '_check_cycle_inputs')
+        return IterateCycles(cycles)
+    elif isinstance(cycles, Cycles):
+        return cycles
+    elif isinstance(cycles, IterateCycles):
+        return cycles
+    elif isinstance(cycles, IterateCyclesFromPhase):
+        return cycles
+    else:
+        raise ValueError("'cycles' input not recognised, must be either a cycle-vector or Cycles class")
+
+
+class IterateCycles:
+    """
+    Iterate through pre-defined set of cycles
+    """
+    def __init__(self, cycles):
+        # Preamble
+        self.cycles = ensure_vector([cycles], ['cycles'], 'cycle_generator')
+        self.ncycles = self.cycles.max() + 1
+        self.nsamples = cycles.shape[0]
+
+    def __iter__(self):
+        for ii in range(self.ncycles):
+            yield ii, np.where(self.cycles == ii)[0]
+
+
+class IterateCyclesFromPhase:
+    """
+    Find and iterate through all cycles based on phase.
+    """
+    def __init__(self, phase, phase_step=1.5 * np.pi,
+                 phase_edge=np.pi / 12, mode='cycle'):
+        # Preamble
+        self.phase = ensure_1d_with_singleton([phase], ['phase'], 'cycle_generator')
+        self.mode = mode
+
+        # Main body
+        if self.phase.max() > 2 * np.pi:
+            self.phase = utils.wrap_phase(self.phase)
+
+        self.inds = np.where(np.abs(np.diff(self.phase[:, 0])) > phase_step)[0] + 1
+        self.ncycles = len(self.inds) + 1
+        self.nsamples = self.phase.shape[0]
+
+    def __iter__(self):
+        for jj in range(-1, len(self.inds)):
+            if jj == -1:
+                # First cycle is normally a stump
+                yield np.arange(0, self.inds[0])
+            elif jj == len(self.inds) - 1:
+                yield np.arange(self.inds[jj], len(self.phase))
+            elif self.mode == 'cycle':
+                yield np.arange(self.inds[jj], self.inds[jj + 1])
+            elif self.mode == 'augmented_cycle':
+                if jj == 0:
+                    start = np.where(self.phase[0:self.inds[jj]] > 1.5 * np.pi)[0][0]
+                    idx = 0 + start
+                else:
+                    start = np.where(self.phase[self.inds[jj-1]:self.inds[jj]] > 1.5*np.pi)[0][0]
+                    idx = self.inds[jj-1] + start
+                yield np.arange(idx, self.inds[jj+1])
+
+
+# ------------------------------------------------
+
+
+def is_good(phase, waveform=None, ret_all_checks=False, phase_edge=np.pi/12, mode='cycle'):
 
     cycle_checks = np.zeros((4,), dtype=bool)
 
+    if mode == 'augmented':
+        phase = np.unwrap(phase) - 2*np.pi
+        phase_min = -np.pi/2
+    else:
+        phase_min = 0
+
     # Check for postively increasing phase
-    if all(np.diff(phase) > 0):
+    if np.all(np.diff(phase) > 0):
         cycle_checks[0] = True
 
     # Check that start of cycle is close to 0
-    if (phase[0] >= 0 and phase[0] <= phase_edge):
+    if (phase[0] >= phase_min and phase[0] <= phase_min + phase_edge):
         cycle_checks[1] = True
 
     # Check that end of cycle is close to pi
@@ -885,16 +956,56 @@ class Cycles:
     _map_cycles_to_samples can map between the two.
     """
 
-    def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12, compute_timings=False):
-        IP = ensure_1d_with_singleton([IP], ['IP'], 'Cycles')
+    def __init__(self, IP,
+                 phase_step=1.5 * np.pi, phase_edge=np.pi / 12,
+                 compute_timings=False, mode='cycle'):
 
-        self._all_cycles = get_cycle_inds(IP, return_good=False, phase_step=phase_step, phase_edge=phase_edge)
+        if mode not in ['cycle', 'augmented']:
+            raise ValueError("mode '{0}' not recognised".format(mode))
+
+        self.phase = ensure_1d_with_singleton([IP], ['IP'], 'Cycles')
+
+        self.cycle_starts = np.where(np.abs(np.diff(self.phase[:, 0])) > phase_step)[0] + 1
+
+        self._all_cycles = get_cycle_inds(self.phase, return_good=False, phase_step=phase_step, phase_edge=phase_edge)
+        self.ncycles = self._all_cycles.max()
+        self.nsamples = IP.shape[0]
+        self.mode = mode
 
         self._metrics = dict()
-        self.add_cycle_stat('is_good', IP, is_good)
+        if self.mode == 'cycle':
+            self.add_cycle_stat('is_good', self.phase, is_good)
+        elif self.mode == 'augmented':
+            is_good_aug = partial(is_good, mode='augmented')
+            self.add_cycle_stat('is_good', self.phase, is_good_aug)
 
         if compute_timings:
             self.compute_timing_metrics()
+
+    def _get_cycle(self, ii):
+        if self.mode == 'cycle':
+            return np.where(self._all_cycles == ii)[0]
+        elif self.mode == 'augmented':
+            if ii == 0:
+                # We don't have a previous cycle to use, return normal
+                return np.where(self._all_cycles == ii)[0]
+            else:
+                prev = np.where(self._all_cycles == ii-1)[0]
+                trough_in_prev = prev[np.where(self.phase[prev] > 1.5*np.pi)[0][0]]
+                stop = np.where(self._all_cycles == ii)[0][-1] + 1
+                return np.arange(trough_in_prev, stop)
+
+    def __iter__(self):
+        for ii in range(self.ncycles):
+            yield ii, self._get_cycle(ii)
+
+    def iter_subset(self, conditions=None):
+        indx = self.get_cycle_index(conditions)
+        for ii in range(self.ncycles):
+            if indx[ii] == True:  # noqa: E712
+                yield ii, self._get_cycle(ii)
+            else:
+                continue
 
     @classmethod
     def load(cls, cycle_vect, metrics_dataframe):
@@ -956,8 +1067,8 @@ class Cycles:
         d = pd.DataFrame.from_dict(self._metrics)
 
         if conditions is not None:
-            inds = self.get_cycle_index(conditions).astype(float)
-            d = d.drop(np.where(inds == 0)[0])
+            inds = self.get_cycle_index(conditions)
+            d = d.drop(np.where(inds)[0])
             d = d.reset_index()
 
         return d
@@ -967,7 +1078,7 @@ class Cycles:
         Compute a statistic for all cycles and store the result in the Cycle
         object for later use.
         """
-        vals = get_cycle_stat(self._all_cycles, X,
+        vals = get_cycle_stat(self, X,
                               mode='compressed',
                               func=func)
 
@@ -978,10 +1089,12 @@ class Cycles:
 
     def add_cycle_metric(self, name, metric):
         """
-        Store a precomuted metric for all cycle
+        Store a precomputed metric for all cycle
         """
         if len(metric) != len(self._metrics['is_good']):
-            raise ValueError
+            raise ValueError("Input '{0}' ({1}) doesn't match cycles ({2})".format(name,
+                                                                                   len(metric),
+                                                                                   len(self._metrics['is_good'])))
         else:
             self._metrics[name] = metric
 
