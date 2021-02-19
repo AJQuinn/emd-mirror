@@ -147,7 +147,7 @@ print(C._metrics['duration'])
 #
 # Let's compute and store the time of the peak and trough in each cycle in milliseconds.
 
-ctrl = emd.cycles.get_control_points(imf[:, 2], C.get_cycle_vector())
+ctrl = emd.cycles.get_control_points(imf[:, 2], C)
 
 peak_time_ms = ctrl[:, 1]/sample_rate * 1000
 trough_time_ms = ctrl[:, 3]/sample_rate * 1000
@@ -206,7 +206,7 @@ big_long_good_cycle_metrics = C.get_metric_dataframe(['max_amp>1.25', 'duration>
 print(big_long_good_cycle_metrics)
 
 #%%
-# Or both and cycle vector and summary data frame can be extracted togther
+# Or both and cycle vector and summary data frame can be extracted together
 # using `Cycles.get_subset`.
 
 cycle_vect, cycle_df = C.get_subset(['max_amp>1.25', 'duration>40', 'is_good==1'])
@@ -229,7 +229,7 @@ cycle_vect, cycle_df = C.get_subset(['max_amp>1', 'duration>30', 'is_good==1'])
 cycle_chains = emd.cycles.get_cycle_chain(cycle_vect)
 
 #%%
-# Next we compute the maxumum amplitude and duration of each chain.
+# Next we compute the maximum amplitude and duration of each chain.
 
 chain_amp = emd.cycles.get_chain_stat(cycle_chains, cycle_df['max_amp'], np.max)
 chain_len = emd.cycles.get_chain_stat(cycle_chains, cycle_df['max_amp'], len)
