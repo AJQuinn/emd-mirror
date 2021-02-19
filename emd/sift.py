@@ -1377,6 +1377,20 @@ class SiftConfig(collections.abc.MutableMapping):
     def __repr__(self):
         return "<{0} ({1})>".format(self.__module__ + '.' + type(self).__name__, self.sift_type)
 
+    def _repr_html_(self):
+        _str_html = "<h3><b>%s %s</b></h3><hr><ul>" % (self.sift_type, self.__class__)
+        lower_level = ['imf_opts', 'envelope_opts', 'extrema_opts']
+        for stage in self.store.keys():
+            if stage not in lower_level:
+                _str_html += '<li><b>{0}</b> : {1}</li>'.format(stage, self.store[stage])
+            else:
+                outer_list = '<li><b>{0}</b></li>%s'.format(stage)
+                inner_list = '<ul>'
+                for key in self.store[stage].keys():
+                    inner_list += '<li><i>{0}</i> : {1}</li>'.format(key, self.store[stage][key])
+                _str_html += outer_list % (inner_list + '</ul>')
+        return _str_html + '</ul>'
+
     def __len__(self):
         return len(self.store)
 
