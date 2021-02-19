@@ -85,7 +85,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
     out_dims = list((nbins, *x.shape[1:]))
     avg = np.zeros(out_dims) * np.nan
     var = np.zeros(out_dims) * np.nan
-    for ii in range(1, nbins):
+    for ii in range(1, nbins+1):
         inds = bin_inds == ii
         if weights is None:
             avg[ii - 1, ...] = np.average(x[inds, ...], axis=0)
