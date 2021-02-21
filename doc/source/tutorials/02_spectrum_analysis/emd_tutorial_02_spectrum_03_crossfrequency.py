@@ -17,7 +17,7 @@ three signals with varying phase-amplitude coupling profiles.
 # First of all, we import EMD alongside numpy and matplotlib. We will also use
 # scipy's ndimage module to smooth our results for visualisation later.
 
-# sphinx_gallery_thumbnail_number = 5
+# sphinx_gallery_thumbnail_number = 8
 
 import matplotlib.pyplot as plt
 import numpy as np
