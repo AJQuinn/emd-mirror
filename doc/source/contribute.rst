@@ -36,15 +36,15 @@ See below for detailed descriptions of the contribution process in a couple of d
 Create a merge-request....
 **************************
 
-.. container:: toggle
+.. container:: toggle body
 
-    .. container:: header
+    .. container:: header body
 
         .. raw:: html
 
             <h3 class='installbar'>... from an issue ticket</h3>
 
-    .. container:: installbody
+    .. container:: installbody body
 
         This section outlines how to contribute to by the issue-tracker on gitlab.com/emd-dev/emd. This is the best method to use if the changes will be made with contributions from several people.
 
@@ -60,15 +60,15 @@ Create a merge-request....
         7. The developer can then approve the merge request and the changes will be accepted into the main EMD branch.
 
 
-.. container:: toggle
+.. container:: toggle body
 
-    .. container:: header
+    .. container:: header body
 
         .. raw:: html
 
             <h3 class='installbar'>... from a fork of EMD</h3>
 
-    .. container:: installbody
+    .. container:: installbody body
 
         This section outlines how to contribute to EMD from your own fork of the repository. This might be the simplest method if you would like to configure the gitlab.com environment and/or keep any changes private during development.
 
