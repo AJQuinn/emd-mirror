@@ -18,14 +18,14 @@
     display: flex;
     clear: both;
     background: #E6E6FA;
-    width: 60%;
     float: left;
-    margin: 25px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    padding: 0px;
 }
 
 .installbody {
     float: left;
-    width: 80%;
 }
 
 .toggle .header:before{

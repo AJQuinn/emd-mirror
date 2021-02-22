@@ -8,17 +8,17 @@ on how you want to use the code.
 Stable PyPI version
 *******************
 
-This version of the code is stable and will be updated relatively slowly. Any updates to PyPI will (hopefully) only contain working changes that have been running without problems on the development versions of the code for a while.
+The `stable version of the code <https://pypi.org/project/emd/>`_ is hosted on `PyPI <https://pypi.org>`_ and will be updated relatively slowly. Any updates to PyPI will (hopefully) only contain working changes that have been running without problems on the development versions of the code for a while.
 
-.. container:: toggle
+.. container:: toggle body
 
-    .. container:: header
+    .. container:: header body
 
         .. raw:: html
 
             <h3 class='installbar'>install from pip</h3>
 
-    .. container:: installbody
+    .. container:: installbody body
 
         EMD can be install from `PyPI <https://pypi.org/project/emd/>`_ using pip::
 
@@ -29,15 +29,15 @@ This version of the code is stable and will be updated relatively slowly. Any up
             pip install emd==0.3.3
 
 
-.. container:: toggle
+.. container:: toggle body
 
-    .. container:: header
+    .. container:: header body
 
         .. raw:: html
 
             <h3 class='installbar'>install in conda environment</h3>
 
-    .. container:: installbody
+    .. container:: installbody body
 
         If you want to create a conda environment containing EMD, you can use the following yaml config::
 
@@ -73,21 +73,22 @@ This version of the code is stable and will be updated relatively slowly. Any up
 Development gitlab.com version
 ******************************
 
-You can also install the latest development version of EMD on gitlab using a
-conda environment. This version is less stable and likely to change quickly
-during active development - however you will get access to new bug-fixes,
-features and bugs more quickly.
+You can also install the `latest development version of EMD
+<https://gitlab.com/emd-dev/emd>`_ from gitlab.com using a conda environment.
+This version is less stable and likely to change quickly during active
+development - however you will get access to new bug-fixes, features and bugs
+more quickly.
 
 
-.. container:: toggle
+.. container:: toggle body
 
-    .. container:: header
+    .. container:: header body
 
         .. raw:: html
 
             <h3 class='installbar'>install in conda environment</h3>
 
-    .. container:: installbody
+    .. container:: installbody body
 
         A conda environment config file can be specified pointing at the development version of EMD on gitlab::
 
@@ -108,15 +109,15 @@ features and bugs more quickly.
             source activate emd-dev
 
 
-.. container:: toggle
+.. container:: toggle body
 
-    .. container:: header
+    .. container:: header body
 
         .. raw:: html
 
             <h3 class='installbar'>install development branch in conda environment</h3>
 
-    .. container:: installbody
+    .. container:: installbody body
 
         A conda environment config file can be specified pointing at the development version of EMD on gitlab. A specific branch can be indicated by adding the branch name after an @ sign in the line specifying the git repo. Here is an example which installs a branch called 'new_feature'::
 
@@ -127,7 +128,7 @@ features and bugs more quickly.
                - pip:
                  - git+https://gitlab.com/emd-dev/emd.git@new_feature
 
-        An example env can be downloaded `HERE (emd-dev_conda_env.yml) <https://gitlab.com/emd-dev/emd/-/blob/master/envs/emd-dev_conda_env.yml>`_. You can download the config and add the branch name to the right line. Finally, you can install the enviromnent by changing directory to the install location and calling these commands::
+        We provide `an example env here (emd-dev_conda_env.yml) <https://gitlab.com/emd-dev/emd/-/blob/master/envs/emd-dev_conda_env.yml>`_. You can download the config and add the branch name to the right line. Finally, you can install the enviromnent by changing directory to the install location and calling these commands::
 
             curl https://gitlab.com/emd-dev/emd/-/raw/master/envs/emd-dev_conda_env.yml > emd-dev_conda_env.yml
             conda env create -f emd-dev_conda_env.yml
@@ -136,15 +137,15 @@ features and bugs more quickly.
 
             source activate emd-dev
 
-.. container:: toggle
+.. container:: toggle body
 
-    .. container:: header
+    .. container:: header body
 
         .. raw:: html
 
             <h3 class='installbar'>install from source code</h3>
 
-    .. container:: installbody
+    .. container:: installbody body
 
         If you plan to actively contribute to EMD, you will need to install EMD directly from source using git. From the terminal, change into the directory you want to install emd into and run the following command::
 
