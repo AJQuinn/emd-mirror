@@ -8,3 +8,34 @@
 .function{ background-color: #f7f5fa; padding: 15px; border-radius: 20px }
 .sig-name { padding: 0px}
 .sig-prename { padding: 0px}
+
+
+.installbar {
+    margin: 11px;
+}
+
+.toggle .header {
+    display: flex;
+    clear: both;
+    background: #E6E6FA;
+    width: 60%;
+    float: left;
+    margin: 25px;
+}
+
+.installbody {
+    float: left;
+    width: 80%;
+}
+
+.toggle .header:before{
+    content: " +     ";
+    margin: 12px;
+    font-size: 20px;
+}
+
+.toggle .header.open:before{
+    content: " -     ";
+    margin: 12px;
+    font-size: 20px;
+}
