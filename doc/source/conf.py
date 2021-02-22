@@ -121,7 +121,7 @@ html_static_path = ['_static']
 
 # Sidebars for tutorial pages only
 html_sidebars = {'emd_tutorials/*/emd_tutorial*': ['localtoc.html'],
-                 'reference*': ['localtoc.html']}
+                 'api*': ['localtoc.html']}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
@@ -239,7 +239,7 @@ html_theme_options = {
     'navbar_links': [
         ("Install", "install"),
         ("Tutorials", "emd_tutorials/index"),
-        ("Reference", "reference"),
+        ("API", "api"),
         ("Contribute", "contribute"),
         ("Changes", "changelog"),
         ("GitLab", "https://gitlab.com/emd-dev/emd", True)
