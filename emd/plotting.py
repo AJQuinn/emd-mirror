@@ -81,6 +81,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
 
 def plot_hilberthuang(hht, time_vect, freq_vect,
                       time_lims=None, freq_lims=None, log_y=False,
+                      vmin=0,  vmax=None,
                       fig=None, ax=None, cmap='hot_r'):
     """
     Create a quick summary plot for a Hilbert-Huang Transform
@@ -130,13 +131,18 @@ def plot_hilberthuang(hht, time_vect, freq_vect,
         finds = np.logical_and(freq_vect >= freq_lims[0], freq_vect <= freq_lims[1])
     else:
         finds = np.ones_like(freq_vect).astype(bool)
+        freq_lims = (freq_vect[0], freq_vect[-1])
 
     # Make space for colourbar
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
 
+    if vmax is None:
+        vmax = np.max(hht[np.ix_(finds, tinds)])
+
     # Make main plot
-    pcm = ax.pcolormesh(time_vect[tinds], freq_vect[finds], hht[np.ix_(finds, tinds)], cmap=cmap, shading='nearest')
+    pcm = ax.pcolormesh(time_vect[tinds], freq_vect[finds], hht[np.ix_(finds, tinds)],
+                        vmin=vmin, vmax=vmax, cmap=cmap, shading='nearest')
 
     # Set labels
     ax.set_xlabel('Time')
@@ -156,7 +162,9 @@ def plot_hilberthuang(hht, time_vect, freq_vect,
 
 
 def plot_holospectrum(holo, freq_vect, am_freq_vect,
-                      freq_lims=None, am_freq_lims=None, log_x=False, log_y=False,
+                      freq_lims=None, am_freq_lims=None,
+                      log_x=False, log_y=False,
+                      vmin=0, vmax=None,
                       fig=None, ax=None, cmap='hot_r', mask=True):
     """
     Create a quick summary plot for a Holospectrum.
@@ -230,9 +238,12 @@ def plot_holospectrum(holo, freq_vect, am_freq_vect,
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
 
+    if vmax is None:
+        vmax = np.max(plot_holo[np.ix_(am_finds, finds)])
+
     # Make main plot
     pcm = ax.pcolormesh(am_freq_vect[am_finds], freq_vect[finds], plot_holo[np.ix_(am_finds, finds)].T,
-                        cmap=cmap, shading='nearest')
+                        cmap=cmap, vmin=vmin, vmax=vmax, shading='nearest')
 
     # Set labels
     ax.set_xlabel('Amplitude Modulation Frequency')
