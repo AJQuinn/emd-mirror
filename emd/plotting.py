@@ -5,6 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Colormap
+from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
@@ -79,7 +80,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
 
 
 def plot_hilberthuang(hht, time_vect, freq_vect,
-                      time_lims=None, freq_lims=None,
+                      time_lims=None, freq_lims=None, log_y=False,
                       fig=None, ax=None, cmap='hot_r'):
     """
     Create a quick summary plot for a Hilbert-Huang Transform
@@ -120,13 +121,13 @@ def plot_hilberthuang(hht, time_vect, freq_vect,
 
     # Get time indices
     if time_lims is not None:
-        tinds = np.logical_and(time_vect > time_lims[0], time_vect < time_lims[1])
+        tinds = np.logical_and(time_vect >= time_lims[0], time_vect <= time_lims[1])
     else:
         tinds = np.ones_like(time_vect).astype(bool)
 
     # Get frequency indices
     if freq_lims is not None:
-        finds = np.logical_and(freq_vect > freq_lims[0], freq_vect < freq_lims[1])
+        finds = np.logical_and(freq_vect >= freq_lims[0], freq_vect <= freq_lims[1])
     else:
         finds = np.ones_like(freq_vect).astype(bool)
 
@@ -135,12 +136,18 @@ def plot_hilberthuang(hht, time_vect, freq_vect,
     cax = divider.append_axes('right', size='5%', pad=0.05)
 
     # Make main plot
-    pcm = ax.pcolormesh(time_vect[tinds], freq_vect[finds], hht[np.ix_(finds, tinds)], cmap=cmap, shading='auto')
+    pcm = ax.pcolormesh(time_vect[tinds], freq_vect[finds], hht[np.ix_(finds, tinds)], cmap=cmap, shading='nearest')
 
     # Set labels
     ax.set_xlabel('Time')
     ax.set_ylabel('Frequency')
     ax.set_title('Hilbert-Huang Transform')
+
+    # Scale axes if requestedd
+    if log_y:
+        ax.set_yscale('log')
+        ax.set_yticks((_get_log_tickpos(freq_lims[0], freq_lims[1])))
+        ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
 
     # Add colourbar
     plt.colorbar(pcm, cax=cax, orientation='vertical')
@@ -225,7 +232,7 @@ def plot_holospectrum(holo, freq_vect, am_freq_vect,
 
     # Make main plot
     pcm = ax.pcolormesh(am_freq_vect[am_finds], freq_vect[finds], plot_holo[np.ix_(am_finds, finds)].T,
-                        cmap=cmap, shading='auto')
+                        cmap=cmap, shading='nearest')
 
     # Set labels
     ax.set_xlabel('Amplitude Modulation Frequency')
@@ -235,11 +242,54 @@ def plot_holospectrum(holo, freq_vect, am_freq_vect,
     # Scale axes if requestedd
     if log_y:
         ax.set_yscale('log')
+        ax.set_yticks((_get_log_tickpos(freq_lims[0], freq_lims[1])))
+        ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
 
     if log_x:
         ax.set_xscale('log')
+        ax.set_xticks((_get_log_tickpos(am_freq_lims[0], am_freq_lims[1])))
+        ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
 
     # Add colourbar
     plt.colorbar(pcm, cax=cax, orientation='vertical')
 
     return ax
+
+
+def _get_log_tickpos(lo, hi, tick_rate=5, round_vals=True):
+    """
+    Helper function for setting tick positions on log-scales
+
+    Parameters
+    ----------
+    lo : float
+        Low end of frequency range
+    hi : float
+        High end of frequency range
+    tick_rate : int
+        Number of ticks per order-of-magnitude
+    round_vals : bool
+        Flag indicating whether ticks should be rounded to first non-zero value.
+
+    Returns
+    -------
+    ndarray
+        Vector of tick positions
+
+    """
+
+    lo_oom = np.floor(np.log10(lo)).astype(int)
+    hi_oom = np.ceil(np.log10(hi)).astype(int) + 1
+    ticks = []
+    log_tick_pos_inds = np.round(np.logspace(1, 2, tick_rate)).astype(int) - 1
+    for ii in range(lo_oom, hi_oom):
+        tks = np.linspace(10**ii, 10**(ii+1), 100)[log_tick_pos_inds]
+        if round_vals:
+            ticks.append(np.round(tks / 10**ii)*10**ii)
+        else:
+            ticks.append(tks)
+        #ticks.append(np.logspace(ii, ii+1, tick_rate))
+
+    ticks = np.unique(np.r_[ticks])
+    inds = np.logical_and(ticks > lo, ticks < hi)
+    return ticks[inds]
