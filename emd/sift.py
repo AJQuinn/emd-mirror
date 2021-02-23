@@ -344,7 +344,7 @@ def fixed_stop(niters, max_iters):
     niters : int
         Number of sift iterations currently completed
     max_iters : int
-        Maxiumum number of sift iterations to be completed
+        Maximum number of sift iterations to be completed
 
     Returns
     -------

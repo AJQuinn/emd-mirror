@@ -2,6 +2,14 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Routines used for generating examples.
+
+Routines:
+  abreu
+
+"""
+
 import numpy as np
 
 from . import utils, sift, spectra
@@ -9,7 +17,7 @@ from . import utils, sift, spectra
 
 def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi / 4,
           seconds=10, freq=1, sample_rate=1000, noise=0):
-    """
+    """Generate an example analysis of an Abreu2010 type wave [1]_.
 
     Parameters
     ----------
@@ -28,10 +36,24 @@ def abreu(nonlinearity_deg=.3, nonlinearity_phi=-np.pi / 4,
 
     Returns
     -------
+    ndarray
+        Set of IMFs
+    ndarray
+        Time vector
+    narray
+        Set of instantaneous phases
+    narray
+        Set of instantaneous frequencies
+    narray
+        Set of instantaneous amplitudes
 
+    References
+    ----------
+    .. [1] Abreu, T., Silva, P. A., Sancho, F., & Temperville, A. (2010).
+    Analytical approximate wave form for asymmetric waves. Coastal Engineering,
+    57(7), 656–667. https://doi.org/10.1016/j.coastaleng.2010.02.005
 
     """
-
     num_samples = sample_rate * seconds
 
     time_vect = np.linspace(0, seconds, num_samples)

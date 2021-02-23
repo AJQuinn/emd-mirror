@@ -2,6 +2,19 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Routines for plotting results of EMD analyses.
+
+Main Routines:
+  plot_imfs
+  plot_hilberthuang
+  plot_holospectrum
+
+Utilities:
+  _get_log_tickpos
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Colormap
@@ -10,8 +23,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=None):
-    """
-    Create a quick summary plot for a set of IMFs.
+    """Create a quick summary plot for a set of IMFs.
 
     Parameters
     ----------
@@ -30,7 +42,6 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
         be passed in.
 
     """
-
     nplots = imfs.shape[1] + 1
     if time_vect is None:
         time_vect = np.arange(imfs.shape[0])
@@ -83,8 +94,7 @@ def plot_hilberthuang(hht, time_vect, freq_vect,
                       time_lims=None, freq_lims=None, log_y=False,
                       vmin=0,  vmax=None,
                       fig=None, ax=None, cmap='hot_r'):
-    """
-    Create a quick summary plot for a Hilbert-Huang Transform
+    """Create a quick summary plot for a Hilbert-Huang Transform.
 
     Parameters
     ----------
@@ -111,7 +121,6 @@ def plot_hilberthuang(hht, time_vect, freq_vect,
         Handle of plot axis
 
     """
-
     # Make figure if no fig or axis are passed
     if (fig is None) and (ax is None):
         fig = plt.figure()
@@ -166,8 +175,7 @@ def plot_holospectrum(holo, freq_vect, am_freq_vect,
                       log_x=False, log_y=False,
                       vmin=0, vmax=None,
                       fig=None, ax=None, cmap='hot_r', mask=True):
-    """
-    Create a quick summary plot for a Holospectrum.
+    """Create a quick summary plot for a Holospectrum.
 
     Parameters
     ----------
@@ -198,7 +206,6 @@ def plot_holospectrum(holo, freq_vect, am_freq_vect,
         Handle of plot axis
 
     """
-
     # Make figure if no fig or axis are passed
     if (fig is None) and (ax is None):
         fig = plt.figure()
@@ -268,8 +275,7 @@ def plot_holospectrum(holo, freq_vect, am_freq_vect,
 
 
 def _get_log_tickpos(lo, hi, tick_rate=5, round_vals=True):
-    """
-    Helper function for setting tick positions on log-scales
+    """Generate tick positions for log-scales.
 
     Parameters
     ----------
@@ -288,7 +294,6 @@ def _get_log_tickpos(lo, hi, tick_rate=5, round_vals=True):
         Vector of tick positions
 
     """
-
     lo_oom = np.floor(np.log10(lo)).astype(int)
     hi_oom = np.ceil(np.log10(hi)).astype(int) + 1
     ticks = []

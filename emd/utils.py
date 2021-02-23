@@ -29,11 +29,11 @@ logger = logging.getLogger(__name__)
 
 def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
                         max_iters=3):
-    """
-    Normalise the amplitude envelope of an IMF to be 1. Multiple runs of
-    normalisation are carried out until the desired threshold is reached.
+    """Normalise the amplitude envelope of an IMF to be 1.
 
-    This uses the method described as part of the AM-FM transform [1]_
+    Multiple runs of normalisation are carried out until the desired threshold
+    is reached. This uses the method described as part of the AM-FM transform
+    [1]_
 
     Parameters
     ----------
@@ -122,8 +122,7 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
 
 
 def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
-    """
-    Simulate a non-linear waveform using equation 9 in [1]_.
+    """Simulate a non-linear waveform using equation 9 in [1]_.
 
     Parameters
     ----------
@@ -150,7 +149,6 @@ def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
        57(7), 656–667. https://doi.org/10.1016/j.coastaleng.2010.02.005
 
     """
-
     time_vect = np.linspace(0, seconds, int(seconds * sample_rate))
 
     factor = np.sqrt(1 - nonlin_deg**2)
@@ -163,8 +161,7 @@ def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
 
 
 def est_orthogonality(imf):
-    """
-    Compute the index of orthogonality as described in equation 6.5 of [1]_.
+    """Compute the index of orthogonality as described in equation 6.5 of [1]_.
 
     Parameters
     ----------
@@ -186,7 +183,6 @@ def est_orthogonality(imf):
        https://doi.org/10.1098/rspa.1998.0193
 
     """
-
     ortho = np.ones((imf.shape[1], imf.shape[1])) * np.nan
 
     for ii in range(imf.shape[1]):
@@ -198,8 +194,7 @@ def est_orthogonality(imf):
 
 
 def find_extrema_locked_epochs(X, winsize, lock_to='peaks', percentile=None):
-    """
-    Helper function for defining epochs around peaks or troughs within the data
+    """Define epochs around peaks or troughs within the data.
 
     Parameters
     ----------
@@ -247,8 +242,7 @@ def find_extrema_locked_epochs(X, winsize, lock_to='peaks', percentile=None):
 
 
 def apply_epochs(X, trls):
-    """
-    Apply a set of epochs to a continuous dataset
+    """Apply a set of epochs to a continuous dataset.
 
     Parameters
     ----------
@@ -264,7 +258,6 @@ def apply_epochs(X, trls):
         Epoched time-series
 
     """
-
     Y = np.zeros((trls[0, 1] - trls[0, 0], X.shape[1], trls.shape[0]))
     for ii in np.arange(trls.shape[0]):
 
@@ -304,14 +297,34 @@ def wrap_phase(IP, ncycles=1, mode='2pi'):
 
 
 def ar_simulate(freq, sample_rate, seconds, r=.95, noise_std=None, random_seed=None):
-    """
-    Create a simulated oscillation using an autoregressive filter. A simple
-    filter is defined by direct pole placement and applied to white noise to
-    generate a random signal with a defined oscillatory peak frequency that
-    exhibits random variability frequency, amplitude and waveform.
+    """Create a simulated oscillation using an autoregressive filter.
+
+    A simple filter is defined by direct pole placement and applied to white
+    noise to generate a random signal with a defined oscillatory peak frequency
+    that exhibits random variability frequency, amplitude and waveform.
+
+    Parameters
+    ----------
+    freq : float
+        Peak resonant frequency of the simulated filter.
+    sample_rate : float
+        Sampling frequency for the simulation
+    seconds : float
+        Number of seconds of data to simulate
+    r : float (0 < r < 1)
+        Pole magnitude of simulated autoregressive resonance.
+    noise_std : float
+        Scaling of optional noise to add to simulation. Scaling is relative to
+        standard-deviation of the simulated data.
+    random_seed : int
+        Optional random seed generation
+
+    Returns
+    -------
+    ndarray
+        A simulated time course.
 
     """
-
     if random_seed is not None:
         np.random.seed(random_seed)
 
