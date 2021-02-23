@@ -147,11 +147,11 @@ Finally, users wishing to submit bug reports or merge-requests are able to do
 so on our gitlab page following our [contribution
 guidelines](https://emd.readthedocs.io/en/latest/contribute.html).
 
-![A simulated signal with an oscillatory component (black line - top panel) with a set of intrinsic mode functions estimated using a mask sift EMD (coloured lines - lower panels)](figures/emd_joss_example1_sift.png)
+![A simulated signal with an oscillatory component (black line - top panel) with a set of intrinsic mode functions estimated using a mask sift EMD (coloured lines - lower panels).](figures/emd_joss_example1_sift.png)
 
-![A segment of a simulated signal with its instantaneous amplitude and cycle-maxiumum amplitude time-series](figures/emd_joss_example2_amp.png)
+![A segment of a simulated signal with its instantaneous amplitude and cycle-maxiumum amplitude time-series.](figures/emd_joss_example2_amp.png)
 
-![Top panel: An Instrinsic Mode function from a simulated signal (black line) and an amplitude threshold (dotted line). Bottom Panel: 2D Hilbert-Huang Transform. Darker colours indicate greater power and the black lines indicate cycle average instantaneous frequency of large amplitude cycles. ](figures/emd_joss_example3_hht.png)
+![Top panel: An Instrinsic Mode function from a simulated signal (black line) and an amplitude threshold (dotted line). Bottom Panel: 2D Hilbert-Huang Transform. Darker colours indicate greater power and the black lines indicate cycle average instantaneous frequency of large amplitude cycles.](figures/emd_joss_example3_hht.png)
 
 ![Top panel: A segment of a simulated containing two nested oscillations and white noise. One 5Hz oscillation with 0.5Hz amplitude modulation and a 37Hz signal whose amplitude is modulated by the lower-frequency 5Hz oscillation. Bottom left: The 1D Hilbert-Huang transform of this signal. Bottom Center: The 2D Hilbert-Huang transform. Bottom Right: The Holospectrum.](figures/emd_joss_example4_holo.png)
 
