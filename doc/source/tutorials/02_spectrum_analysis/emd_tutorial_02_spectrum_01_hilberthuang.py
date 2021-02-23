@@ -444,4 +444,4 @@ emd.plotting.plot_hilberthuang(hht, time_centres, freq_centres)
 # log scale and zoom into a specified time-range.
 
 emd.plotting.plot_hilberthuang(hht, time_centres, freq_centres,
-                               cmap='viridis', time_lims=(750,1500),  log_y=True)
+                               cmap='viridis', time_lims=(750, 1500),  log_y=True)
