@@ -60,9 +60,9 @@ logger = logging.getLogger(__name__)
 def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
                  stop_method='sd', sd_thresh=.1, rilling_thresh=(0.05, 0.5, 0.05),
                  envelope_opts={}, extrema_opts={}):
-    """
-    Compute the next IMF from a data set. This is a helper function used within
-    the more general sifting functions.
+    """Compute the next IMF from a data set.
+
+    This is a helper function used within the more general sifting functions.
 
     Parameters
     ----------
@@ -110,7 +110,6 @@ def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
     emd.sift.interp_envelope
 
     """
-
     X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf')
 
     proto_imf = X.copy()
@@ -168,7 +167,7 @@ def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
         proto_imf = proto_imf[:, None]
 
     if energy_thresh is not None:
-        energy_db = energy_difference(X, X-proto_imf)
+        energy_db = _energy_difference(X, X-proto_imf)
         if energy_db > energy_thresh:
             continue_flag = False
             logger.debug('Finishing sift: energy ratio is {0}'.format(energy_db))
@@ -176,7 +175,28 @@ def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
     return proto_imf, continue_flag
 
 
-def energy_difference(imf, residue):
+def _energy_difference(imf, residue):
+    """Compute energy change in IMF during a sift.
+
+    Parameters
+    ----------
+    imf : ndarray
+        IMF to be evaluated
+    residue : ndarray
+        Remaining signal after IMF removal
+
+    Returns
+    -------
+    float
+        Energy difference in decibels
+
+    Notes
+    -----
+    This function is used during emd.sift.energy_stop to implement the
+    energy-difference sift-stopping method defined in section 3.2.4 of
+    https://doi.org/10.1016/j.ymssp.2007.11.028
+
+    """
     sumsqr = np.sum(imf**2)
     imf_energy = 20 * np.log10(sumsqr, where=sumsqr > 0)
     sumsqr = np.sum(residue ** 2)
@@ -185,9 +205,36 @@ def energy_difference(imf, residue):
 
 
 def energy_stop(imf, residue, thresh=50, niters=None):
-    """10.1016/j.ymssp.2007.11.028 3.2.4"""
+    """Compute energy change in IMF during a sift.
 
-    diff = energy_difference(imf, residue)
+    The energy in the IMFs are compared to the energy at the start of sifting.
+    The sift terminates once this ratio reaches a predefined threshold.
+
+    Parameters
+    ----------
+    imf : ndarray
+        IMF to be evaluated
+    residue : ndarray
+        Remaining signal after IMF removal
+    thresh : float
+        Energy ratio threshold (default=50)
+    niters : int
+        Number of sift iterations currently completed
+
+    Returns
+    -------
+    bool
+        A flag indicating whether to stop siftingg
+    float
+        Energy difference in decibels
+
+    Notes
+    -----
+    This function implements the energy-difference sift-stopping method defined
+    in section 3.2.4 of https://doi.org/10.1016/j.ymssp.2007.11.028
+
+    """
+    diff = _energy_difference(imf, residue)
     if diff > thresh:
         stop = True,
     else:
@@ -200,7 +247,29 @@ def energy_stop(imf, residue, thresh=50, niters=None):
 
 
 def sd_stop(proto_imf, prev_imf, sd=0.2, niters=None):
+    """Compute the sd sift stopping metric.
 
+    Parameters
+    ----------
+    proto_imf : ndarray
+        A signal which may be an IMF
+    prev_imf : ndarray
+        The previously identified IMF
+    sd : float
+        The stopping threshold
+    niters : int
+        Number of sift iterations currently completed
+    niters : int
+        Number of sift iterations currently completed
+
+    Returns
+    -------
+    bool
+        A flag indicating whether to stop siftingg
+    float
+        The SD metric value
+
+    """
     metric = np.sum((proto_imf - prev_imf)**2) / np.sum(proto_imf**2)
 
     stop = metric < sd
@@ -212,7 +281,44 @@ def sd_stop(proto_imf, prev_imf, sd=0.2, niters=None):
 
 
 def rilling_stop(upper_env, lower_env, sd1=0.05, sd2=0.5, tol=0.05, niters=None):
+    """Compute the Rilling et al 2003 sift stopping metric.
 
+    This metrix is aimed at guaranteeing globally small fluctuations in the IMF
+    mean while taking into account locally large excursions that may occur in
+    noisy signals.
+
+    Parameters
+    ----------
+    upper_env : ndarray
+        The upper envelope of a proto-IMF
+    lower_env : ndarray
+        The lower envelope of a proto-IMF
+    sd1 : float
+        The maximum threshold for globally small differences from zero-mean
+    sd2 : float
+        The maximum threshold for locally large differences from zero-mean
+    tol : float (0 < tol < 1)
+        (1-tol) defines the proportion of time which may contain large deviations
+        from zero-mean
+    niters : int
+        Number of sift iterations currently completed
+
+    Returns
+    -------
+    bool
+        A flag indicating whether to stop siftingg
+    float
+        The SD metric value
+
+    Notes
+    -----
+    This method is described in section 3.2 of:
+    Rilling, G., Flandrin, P., & Goncalves, P. (2003, June). On empirical mode
+    decomposition and its algorithms. In IEEE-EURASIP workshop on nonlinear
+    signal and image processing (Vol. 3, No. 3, pp. 8-11). NSIP-03, Grado (I).
+    http://perso.ens-lyon.fr/patrick.flandrin/NSIP03.pdf
+
+    """
     avg_env = (upper_env+lower_env)/2
     amp = np.abs(upper_env-lower_env)/2
 
@@ -231,7 +337,21 @@ def rilling_stop(upper_env, lower_env, sd1=0.05, sd2=0.5, tol=0.05, niters=None)
 
 
 def fixed_stop(niters, max_iters):
+    """Compute the fixed-iteraiton sift stopping metric.
 
+    Parameters
+    ----------
+    niters : int
+        Number of sift iterations currently completed
+    max_iters : int
+        Maxiumum number of sift iterations to be completed
+
+    Returns
+    -------
+    bool
+        A flag indicating whether to stop siftingg
+
+    """
     if niters == max_iters:
         stop = True
     else:
@@ -249,9 +369,9 @@ def fixed_stop(niters, max_iters):
 @sift_logger('sift')
 def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
          imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Compute Intrinsic Mode Functions from an input data vector using the
-    original sift algorithm [1]_.
+    """Compute Intrinsic Mode Functions from an input data vector.
+
+    This function implements the original sift algorithm [1]_.
 
     Parameters
     ----------
@@ -292,7 +412,6 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
        https://doi.org/10.1098/rspa.1998.0193
 
     """
-
     if not imf_opts:
         imf_opts = {'env_step_size': 1,
                     'sd_thresh': .1}
@@ -338,9 +457,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
 def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
                      sift_thresh=1e-8, max_imfs=None, job_ind=1,
                      imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Helper function for applying white noise to a signal prior to computing the
-    sift.
+    """Apply white noise to a signal prior to computing a sift.
 
     Parameters
     ----------
@@ -381,7 +498,6 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
     emd.sift.complete_ensemble_sift
     emd.sift.get_next_imf
 
-
     """
     if job_ind is not None:
         from multiprocessing import current_process
@@ -414,13 +530,12 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
                   nprocesses=1, sift_thresh=1e-8, max_imfs=None, verbose=None,
                   imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Compute Intrinsic Mode Functions from an input data vector using the
-    ensemble empirical model decomposition algorithm [1]_. This approach sifts
-    an ensemble of signals with white-noise added and treats the mean IMFs as
-    the result.
+    """Compute Intrinsic Mode Functions with the ensemble EMD.
 
-    The resulting IMFs from the ensemble sift resembles a dyadic filter [2]_.
+    This function implements the ensemble empirical model decomposition
+    algorithm defined in [1]_. This approach sifts an ensemble of signals with
+    white-noise added and treats the mean IMFs as the result. The resulting
+    IMFs from the ensemble sift resembles a dyadic filter [2]_.
 
     Parameters
     ----------
@@ -474,7 +589,6 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 
 
     """
-
     if noise_mode not in ['single', 'flip']:
         raise ValueError(
             'noise_mode: {0} not recognised, please use \'single\' or \'flip\''.format(noise_mode))
@@ -511,11 +625,12 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
                            sift_thresh=1e-8, max_imfs=None, verbose=None,
                            imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Compute Intrinsic Mode Functions from an input data vector using the
-    complete ensemble empirical model decomposition algorithm [1]_. This approach sifts
-    an ensemble of signals with white-noise added taking a single IMF across
-    all ensembles at before moving to the next IMF.
+    """Compute Intrinsic Mode Functions with complete ensemble EMD.
+
+    This function implements the complete ensemble empirical model
+    decomposition algorithm defined in [1]_. This approach sifts an ensemble of
+    signals with white-noise added taking a single IMF across all ensembles at
+    before moving to the next IMF.
 
     Parameters
     ----------
@@ -567,7 +682,6 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
        https://doi.org/10.1109/icassp.2011.5947265
 
     """
-
     import multiprocessing as mp
     p = mp.Pool(processes=nprocesses)
 
@@ -635,9 +749,9 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
 def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
                       imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Compute the next IMF from a data set using the mask sift appraoch. This is
-    a helper function used within the more general sifting functions.
+    """Compute the next IMF from a data set a mask sift.
+
+    This is a helper function used within the more general sifting functions.
 
     Parameters
     ----------
@@ -679,7 +793,6 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
     emd.sift.get_next_imf
 
     """
-
     X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf_mask')
 
     logger.info("Defining masks with freq {0} and amp {1} at {2} phases".format(z, amp, nphases))
@@ -713,7 +826,24 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
 
 
 def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
+    """Determine mask frequencies for a sift.
 
+    Parameters
+    ----------
+    X : ndarray
+        Vector time-series
+    first_mask_mode : (str, float<0.5)
+        Either a string denoting a method {'zc', 'if'} or a float determining
+        and initial frequency. See notes for more details.
+    imf_opts : dict
+        Options to be passed to get_next_imf if first_mask_mode is 'zc' or 'if'.
+
+    Returns
+    -------
+    float
+        Frequency for the first mask in normalised units.
+
+    """
     if (first_mask_mode == 'zc') or (first_mask_mode == 'if'):
         logger.info('Computing first mask frequency with method {0}'.format(first_mask_mode))
         logger.info('Getting first IMF with no mask')
@@ -747,9 +877,11 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
               mask_step_factor=2, ret_mask_freq=False, max_imfs=9, sift_thresh=1e-8,
               nphases=4, nprocesses=1, verbose=None,
               imf_opts={}, envelope_opts={}, extrema_opts={}):
-    """
-    Compute Intrinsic Mode Functions from a dataset using a set of masking
-    signals to reduce mixing of components between modes [1]_.
+    """Compute Intrinsic Mode Functions using a mask sift.
+
+    This function implements a masked sift from a dataset using a set of
+    masking signals to reduce mixing of components between modes [1]_, multiple
+    masks of different phases can be applied when isolating each IMF [2]_.
 
     This function can either compute the mask frequencies based on the fastest
     dynamics in the data (the properties of the first IMF from a standard sift)
@@ -843,9 +975,13 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
        to Improve Empirical Mode Decomposition. In Proceedings. (ICASSP ’05). IEEE
        International Conference on Acoustics, Speech, and Signal Processing, 2005.
        IEEE. https://doi.org/10.1109/icassp.2005.1416051
+    .. [2] Tsai, F.-F., Fan, S.-Z., Lin, Y.-S., Huang, N. E., & Yeh, J.-R.
+       (2016). Investigating Power Density and the Degree of Nonlinearity in
+       Intrinsic Components of Anesthesia EEG by the Hilbert-Huang Transform: An
+       Example Using Ketamine and Alfentanil. PLOS ONE, 11(12), e0168108.
+       https://doi.org/10.1371/journal.pone.0168108
 
     """
-
     X = ensure_1d_with_singleton([X], ['X'], 'sift')
 
     # if first mask is if or zc - compute first imf as normal and get freq
@@ -920,9 +1056,10 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
 
 @sift_logger('second_layer')
 def sift_second_layer(IA, sift_func=sift, sift_args=None):
-    """
-    Compute second layer IMFs from the amplitude envelopes of a set of first
-    layer IMFs [1]_.
+    """Compute second layer intrinsic mode functions.
+
+    This function implements a second-layer sift to be appliede to the
+    amplitude envelopes of a set of first layer IMFs [1]_.
 
     Parameters
     ----------
@@ -949,7 +1086,6 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
        https://doi.org/10.1098/rsta.2015.0206
 
     """
-
     IA = ensure_2d([IA], ['IA'], 'sift_second_layer')
 
     if (sift_args is None) or ('max_imfs' not in sift_args):
@@ -1020,9 +1156,10 @@ def mask_sift_second_layer(IA, mask_freqs, sift_args=None):
 
 def get_padded_extrema(X, pad_width=2, mode='peaks', parabolic_extrema=False,
                        loc_pad_opts={}, mag_pad_opts={}):
-    """
-    Return a set of extrema from a signal including padded extrema at the edges
-    of the signal. Padding is carried out using numpy.pad and the
+    """Identify and pad the extrema in a signal.
+
+    This function returns a set of extrema from a signal including padded
+    extrema at the edges of the signal. Padding is carried out using numpy.pad.
 
     Parameters
     ----------
@@ -1046,9 +1183,7 @@ def get_padded_extrema(X, pad_width=2, mode='peaks', parabolic_extrema=False,
     mags : ndarray
         Magnitude of each extrema
 
-
     """
-
     if not loc_pad_opts:  # Empty dict evaluates to False
         loc_pad_opts = {'mode': 'reflect', 'reflect_type': 'odd'}
     else:
@@ -1101,9 +1236,11 @@ def get_padded_extrema(X, pad_width=2, mode='peaks', parabolic_extrema=False,
 
 
 def _find_extrema(X, peak_prom_thresh=None, parabolic_extrema=False):
-    """
-    Identify extrema within a time-course and reject extrema whose magnitude is
-    below a set threshold.
+    """Identify extrema within a time-course.
+
+    This function detects extrema using a scipy.signals.argrelextrema. Extrema
+    locations can be refined by parabolic intpolation and optionally
+    thresholded by peak prominence.
 
     Parameters
     ----------
@@ -1123,9 +1260,7 @@ def _find_extrema(X, peak_prom_thresh=None, parabolic_extrema=False):
     extrema : ndarray
         Value of each extrema
 
-
     """
-
     ext_locs = signal.argrelextrema(X, np.greater, order=1)[0]
 
     if len(ext_locs) == 0:
@@ -1145,9 +1280,10 @@ def _find_extrema(X, peak_prom_thresh=None, parabolic_extrema=False):
 
 
 def compute_parabolic_extrema(y, locs):
-    """
-    Compute a parabolic approximation of the extrema of in triplets of points
-    based on section 3.2.1 from Rato 2008 [1]_.
+    """Compute a parabolic refinement extrema locations.
+
+    Parabolic refinement is computed from in triplets of points based on the
+    method described in section 3.2.1 from Rato 2008 [1]_.
 
     Parameters
     ----------
@@ -1171,7 +1307,6 @@ def compute_parabolic_extrema(y, locs):
     22(6), 1374–1394. https://doi.org/10.1016/j.ymssp.2007.11.028
 
     """
-
     # Parabola equation parameters for computing y from parameters a, b and c
     # w = np.array([[1, 1, 1], [4, 2, 1], [9, 3, 1]])
     # ... and its inverse for computing a, b and c from y
@@ -1188,8 +1323,7 @@ def compute_parabolic_extrema(y, locs):
 
 def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
                     ret_extrema=False):
-    """
-    Interpolate the amplitude envelope of a signal.
+    """Interpolate the amplitude envelope of a signal.
 
     Parameters
     ----------
@@ -1205,9 +1339,7 @@ def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
     ndarray
         Interpolated amplitude envelope
 
-
     """
-
     if not extrema_opts:  # Empty dict evaluates to False
         extrema_opts = {'pad_width': 2,
                         'loc_pad_opts': {},
@@ -1258,9 +1390,10 @@ def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
 
 
 def zero_crossing_count(X):
-    """
-    Count the number of zero-crossings within a time-course through
-    differentiation of the sign of the signal.
+    """Count the number of zero-crossings within a time-course.
+
+    Zero-crossings are counted through differentiation of the sign of the
+    signal.
 
     Parameters
     ----------
@@ -1273,7 +1406,6 @@ def zero_crossing_count(X):
         Number of zero-crossings
 
     """
-
     if X.ndim == 2:
         X = X[:, None]
 
@@ -1281,11 +1413,11 @@ def zero_crossing_count(X):
 
 
 def is_imf(imf, avg_tol=5e-2, envelope_opts=None, extrema_opts=None):
-    """
-    Run checks to validate whether a signal is a 'true IMF' according to two
-    criteria. Firstly, the number of extrema and number of zero-crossings must
-    differ by zero or one. Secondly,the mean of the upper and lower envelopes
-    must be within a tolerance of zero.
+    """Determine whether a signal is a 'true IMF'.
+
+    Two criteria are tested. Firstly, the number of extrema and number of
+    zero-crossings must differ by zero or one. Secondly,the mean of the upper
+    and lower envelopes must be within a tolerance of zero.
 
     Parameters
     ----------
@@ -1317,7 +1449,6 @@ def is_imf(imf, avg_tol=5e-2, envelope_opts=None, extrema_opts=None):
     extrema_opts as were used in the sift estimation.
 
     """
-
     imf = ensure_2d([imf], ['imf'], 'is_imf')
 
     if envelope_opts is None:
@@ -1364,10 +1495,7 @@ def is_imf(imf, avg_tol=5e-2, envelope_opts=None, extrema_opts=None):
 
 
 class SiftConfig(collections.abc.MutableMapping):
-    """
-    A dictionary like object specifying keyword arguments configuring a sift.
-
-    """
+    """A dictionary-like object specifying keyword arguments configuring a sift."""
 
     def __init__(self, name='sift', *args, **kwargs):
         self.store = dict()
@@ -1375,6 +1503,7 @@ class SiftConfig(collections.abc.MutableMapping):
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
+        """Return an item from the internal store."""
         key = self.__keytransform__(key)
         if isinstance(key, list):
             if len(key) == 2:
@@ -1385,6 +1514,7 @@ class SiftConfig(collections.abc.MutableMapping):
             return self.store[key]
 
     def __setitem__(self, key, value):
+        """Set or change the value of an item in the internal store."""
         key = self.__keytransform__(key)
         if isinstance(key, list):
             if len(key) == 2:
@@ -1395,6 +1525,7 @@ class SiftConfig(collections.abc.MutableMapping):
             self.store[key] = value
 
     def __delitem__(self, key):
+        """Remove an item from the internal store."""
         key = self.__keytransform__(key)
         if isinstance(key, list):
             if len(key) == 2:
@@ -1405,9 +1536,11 @@ class SiftConfig(collections.abc.MutableMapping):
             del self.store[key]
 
     def __iter__(self):
+        """Iterate through items in the internal store."""
         return iter(self.store)
 
     def __str__(self):
+        """Print summary of internal store."""
         out = []
         lower_level = ['imf_opts', 'envelope_opts', 'extrema_opts']
         for stage in self.store.keys():
@@ -1421,6 +1554,7 @@ class SiftConfig(collections.abc.MutableMapping):
         return '%s %s\n%s' % (self.sift_type, self.__class__, '\n'.join(out))
 
     def __repr__(self):
+        """Print summary of internal store."""
         return "<{0} ({1})>".format(self.__module__ + '.' + type(self).__name__, self.sift_type)
 
     def _repr_html_(self):
@@ -1438,9 +1572,11 @@ class SiftConfig(collections.abc.MutableMapping):
         return _str_html + '</ul>'
 
     def __len__(self):
+        """Return number of items in internal store."""
         return len(self.store)
 
     def __keytransform__(self, key):
+        """Split a merged dictionary key into separate levels."""
         key = key.split('/')
         if len(key) == 1:
             return key[0]
@@ -1451,20 +1587,24 @@ class SiftConfig(collections.abc.MutableMapping):
             return key
 
     def _get_yamlsafe_dict(self):
+        """Return copy of internal store with values prepped for saving into yaml format."""
         conf = self.store.copy()
         conf = _array_or_tuple_to_list(conf)
         return [{'sift_type': self.sift_type}, conf]
 
     def to_yaml_text(self):
+        """Return a copy of the internal store in yaml-text format."""
         return yaml.dump(self._get_yamlsafe_dict(), sort_keys=False)
 
     def to_yaml_file(self, fname):
+        """Save a copy of the internal store in a specified yaml file."""
         with open(fname, 'w') as f:
             yaml.dump_all(self._get_yamlsafe_dict(), f, sort_keys=False)
         logger.info("Saved SiftConfig ({0}) to {1}".format(self, fname))
 
     @classmethod
     def from_yaml_file(cls, fname):
+        """Create and return a new SiftConfig object with options loaded from a yaml file."""
         ret = cls()
         with open(fname, 'r') as f:
             cfg = [d for d in yaml.load_all(f, Loader=yaml.FullLoader)]
@@ -1480,19 +1620,21 @@ class SiftConfig(collections.abc.MutableMapping):
 
     @classmethod
     def from_yaml_stream(cls, stream):
+        """Create and return a new SiftConfig object with options loaded from a yaml stream."""
         ret = cls()
         ret.store = yaml.load(stream, Loader=yaml.FullLoader)
         return ret
 
     def get_func(self):
-        """Get a partial-function coded with the options from this config"""
+        """Get a partial-function coded with the options from this config."""
         mod = sys.modules[__name__]
         func = getattr(mod, self.sift_type)
         return functools.partial(func, **self.store)
 
 
 def get_config(siftname='sift'):
-    """
+    """Return a SiftConfig with default options for a specified sift variant.
+
     Helper function for specifying config objects specifying parameters to be
     used in a sift. The functions used during the sift areinspected
     automatically and default values are populated into a nested dictionary
@@ -1540,7 +1682,6 @@ def get_config(siftname='sift'):
     imfs = emd.sift.sift(X, **config)
 
     """
-
     # Extrema padding opts are hard-coded for the moment, these run through
     # np.pad which has a complex signature
     mag_pad_opts = {'mode': 'median', 'stat_length': 1}
@@ -1582,9 +1723,7 @@ def get_config(siftname='sift'):
 
 
 def _get_function_opts(func, ignore=None):
-    """
-    Helper function for inspecting a function and extracting its keyword
-    arguments and their default values
+    """Inspect a function and extract its keyword arguments and their default values.
 
     Parameters
     ----------
@@ -1601,7 +1740,6 @@ def _get_function_opts(func, ignore=None):
         values.
 
     """
-
     if ignore is None:
         ignore = []
     import inspect
@@ -1614,6 +1752,7 @@ def _get_function_opts(func, ignore=None):
 
 
 def _array_or_tuple_to_list(conf):
+    """Convert an input array or tuple to list (for yaml_safe dict creation."""
     for key, val in conf.items():
         if isinstance(val, np.ndarray):
             conf[key] = val.tolist()
