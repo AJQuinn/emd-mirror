@@ -80,7 +80,7 @@ def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
         to suggest stopping overall sift. (Default is None, recommended value is 50)
     stop_method : {'sd','rilling','fixed'}
         Flag indicating which metric to use to stop sifting and return an IMF.
-    sd_thresh : scalar
+    sd_thresh : float
         Used if 'stop_method' is 'sd'. The threshold at which the sift of each
         IMF will be stopped. (Default value = .1)
     rilling_thresh : tuple
@@ -377,7 +377,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
     ----------
     X : ndarray
         1D input array containing the time-series data to be decomposed
-    sift_thresh : scalar
+    sift_thresh : float
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
@@ -463,7 +463,7 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
     ----------
     X : ndarray
         1D input array containing the time-series data to be decomposed
-    noise_scaling : scalar
+    noise_scaling : float
          Standard deviation of noise to add to each ensemble (Default value =
          None)
     noise : ndarray
@@ -471,7 +471,7 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
     noise_mode : {'single','flip'}
          Flag indicating whether to compute each ensemble with noise once or
          twice with the noise and sign-flipped noise (Default value = 'single')
-    sift_thresh : scalar
+    sift_thresh : float
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
@@ -543,7 +543,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
         1D input array containing the time-series data to be decomposed
     nensembles : int
         Integer number of different ensembles to compute the sift across.
-    ensemble_noise : scalar
+    ensemble_noise : float
          Standard deviation of noise to add to each ensemble (Default value = .2)
     noise_mode : {'single','flip'}
          Flag indicating whether to compute each ensemble with noise once or
@@ -551,7 +551,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     nprocesses : integer
          Integer number of parallel processes to compute. Each process computes
          a single realisation of the total ensemble (Default value = 1)
-    sift_thresh : scalar
+    sift_thresh : float
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
@@ -638,7 +638,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
         1D input array containing the time-series data to be decomposed
     nensembles : int
         Integer number of different ensembles to compute the sift across.
-    ensemble_noise : scalar
+    ensemble_noise : float
          Standard deviation of noise to add to each ensemble (Default value = .2)
     noise_mode : {'single','flip'}
          Flag indicating whether to compute each ensemble with noise once or
@@ -646,7 +646,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     nprocesses : integer
          Integer number of parallel processes to compute. Each process computes
          a single realisation of the total ensemble (Default value = 1)
-    sift_thresh : scalar
+    sift_thresh : float
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
@@ -757,9 +757,9 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
     ----------
     X : ndarray
         1D input array containing the time-series data to be decomposed
-    z : scalar
+    z : float
         Mask frequency as a proportion of the sampling rate, values between 0->z->.5
-    amp : scalar
+    amp : float
         Mask amplitude
     nphases : int > 0
         The number of separate sinusoidal masks to apply for each IMF, the
@@ -891,8 +891,8 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
     ----------
     X : ndarray
         1D input array containing the time-series data to be decomposed
-    mask_amp : scalar or array_like
-        Amplitude of mask signals as specified by mask_amp_mode. If scalar the
+    mask_amp : float or array_like
+        Amplitude of mask signals as specified by mask_amp_mode. If float the
         same value is applied to all IMFs, if an array is passed each value is
         applied to each IMF in turn (Default value = 1)
     mask_amp_mode : {'abs','ratio_imf','ratio_sig'}
@@ -907,7 +907,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
         Subsequent masks are defined by the mask_step_factor. If an array_like
         vector is passed, the values in the vector will specify the mask
         frequencies.
-    mask_step_factor : scalar
+    mask_step_factor : float
         Step in frequency between successive masks (Default value = 2)
     mask_type : {'all','sine','cosine'}
         Which type of masking signal to use. 'sine' or 'cosine' options return
@@ -922,7 +922,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
          Boolean flag indicating whether mask frequencies are returned (Default value = False)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)
-    sift_thresh : scalar
+    sift_thresh : float
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
 
     Returns
@@ -1065,9 +1065,9 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
     ----------
     IA : ndarray
         Input array containing a set of first layer IMFs
-    sd_thresh : scalar
+    sd_thresh : float
          The threshold at which the sift of each IMF will be stopped. (Default value = .1)
-    sift_thresh : scalar
+    sift_thresh : float
          The threshold at which the overall sifting process will stop. (Default value = 1e-8)
     max_imfs : int
          The maximum number of IMFs to compute. (Default value = None)

@@ -39,7 +39,7 @@ def amplitude_normalise(X, thresh=1e-10, clip=False, interp_method='pchip',
     ----------
     X : ndarray
         Input array of IMFs to be normalised
-    thresh : scalar
+    thresh : float
          Threshold for stopping normalisation (Default value = 1e-10)
     clip : bool
          Whether to clip the output between -1 and 1 (Default value = False)
@@ -126,15 +126,15 @@ def abreu2010(f, nonlin_deg, nonlin_phi, sample_rate, seconds):
 
     Parameters
     ----------
-    f : scalar
+    f : float
         Fundamental frequency of generated signal
-    nonlin_deg : scalar
+    nonlin_deg : float
         Degree of non-linearity in generated signal
-    nonlin_phi : scalar
+    nonlin_phi : float
         Skew in non-linearity of generated signal
-    sample_rate : scalar
+    sample_rate : float
         The sampling frequency of the generated signal
-    seconds : scalar
+    seconds : float
         The number of seconds of data to generate
 
     Returns
@@ -204,7 +204,7 @@ def find_extrema_locked_epochs(X, winsize, lock_to='peaks', percentile=None):
         Width of window to extract around each extrema
     lock_to : {'max','min'}
          Flag to select peak or trough locking (Default value = 'max')
-    percentile : scalar
+    percentile : float
          Optional flag to selection only the upper percentile of extrema by
          magnitude (Default value = None)
 

@@ -189,10 +189,10 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     imf : ndarray
         Optional array of IMFs to used for control point identification when
         identifying good/bad cycles (Default value = None)
-    phase_step : scalar
+    phase_step : float
         Minimum value in the differential of the wrapped phase to identify a
         cycle transition (Default value = 1.5*np.pi)
-    phase_edge : scalar
+    phase_edge : float
         Maximum distance from 0 or 2pi for the first and last phase value in a
         good cycle. Only used when return_good is True
         (Default value = np.pi/12)
