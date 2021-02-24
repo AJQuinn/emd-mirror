@@ -200,7 +200,7 @@ def find_extrema_locked_epochs(X, winsize, lock_to='peaks', percentile=None):
     ----------
     X : ndarray
         Input time-series
-    winsize : integer
+    winsize : int
         Width of window to extract around each extrema
     lock_to : {'max','min'}
          Flag to select peak or trough locking (Default value = 'max')
@@ -274,7 +274,7 @@ def wrap_phase(IP, ncycles=1, mode='2pi'):
     ----------
     IP : ndarray
         Input array of unwrapped phase values
-    ncycles : integer
+    ncycles : int
          Number of cycles per wrap (Default value = 1)
     mode : {'2pi','-pi2pi'}
          Flag to indicate the values to wrap phase within (Default value = '2pi')
