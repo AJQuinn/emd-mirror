@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 
 def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
                  stop_method='sd', sd_thresh=.1, rilling_thresh=(0.05, 0.5, 0.05),
-                 envelope_opts={}, extrema_opts={}):
+                 envelope_opts=None, extrema_opts=None):
     """Compute the next IMF from a data set.
 
     This is a helper function used within the more general sifting functions.
@@ -113,6 +113,9 @@ def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
 
     """
     X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf')
+
+    if envelope_opts is None:
+        envelope_opts = {}
 
     proto_imf = X.copy()
 
@@ -364,7 +367,7 @@ def fixed_stop(niters, max_iters):
 @wrap_verbose
 @sift_logger('sift')
 def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
-         imf_opts={}, envelope_opts={}, extrema_opts={}):
+         imf_opts=None, envelope_opts=None, extrema_opts=None):
     """Compute Intrinsic Mode Functions from an input data vector.
 
     This function implements the original sift algorithm [1]_.
@@ -452,7 +455,7 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
 
 def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
                      sift_thresh=1e-8, max_imfs=None, job_ind=1,
-                     imf_opts={}, envelope_opts={}, extrema_opts={}):
+                     imf_opts=None, envelope_opts=None, extrema_opts=None):
     """Apply white noise to a signal prior to computing a sift.
 
     Parameters
@@ -524,7 +527,7 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 @sift_logger('ensemble_sift')
 def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
                   nprocesses=1, sift_thresh=1e-8, max_imfs=None, verbose=None,
-                  imf_opts={}, envelope_opts={}, extrema_opts={}):
+                  imf_opts=None, envelope_opts=None, extrema_opts=None):
     """Compute Intrinsic Mode Functions with the ensemble EMD.
 
     This function implements the ensemble empirical model decomposition
@@ -618,7 +621,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
                            noise_mode='single', nprocesses=1,
                            sift_thresh=1e-8, max_imfs=None, verbose=None,
-                           imf_opts={}, envelope_opts={}, extrema_opts={}):
+                           imf_opts=None, envelope_opts=None, extrema_opts=None):
     """Compute Intrinsic Mode Functions with complete ensemble EMD.
 
     This function implements the complete ensemble empirical model
@@ -741,7 +744,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
 
 
 def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
-                      imf_opts={}, envelope_opts={}, extrema_opts={}):
+                      imf_opts=None, envelope_opts=None, extrema_opts=None):
     """Compute the next IMF from a data set a mask sift.
 
     This is a helper function used within the more general sifting functions.
@@ -788,6 +791,9 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
     """
     X = ensure_1d_with_singleton([X], ['X'], 'get_next_imf_mask')
 
+    if imf_opts is None:
+        imf_opts = {}
+
     logger.info("Defining masks with freq {0} and amp {1} at {2} phases".format(z, amp, nphases))
 
     # Create normalised freq
@@ -817,7 +823,7 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
     return imfs.mean(axis=1)[:, np.newaxis], np.any(continue_flags)
 
 
-def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
+def get_mask_freqs(X, first_mask_mode='zc', imf_opts=None):
     """Determine mask frequencies for a sift.
 
     Parameters
@@ -836,6 +842,9 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
         Frequency for the first mask in normalised units.
 
     """
+    if imf_opts is None:
+        imf_opts = {}
+
     if first_mask_mode in ('zc', 'if'):
         logger.info('Computing first mask frequency with method {0}'.format(first_mask_mode))
         logger.info('Getting first IMF with no mask')
@@ -868,7 +877,7 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
 def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
               mask_step_factor=2, ret_mask_freq=False, max_imfs=9, sift_thresh=1e-8,
               nphases=4, nprocesses=1, verbose=None,
-              imf_opts={}, envelope_opts={}, extrema_opts={}):
+              imf_opts=None, envelope_opts=None, extrema_opts=None):
     """Compute Intrinsic Mode Functions using a mask sift.
 
     This function implements a masked sift from a dataset using a set of
@@ -1101,7 +1110,7 @@ def sift_second_layer(IA, sift_func=sift, sift_args=None):
 
 
 def get_padded_extrema(X, pad_width=2, mode='peaks', parabolic_extrema=False,
-                       loc_pad_opts={}, mag_pad_opts={}):
+                       loc_pad_opts=None, mag_pad_opts=None):
     """Identify and pad the extrema in a signal.
 
     This function returns a set of extrema from a signal including padded
@@ -1267,7 +1276,7 @@ def compute_parabolic_extrema(y, locs):
     return t, y_hat
 
 
-def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
+def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts=None,
                     ret_extrema=False):
     """Interpolate the amplitude envelope of a signal.
 
@@ -1288,8 +1297,8 @@ def interp_envelope(X, mode='upper', interp_method='splrep', extrema_opts={},
     """
     if not extrema_opts:  # Empty dict evaluates to False
         extrema_opts = {'pad_width': 2,
-                        'loc_pad_opts': {},
-                        'mag_pad_opts': {}}
+                        'loc_pad_opts': None,
+                        'mag_pad_opts': None}
     else:
         extrema_opts = extrema_opts.copy()  # Don't work in place...
 
