@@ -23,13 +23,13 @@ Errors:
 
 import os
 import pytest
+import logging
 import numpy as np
 import pkg_resources  # part of setuptoos
 
 from . import sift
 
 # Housekeeping for logging
-import logging
 logger = logging.getLogger(__name__)
 
 

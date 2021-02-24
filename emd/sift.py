@@ -34,13 +34,15 @@ Sift Config:
 
 """
 
-
 import sys
-import yaml
 import logging
-import numpy as np
-import collections
+import inspect
 import functools
+import collections
+import multiprocessing as mp
+
+import yaml
+import numpy as np
 from scipy import signal
 from scipy import interpolate as interp
 
@@ -147,12 +149,12 @@ def get_next_imf(X, env_step_size=1, max_iters=1000, energy_thresh=None,
 
         # Stop sifting if we pass threshold
         if stop_method == 'sd':
-            stop, sd = sd_stop(proto_imf, x1, sd=sd_thresh, niters=niters)
+            stop, _ = sd_stop(proto_imf, x1, sd=sd_thresh, niters=niters)
         elif stop_method == 'rilling':
-            stop, sd = rilling_stop(upper, lower, niters=niters,
-                                    sd1=rilling_thresh[0],
-                                    sd2=rilling_thresh[1],
-                                    tol=rilling_thresh[2])
+            stop, _ = rilling_stop(upper, lower, niters=niters,
+                                   sd1=rilling_thresh[0],
+                                   sd2=rilling_thresh[1],
+                                   tol=rilling_thresh[2])
         elif stop_method == 'fixed':
             stop = fixed_stop(niters, max_iters)
 
@@ -235,10 +237,7 @@ def energy_stop(imf, residue, thresh=50, niters=None):
 
     """
     diff = _energy_difference(imf, residue)
-    if diff > thresh:
-        stop = True,
-    else:
-        stop = False
+    stop = bool(diff > thresh)
 
     if stop:
         logger.debug('Sift stopped by Energy Ratio in {0} iters with difference of {1}dB'.format(niters, diff))
@@ -352,10 +351,7 @@ def fixed_stop(niters, max_iters):
         A flag indicating whether to stop siftingg
 
     """
-    if niters == max_iters:
-        stop = True
-    else:
-        stop = False
+    stop = bool(niters == max_iters)
 
     if stop:
         logger.debug('Sift stopped at fixed number of {0} iterations'.format(niters))
@@ -500,8 +496,7 @@ def _sift_with_noise(X, noise_scaling=None, noise=None, noise_mode='single',
 
     """
     if job_ind is not None:
-        from multiprocessing import current_process
-        p = current_process()
+        p = mp.current_process()
         logger.info('Starting SIFT Ensemble: {0} on process {1}'.format(job_ind, p._identity[0]))
 
     if noise is None:
@@ -598,7 +593,6 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     # Noise is defined with respect to variance in the data
     noise_scaling = X.std() * ensemble_noise
 
-    import multiprocessing as mp
     p = mp.Pool(processes=nprocesses)
 
     noise = None
@@ -682,7 +676,6 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
        https://doi.org/10.1109/icassp.2011.5947265
 
     """
-    import multiprocessing as mp
     p = mp.Pool(processes=nprocesses)
 
     X = ensure_1d_with_singleton([X], ['X'], 'sift')
@@ -712,7 +705,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
         proto_imf = X - imf.sum(axis=1)[:, None]
 
         args = [(proto_imf, None, noise[:, ii, None], noise_mode, sift_thresh,
-                1, ii, imf_opts, envelope_opts, extrema_opts)
+                 1, ii, imf_opts, envelope_opts, extrema_opts)
                 for ii in range(nensembles)]
         res = p.starmap(_sift_with_noise, args)
         next_imf = np.array([r for r in res]).mean(axis=0)
@@ -724,7 +717,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
         res = p.starmap(sift, args)
         noise = noise - np.array([r[:, 0] for r in res]).T
 
-        pks, locs = _find_extrema(imf[:, -1])
+        pks, _ = _find_extrema(imf[:, -1])
         if len(pks) < 2:
             continue_sift = False
 
@@ -811,7 +804,6 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
 
     args = [[X+m[:, ii, np.newaxis]] for ii in range(nphases)]
 
-    import multiprocessing as mp
     with mp.Pool(processes=nprocesses) as p:
         res = p.starmap(my_get_next_imf, args)
 
@@ -844,7 +836,7 @@ def get_mask_freqs(X, first_mask_mode='zc', imf_opts={}):
         Frequency for the first mask in normalised units.
 
     """
-    if (first_mask_mode == 'zc') or (first_mask_mode == 'if'):
+    if first_mask_mode in ('zc', 'if'):
         logger.info('Computing first mask frequency with method {0}'.format(first_mask_mode))
         logger.info('Getting first IMF with no mask')
         # First IMF is computed normally
@@ -1013,7 +1005,7 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
         if mask_amp_mode == 'ratio_imf' and imf_layer > 0:
             sd = imf[:, -1].std()
 
-        if isinstance(mask_amp, int) or isinstance(mask_amp, float):
+        if isinstance(mask_amp, (int, float)):
             amp = mask_amp * sd
         else:
             # Should be array_like if not a single number
@@ -1476,7 +1468,7 @@ def is_imf(imf, avg_tol=5e-2, envelope_opts=None, extrema_opts=None):
         # Find local mean
         avg = np.mean([upper, lower], axis=0)[:, None]
         avg_sum = np.sum(np.abs(avg))
-        imf_sum = np.sum(np.abs(imf[:,  ii]))
+        imf_sum = np.sum(np.abs(imf[:, ii]))
         diff = avg_sum / imf_sum
 
         # TODO: Could probably add a Rilling-like criterion here. ie - is_imf
@@ -1485,7 +1477,7 @@ def is_imf(imf, avg_tol=5e-2, envelope_opts=None, extrema_opts=None):
         checks[ii, 1] = diff < avg_tol
 
         msg = 'IMF-{0} {1} - {2} extrema and {3} zero-crossings. Avg of envelopes is {4:.4}/{5:.4} ({6:.4}%)'
-        msg = msg.format(ii, np.alltrue(checks[ii, :]),  num_ext, num_zc, avg_sum, imf_sum, 100*diff)
+        msg = msg.format(ii, np.alltrue(checks[ii, :]), num_ext, num_zc, avg_sum, imf_sum, 100*diff)
         logger.debug(msg)
 
     return checks
@@ -1702,7 +1694,6 @@ def get_config(siftname='sift'):
     sift_types = ['sift', 'ensemble_sift', 'complete_ensemble_sift',
                   'mask_sift', 'mask_sift_adaptive', 'mask_sift_specified']
     if siftname in sift_types:
-        import sys
         mod = sys.modules[__name__]
         sift_opts = _get_function_opts(getattr(mod, siftname), ignore=['X', 'imf_opts'
                                                                        'envelope_opts',
@@ -1742,7 +1733,6 @@ def _get_function_opts(func, ignore=None):
     """
     if ignore is None:
         ignore = []
-    import inspect
     out = {}
     sig = inspect.signature(func)
     for p in sig.parameters:

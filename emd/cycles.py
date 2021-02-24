@@ -18,15 +18,15 @@ Routines:
 
 
 """
-
+import logging
 import numpy as np
 from scipy import interpolate as interp
+from scipy import spatial
 
 from . import spectra, utils, sift
 from .support import ensure_equal_dims, ensure_vector, ensure_2d, ensure_1d_with_singleton
 
 # Housekeeping for logging
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -93,7 +93,8 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
             if inds.sum() > 0:
                 avg[ii - 1, ...] = np.average(x[inds, ...], axis=0,
                                               weights=weights[inds].dot(np.ones((1, x.shape[1]))))
-                v = np.average((x[inds, ...] - np.repeat(avg[None, ii - 1, ...], np.sum(inds), axis=0)**2),
+                v = np.average((x[inds, ...] - np.repeat(avg[None, ii - 1, ...],
+                                                         np.sum(inds), axis=0)**2),
                                weights=weights[inds].dot(np.ones((1, x.shape[1]))), axis=0)
             else:
                 v = np.nan
@@ -147,12 +148,10 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
 
     # Main Body
 
-    phase_edges, phase_bins = spectra.define_hist_bins(0, 2 * np.pi, npoints)
+    _, phase_bins = spectra.define_hist_bins(0, 2 * np.pi, npoints)
 
     msg = 'aligning {0} cycles over {1} phase points with {2} interpolation'
-    logger.debug(msg.format(cycles.max(),
-                 npoints,
-                 interp_kind))
+    logger.debug(msg.format(cycles.max(), npoints, interp_kind))
 
     ncycles = cycles.max()
     avg = np.zeros((npoints, ncycles))
@@ -546,7 +545,7 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     return chains
 
 
-def mean_vector(IP, X, mask=None):
+def mean_vector(IP, X):
     """Compute the mean vector of a set of values wrapped around the unit circle.
 
     Parameters
@@ -555,8 +554,6 @@ def mean_vector(IP, X, mask=None):
         Instantaneous Phase values
     X : ndarray
         Observations corresponding to IP values
-    mask :
-         (Default value = None)
 
     Returns
     -------
@@ -651,7 +648,6 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     logger.debug('K: {0}, distance_upper_bound: {1}'.format(K, distance_upper_bound))
 
     # Initialise Tree and find nearest neighbours
-    from scipy import spatial
     kdt = spatial.cKDTree(y)
     D, inds = kdt.query(x, k=K, distance_upper_bound=distance_upper_bound)
 
@@ -694,7 +690,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
             final[ii] = -1  # No good match
 
     # Remove failed matches
-    uni, cnt = np.unique(final, return_counts=True)
+    uni, _ = np.unique(final, return_counts=True)
     x_inds = np.where(final > -1)[0]
     y_inds = final[x_inds]
 

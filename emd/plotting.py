@@ -92,7 +92,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
 
 def plot_hilberthuang(hht, time_vect, freq_vect,
                       time_lims=None, freq_lims=None, log_y=False,
-                      vmin=0,  vmax=None,
+                      vmin=0, vmax=None,
                       fig=None, ax=None, cmap='hot_r'):
     """Create a quick summary plot for a Hilbert-Huang Transform.
 
@@ -227,10 +227,11 @@ def plot_holospectrum(holo, freq_vect, am_freq_vect,
         am_finds = np.ones_like(am_freq_vect).astype(bool)
 
     plot_holo = holo.copy()
-    for ii in range(len(freq_vect)):
-        for jj in range(len(am_freq_vect)):
-            if freq_vect[ii] < am_freq_vect[jj]:
-                plot_holo[jj, ii] = np.nan
+    if mask:
+        for ii in range(len(freq_vect)):
+            for jj in range(len(am_freq_vect)):
+                if freq_vect[ii] < am_freq_vect[jj]:
+                    plot_holo[jj, ii] = np.nan
 
     # Set colourmap
     if isinstance(cmap, str):
