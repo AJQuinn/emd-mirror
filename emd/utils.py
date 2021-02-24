@@ -21,7 +21,7 @@ import logging
 import numpy as np
 from scipy import signal
 
-from .sift import interp_envelope
+from .sift import interp_envelope, get_padded_extrema
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -217,7 +217,6 @@ def find_extrema_locked_epochs(X, winsize, lock_to='peaks', percentile=None):
     if lock_to not in ['peaks', 'troughs', 'combined']:
         raise ValueError("Invalid lock_to value")
 
-    from .sift import get_padded_extrema
     locs, pks = get_padded_extrema(X, pad_width=0, mode=lock_to)
 
     if percentile is not None:

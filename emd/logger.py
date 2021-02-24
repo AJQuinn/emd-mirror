@@ -21,15 +21,16 @@ Decorators
 """
 
 import sys
+import logging
+import logging.config
+from functools import wraps
+
 import yaml
 import numpy as np
-from functools import wraps
+
 from .support import get_install_dir, get_installed_version
 
 # Housekeeping for logging
-import logging
-import logging.config
-
 # Add a single null handler until set-up is called, this is activated on import
 # to __init__
 logging.getLogger('emd').addHandler(logging.NullHandler())
@@ -190,8 +191,7 @@ def sift_logger(sift_name):
         def sift_logger(*args, **kwargs):
             logger.info('STARTED: {0}'.format(sift_name))
 
-            if (sift_name == 'ensemble_sift') or \
-               (sift_name == 'complete_ensemble_sift'):
+            if sift_name == ('ensemble_sift', 'complete_ensemble_sift'):
                 # Print number of ensembles if ensemble sift
                 logger.debug('Input data size: {0}'.format(args[0].shape))
                 if 'nensembles' in kwargs:
