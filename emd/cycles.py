@@ -41,7 +41,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
     x : ndarray
         Input array of values to be binned, first dimension much match length of
         IP
-    nbins : integer
+    nbins : int
          number of phase bins to define (Default value = 24)
     weights : ndarray (optional)
          Optional set of linear weights to apply before averaging (Default value = None)
@@ -487,11 +487,11 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     ----------
     cycles : ndarray
         array whose content index cycle locations
-    min_chain : integer
+    min_chain : int
         Minimum length of chain to return (Default value = 1)
-    drop_first : {bool, integer}
+    drop_first : {bool, int}
         Number of cycles to remove from start of chain (default is False)
-    drop_last : {bool, integer}
+    drop_last : {bool, int}
         Number of cycles to remove from end of chain (default is False)
 
     Returns

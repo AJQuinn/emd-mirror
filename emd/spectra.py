@@ -60,11 +60,11 @@ def frequency_transform(imf, sample_rate, method,
     ----------
     imf : ndarray
         Input array of IMFs.
-    sample_rate : scalar
+    sample_rate : float
         Sampling frequency of the signal in Hz
     method : {'hilbert','quad','direct_quad','nht'}
         The method for computing the frequency stats
-    smooth_phase : integer
+    smooth_phase : int
          Length of window when smoothing the unwrapped phase (Default value = 31)
 
     Returns
@@ -275,7 +275,7 @@ def freq_from_phase(iphase, sample_rate):
     ----------
     iphase : ndarray
         Input array containing the unwrapped instantaneous phase time-course
-    sample_rate : scalar
+    sample_rate : float
         The sampling frequency of the data
 
     Returns
@@ -300,9 +300,9 @@ def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
     ----------
     ifrequency : ndarray
         Input array containing the instantaneous frequencies of a signal
-    sample_rate : scalar
+    sample_rate : float
         The sampling frequency of the data
-    phase_start : scalar
+    phase_start : float
          Start value of the phase output (Default value = -np.pi)
 
     Returns
@@ -625,11 +625,11 @@ def define_hist_bins(data_min, data_max, nbins, scale='linear'):
 
     Parameters
     ----------
-    data_min : scalar
+    data_min : float
         Value for minimum edge
-    data_max : scalar
+    data_max : float
         Value for maximum edge
-    nbins : integer
+    nbins : int
         Number of bins to create
     scale : {'linear','log'}
          Flag indicating whether to use a linear or log spacing between bins (Default value = 'linear')

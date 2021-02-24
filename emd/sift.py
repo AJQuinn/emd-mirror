@@ -548,7 +548,7 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     noise_mode : {'single','flip'}
          Flag indicating whether to compute each ensemble with noise once or
          twice with the noise and sign-flipped noise (Default value = 'single')
-    nprocesses : integer
+    nprocesses : int
          Integer number of parallel processes to compute. Each process computes
          a single realisation of the total ensemble (Default value = 1)
     sift_thresh : float
@@ -643,7 +643,7 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     noise_mode : {'single','flip'}
          Flag indicating whether to compute each ensemble with noise once or
          twice with the noise and sign-flipped noise (Default value = 'single')
-    nprocesses : integer
+    nprocesses : int
          Integer number of parallel processes to compute. Each process computes
          a single realisation of the total ensemble (Default value = 1)
     sift_thresh : float
@@ -765,7 +765,7 @@ def get_next_imf_mask(X, z, amp, nphases=4, nprocesses=1,
         The number of separate sinusoidal masks to apply for each IMF, the
         phase of masks are uniformly spread across a 0<=p<2pi range
         (Default=4).
-    nprocesses : integer
+    nprocesses : int
          Integer number of parallel processes to compute. Each process computes
          an IMF from the signal plus a mask. nprocesses should be less than or
          equal to nphases, no additional benefit from setting nprocesses > nphases
