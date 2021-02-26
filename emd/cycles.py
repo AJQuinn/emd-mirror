@@ -1067,7 +1067,7 @@ class Cycles:
         d = pd.DataFrame.from_dict(self._metrics)
 
         if conditions is not None:
-            inds = self.get_cycle_index(conditions)
+            inds = self.get_cycle_index(conditions) == False
             d = d.drop(np.where(inds)[0])
             d = d.reset_index()
 
