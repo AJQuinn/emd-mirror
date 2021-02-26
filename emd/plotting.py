@@ -34,17 +34,21 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
         time_vect = np.arange(imfs.shape[0])
 
     mx = np.abs(imfs).max()
+    mx_sig = np.abs(imfs.sum(axis=1)).max()
 
     if fig is None:
         fig = plt.figure()
 
     ax = fig.add_subplot(nplots, 1, 1)
+    if scale_y:
+        ax.yaxis.get_major_locator().set_params(integer=True)
     for tag in ['top', 'right', 'bottom']:
         ax.spines[tag].set_visible(False)
     ax.plot((time_vect[0], time_vect[-1]), (0, 0), color=[.5, .5, .5])
     ax.plot(time_vect, imfs.sum(axis=1), 'k')
     ax.tick_params(axis='x', labelbottom=False)
     ax.set_xlim(time_vect[0], time_vect[-1])
+    ax.set_ylim(-mx_sig* 1.1, mx_sig * 1.1)
     ax.set_ylabel('Signal', rotation=0, labelpad=10)
 
     if cmap is True:
@@ -67,6 +71,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
         ax.set_xlim(time_vect[0], time_vect[-1])
         if scale_y:
             ax.set_ylim(-mx * 1.1, mx * 1.1)
+            ax.yaxis.get_major_locator().set_params(integer=True)
         ax.set_ylabel('IMF {0}'.format(ii), rotation=0, labelpad=10)
 
         if ii < nplots:
