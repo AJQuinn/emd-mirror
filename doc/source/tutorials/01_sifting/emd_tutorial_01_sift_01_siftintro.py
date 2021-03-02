@@ -54,7 +54,7 @@ plt.plot(x, 'k')
 # 'Intrinsic Mode Function' or IMF.
 #
 # The extraction of these IMFs is a difficult problem without a clear analytic
-# or symbolic solutoin. Therefore, the sift looks to iteratively approximate
+# or symbolic solution. Therefore, the sift looks to iteratively approximate
 # the best set of IMFs using a set of heuristic rules (this sort of analysis is
 # a type of numerical algorithm).
 #
@@ -246,7 +246,7 @@ imf1 = my_get_next_imf(x, zoom=(100, 200))
 
 #%%
 # The top panel shows the original signal and each lower panel shows successive
-# iteraitons. The first iteration removes the majority of the slow oscillation
+# iterations. The first iteration removes the majority of the slow oscillation
 # whilst the second does some fine-tuning.
 #
 # Here we plot the original signal, the first IMF and the residual after

@@ -105,7 +105,7 @@ config['imf_opts/sd_thresh'] = 0.05
 config['envelope_opts/interp_method'] = 'mono_pchip'
 
 # Sift the first 5 first level IMFs
-imf2 = mask_sift_second_layer(IA, masks, config=config)
+imf2 = emd.sift.mask_sift_second_layer(IA, masks, sift_args=config)
 
 #%%
 # We can see that the oscillatory content in the amplitude modulations has been
@@ -199,9 +199,9 @@ plt.xticks([.1, .5, 1, 2, 4, 8, 16], [.1, .5, 1, 2, 4, 8, 16])
 
 #%%
 # The four panels of the figure show:
-# - top-left shows a segment of our original signal
-# - top-right shows the 1D Hilbert-Huang power spectrum
-# - bottom-left shows a segment of the 2D Hilbert-Huang transform
+# - top-center shows a segment of our original signal
+# - bottom-leftshows the 1D Hilbert-Huang power spectrum
+# - bottom-center shows a segment of the 2D Hilbert-Huang transform
 # - bottom-right shows the Holospectrum summed over the time dimension
 #
 # We can see prominent peaks at 5Hz and at 37Hz in the 1D Hilbert-Huang
