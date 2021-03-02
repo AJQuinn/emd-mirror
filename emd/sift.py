@@ -285,9 +285,9 @@ def sd_stop(proto_imf, prev_imf, sd=0.2, niters=None):
 def rilling_stop(upper_env, lower_env, sd1=0.05, sd2=0.5, tol=0.05, niters=None):
     """Compute the Rilling et al 2003 sift stopping metric.
 
-    This metrix is aimed at guaranteeing globally small fluctuations in the IMF
-    mean while taking into account locally large excursions that may occur in
-    noisy signals.
+    This metric tries to guarantee globally small fluctuations in the IMF mean
+    while taking into account locally large excursions that may occur in noisy
+    signals.
 
     Parameters
     ----------
