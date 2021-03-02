@@ -22,6 +22,18 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+### Notes
+Many changes in this revision come from the review process at [JOSS](https://github.com/openjournals/joss-reviews/issues/2977)
+
+### Added
+- New tutorial on cross-frequency coupling [!52](https://gitlab.com/emd-dev/emd/-/merge_requests/52)
+- Second layer mask sift function [65a05dd2](https://gitlab.com/emd-dev/emd/-/commit/65a05dd2cf1610508d13a68f6753094f07d67e48)
+- Add html printing functionality for SiftConfig [5c57781e](https://gitlab.com/emd-dev/emd/-/commit/5c57781e2e8b92b8d2a7e00ceec8bde064bc412b)
+
+
+### Fixed
+- Widespread fixing of typos and mistakes in documentation & website [!52](https://gitlab.com/emd-dev/emd/-/merge_requests/52)
+- Indexing typo fixed in bin_by_phase [c5679432](https://gitlab.com/emd-dev/emd/-/commit/c5679432cfcd011965547144aaa936eee1405f62)
 
 ---
 
