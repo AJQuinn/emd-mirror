@@ -18,19 +18,18 @@ Routines:
 
 
 """
+
 import re
-import logging
 import warnings
 import numpy as np
 from scipy import interpolate as interp
-from scipy import spatial
 
 from . import spectra, utils, sift, _cycles_support
 from .support import ensure_equal_dims, ensure_vector, ensure_2d, ensure_1d_with_singleton
 
 # Housekeeping for logging
+import logging
 logger = logging.getLogger(__name__)
-
 
 
 ###################################################
@@ -51,7 +50,8 @@ def get_cycle_inds(*args, **kwargs):
 def get_cycle_vector(phase, return_good=True, mask=None,
                      imf=None, phase_step=1.5 * np.pi,
                      phase_edge=np.pi / 12):
-    """Identify cycles within a instantaneous phase time-course and, optionally,
+    """
+    Identify cycles within a instantaneous phase time-course and, optionally,
     remove 'bad' cycles by a number of criteria.
 
     Parameters
@@ -65,10 +65,10 @@ def get_cycle_vector(phase, return_good=True, mask=None,
     imf : ndarray
         Optional array of IMFs to used for control point identification when
         identifying good/bad cycles (Default value = None)
-    phase_step : float
+    phase_step : scalar
         Minimum value in the differential of the wrapped phase to identify a
         cycle transition (Default value = 1.5*np.pi)
-    phase_edge : float
+    phase_edge : scalar
         Maximum distance from 0 or 2pi for the first and last phase value in a
         good cycle. Only used when return_good is True
         (Default value = np.pi/12)
@@ -98,7 +98,9 @@ def get_cycle_vector(phase, return_good=True, mask=None,
     A single cycle can be isolated by matching its index, eg for the 5th cycle
     cycle_5_inds = good_cycles==5
 
+
     """
+
     # Preamble
     logger.info('STARTED: get cycle indices')
     if mask is not None:
@@ -402,6 +404,7 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear', ii=None, m
         array containing the phase aligned observations
 
     """
+
     # Preamble
     logger.info('STARTED: phase-align cycles')
 
@@ -539,8 +542,9 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
     return avg, var, bin_centres
 
 
-def mean_vector(IP, X):
-    """Compute the mean vector of a set of values wrapped around the unit circle.
+def mean_vector(IP, X, mask=None):
+    """
+    Compute the mean vector of a set of values wrapped around the unit circle.
 
     Parameters
     ----------
@@ -548,20 +552,25 @@ def mean_vector(IP, X):
         Instantaneous Phase values
     X : ndarray
         Observations corresponding to IP values
+    mask :
+         (Default value = None)
 
     Returns
     -------
     mv : ndarray
         Set of mean vectors
 
+
     """
+
     phi = np.cos(IP) + 1j * np.sin(IP)
     mv = phi[:, None] * X
     return mv.mean(axis=0)
 
 
 def basis_project(X, ncomps=1, ret_basis=False):
-    """Express a set of signals in a simple sine-cosine basis set.
+    """
+    Express a set of signals in a simple sine-cosine basis set
 
     Parameters
     ----------
@@ -578,6 +587,7 @@ def basis_project(X, ncomps=1, ret_basis=False):
     -------
     basis : ndarray
         Set of values in basis dimensions
+
 
     """
     nsamples = X.shape[0]
@@ -712,8 +722,8 @@ def get_control_point_metrics_aug(ctrl):
 
 
 def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
-    """Find unique nearest-neighbours between two n-dimensional feature sets.
-
+    """
+    Find unique nearest-neighbours between two n-dimensional feature sets.
     Useful for matching two sets of cycles on one or more features (ie
     amplitude and average frequency).
 
@@ -744,6 +754,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         indices of matched observations in y
 
     """
+
     if x.ndim == 1:
         x = x[:, None]
     if y.ndim == 1:
@@ -756,6 +767,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     logger.debug('K: {0}, distance_upper_bound: {1}'.format(K, distance_upper_bound))
 
     # Initialise Tree and find nearest neighbours
+    from scipy import spatial
     kdt = spatial.cKDTree(y)
     D, inds = kdt.query(x, k=K, distance_upper_bound=distance_upper_bound)
 
@@ -798,7 +810,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
             final[ii] = -1  # No good match
 
     # Remove failed matches
-    uni, _ = np.unique(final, return_counts=True)
+    uni, cnt = np.unique(final, return_counts=True)
     x_inds = np.where(final > -1)[0]
     y_inds = final[x_inds]
 
@@ -809,10 +821,10 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
 
 
 def _unique_inds(ar):
-    """Find the unique elements of an array, ignoring shape.
-
-    Adapted from numpy.lib.arraysetops._unique1d - Original function only
-    returns index of first occurrence of unique value
+    """
+    Find the unique elements of an array, ignoring shape.
+    Adapted from numpy.lib.arraysetops._unique1d
+        Original function only returns index of first occurrence of unique value
 
     """
     ar = np.asanyarray(ar).flatten()
