@@ -2,16 +2,35 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Routines for logging EMD analyses.
+
+Main Routines:
+  set_up
+  set_level
+  get_level
+  set_format
+  enable
+  disable
+  is_active
+
+Decorators
+  sift_logger
+  wrap_verbose
+
+"""
+
 import sys
+import logging
+import logging.config
+from functools import wraps
+
 import yaml
 import numpy as np
-from functools import wraps
+
 from .support import get_install_dir, get_installed_version
 
 # Housekeeping for logging
-import logging
-import logging.config
-
 # Add a single null handler until set-up is called, this is activated on import
 # to __init__
 logging.getLogger('emd').addHandler(logging.NullHandler())
@@ -57,8 +76,7 @@ disable_existing_loggers: true
 
 
 def set_up(prefix='', log_file='', level=None, console_format=None):
-    """
-    Initialisation for the EMD module logger.
+    """Initialise the EMD module logger.
 
     Parameters
     ----------
@@ -66,8 +84,12 @@ def set_up(prefix='', log_file='', level=None, console_format=None):
         Optional prefix to attach to logger output
     log_file : str
         Optional path to a log file to record logger output
-    """
+    level : {'CRITICAL', 'WARNING', 'INFO', 'DEBUG'}
+        String indicating initial logging level
+    console_format : str
+        Formatting string for console logging.
 
+    """
     # Format config with user options
     new_config = default_config.format(prefix=prefix, log_file=log_file)
     # Load config to dict
@@ -159,6 +181,7 @@ def is_active():
 
 # Decorator for logging sift function
 def sift_logger(sift_name):
+    """Log sift function and inputs."""
     # This first layer is a wrapper func to allow an argument to be passed in.
     # If we don't do this then we can't easily tell which function is being
     # decorated
@@ -168,8 +191,7 @@ def sift_logger(sift_name):
         def sift_logger(*args, **kwargs):
             logger.info('STARTED: {0}'.format(sift_name))
 
-            if (sift_name == 'ensemble_sift') or \
-               (sift_name == 'complete_ensemble_sift'):
+            if sift_name == ('ensemble_sift', 'complete_ensemble_sift'):
                 # Print number of ensembles if ensemble sift
                 logger.debug('Input data size: {0}'.format(args[0].shape))
                 if 'nensembles' in kwargs:
@@ -201,6 +223,7 @@ def sift_logger(sift_name):
 
 # Decorator for logging sift function
 def wrap_verbose(func):
+    """Add option to change logging level for single function calls."""
     # This is the actual decorator
     @wraps(func)
     def inner_verbose(*args, **kwargs):

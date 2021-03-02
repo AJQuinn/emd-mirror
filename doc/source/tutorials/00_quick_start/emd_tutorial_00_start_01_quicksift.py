@@ -28,7 +28,7 @@ time_vect = np.linspace(0, seconds, num_samples)
 freq = 5
 
 # Change extent of deformation from sinusoidal shape [-1 to 1]
-nonlinearity_deg = .25
+nonlinearity_deg = 0.25
 
 # Change left-right skew of deformation [-pi to pi]
 nonlinearity_phi = -np.pi/4
@@ -58,12 +58,12 @@ print(imf.shape)
 # and, from the IMFs, compute the instantaneous frequency, phase and amplitude
 # using the Normalised Hilbert Transform Method:
 
-IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'nht')
+IP, IF, IA = emd.spectra.frequency_transform(imf, sample_rate, 'hilbert')
 
 #%%
 # From the instantaneous frequency and amplitude, we can compute the Hilbert-Huang spectrum:
 
-freq_edges, freq_bins = emd.spectra.define_hist_bins(0, 10, 100)
+freq_edges, freq_bins = emd.spectra.define_hist_bins(0.1, 10, 80, 'log')
 hht = emd.spectra.hilberthuang(IF, IA, freq_edges)
 
 #%%
@@ -78,13 +78,7 @@ emd.plotting.plot_imfs(imf, scale_y=True, cmap=True)
 #
 # and now the Hilbert-Huang transform of this decomposition
 
-plt.figure(figsize=(10, 6))
-
-plt.subplot(1, 1, 1)
-plt.pcolormesh(time_vect[:5000], freq_bins, hht[:, :5000], cmap='Reds')
-cb = plt.colorbar()
-cb.set_label('Power')
-plt.ylabel('Frequency (Hz)')
-plt.xlabel('Time (secs)')
-
-plt.grid(True)
+fig = plt.figure(figsize=(10, 6))
+emd.plotting.plot_hilberthuang(hht, time_vect, freq_bins,
+                               time_lims=(2, 4), freq_lims=(0.1, 15),
+                               fig=fig, log_y=True)

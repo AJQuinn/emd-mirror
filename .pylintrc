@@ -1,0 +1,10 @@
+[MASTER]
+max-args=12
+max-module-lines=2000
+disable=invalid-name,
+        logging-format-interpolation,
+        line-too-long,
+        singleton-comparison,  # equiv to flake8: E712?
+        no-else-return,
+        fixme
+

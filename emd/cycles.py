@@ -18,22 +18,21 @@ Routines:
 
 
 """
-
+import logging
 import numpy as np
 from scipy import interpolate as interp
+from scipy import spatial
 
 from . import spectra, utils, sift
 from .support import ensure_equal_dims, ensure_vector, ensure_2d, ensure_1d_with_singleton
 
 # Housekeeping for logging
-import logging
 logger = logging.getLogger(__name__)
 
 
 def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
                  bin_edges=None):
-    """
-    Compute distribution of x by phase-bins in the Instantaneous Frequency.
+    """Compute distribution of x by phase-bins in the Instantaneous Frequency.
 
     Parameters
     ----------
@@ -42,7 +41,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
     x : ndarray
         Input array of values to be binned, first dimension much match length of
         IP
-    nbins : integer
+    nbins : int
          number of phase bins to define (Default value = 24)
     weights : ndarray (optional)
          Optional set of linear weights to apply before averaging (Default value = None)
@@ -63,7 +62,6 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
         Vector of bin centres
 
     """
-
     # Preamble
     ip = ensure_vector([ip], ['ip'], 'bin_by_phase')
     if weights is not None:
@@ -95,7 +93,8 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
             if inds.sum() > 0:
                 avg[ii - 1, ...] = np.average(x[inds, ...], axis=0,
                                               weights=weights[inds].dot(np.ones((1, x.shape[1]))))
-                v = np.average((x[inds, ...] - np.repeat(avg[None, ii - 1, ...], np.sum(inds), axis=0)**2),
+                v = np.average((x[inds, ...] - np.repeat(avg[None, ii - 1, ...],
+                                                         np.sum(inds), axis=0)**2),
                                weights=weights[inds].dot(np.ones((1, x.shape[1]))), axis=0)
             else:
                 v = np.nan
@@ -112,8 +111,7 @@ def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',
 
 
 def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
-    """
-    Compute phase alignment of a vector of observed values across a set of cycles.
+    """Compute phase alignment of a vector of observed values across a set of cycles.
 
     Parameters
     ----------
@@ -135,7 +133,6 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
         array containing the phase aligned observations
 
     """
-
     # Preamble
     logger.info('STARTED: phase-align cycles')
 
@@ -151,12 +148,10 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
 
     # Main Body
 
-    phase_edges, phase_bins = spectra.define_hist_bins(0, 2 * np.pi, npoints)
+    _, phase_bins = spectra.define_hist_bins(0, 2 * np.pi, npoints)
 
     msg = 'aligning {0} cycles over {1} phase points with {2} interpolation'
-    logger.debug(msg.format(cycles.max(),
-                 npoints,
-                 interp_kind))
+    logger.debug(msg.format(cycles.max(), npoints, interp_kind))
 
     ncycles = cycles.max()
     avg = np.zeros((npoints, ncycles))
@@ -177,9 +172,10 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear'):
 def get_cycle_inds(phase, return_good=True, mask=None,
                    imf=None, phase_step=1.5 * np.pi,
                    phase_edge=np.pi / 12):
-    """
-    Identify cycles within a instantaneous phase time-course and, optionally,
-    remove 'bad' cycles by a number of criteria.
+    """Identify cycles within a instantaneous phase time-course.
+
+    Cycles are located by phase jumps and optionally assessed to remove 'bad'
+    cycles by criteria specified in Notes.
 
     Parameters
     ----------
@@ -192,10 +188,10 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     imf : ndarray
         Optional array of IMFs to used for control point identification when
         identifying good/bad cycles (Default value = None)
-    phase_step : scalar
+    phase_step : float
         Minimum value in the differential of the wrapped phase to identify a
         cycle transition (Default value = 1.5*np.pi)
-    phase_edge : scalar
+    phase_edge : float
         Maximum distance from 0 or 2pi for the first and last phase value in a
         good cycle. Only used when return_good is True
         (Default value = np.pi/12)
@@ -225,9 +221,7 @@ def get_cycle_inds(phase, return_good=True, mask=None,
     A single cycle can be isolated by matching its index, eg for the 5th cycle
     cycle_5_inds = good_cycles==5
 
-
     """
-
     # Preamble
     logger.info('STARTED: get cycle indices')
     if mask is not None:
@@ -423,9 +417,9 @@ def get_chain_stat(chains, var, func=np.mean):
 
 
 def get_control_points(x, good_cycles):
-    """
-    Identify sets of control points from identified cycles. The control points
-    are the ascending zero, peak, descending zero & trough.
+    """Identify sets of control points from identified cycles.
+
+    The control points are the ascending zero, peak, descending zero & trough.
 
     Parameters
     ----------
@@ -439,9 +433,7 @@ def get_control_points(x, good_cycles):
     ndarray
         The control points for each cycle in x
 
-
     """
-
     # Preamble
     x, good_cycles = ensure_vector((x, good_cycles),
                                    ('x', 'good_cycles'),
@@ -494,11 +486,11 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     ----------
     cycles : ndarray
         array whose content index cycle locations
-    min_chain : integer
+    min_chain : int
         Minimum length of chain to return (Default value = 1)
-    drop_first : {bool, integer}
+    drop_first : {bool, int}
         Number of cycles to remove from start of chain (default is False)
-    drop_last : {bool, integer}
+    drop_last : {bool, int}
         Number of cycles to remove from end of chain (default is False)
 
     Returns
@@ -553,9 +545,8 @@ def get_cycle_chain(cycles, min_chain=1, drop_first=False, drop_last=False):
     return chains
 
 
-def mean_vector(IP, X, mask=None):
-    """
-    Compute the mean vector of a set of values wrapped around the unit circle.
+def mean_vector(IP, X):
+    """Compute the mean vector of a set of values wrapped around the unit circle.
 
     Parameters
     ----------
@@ -563,25 +554,20 @@ def mean_vector(IP, X, mask=None):
         Instantaneous Phase values
     X : ndarray
         Observations corresponding to IP values
-    mask :
-         (Default value = None)
 
     Returns
     -------
     mv : ndarray
         Set of mean vectors
 
-
     """
-
     phi = np.cos(IP) + 1j * np.sin(IP)
     mv = phi[:, None] * X
     return mv.mean(axis=0)
 
 
 def basis_project(X, ncomps=1, ret_basis=False):
-    """
-    Express a set of signals in a simple sine-cosine basis set
+    """Express a set of signals in a simple sine-cosine basis set.
 
     Parameters
     ----------
@@ -598,7 +584,6 @@ def basis_project(X, ncomps=1, ret_basis=False):
     -------
     basis : ndarray
         Set of values in basis dimensions
-
 
     """
     nsamples = X.shape[0]
@@ -619,8 +604,8 @@ def basis_project(X, ncomps=1, ret_basis=False):
 
 
 def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
-    """
-    Find unique nearest-neighbours between two n-dimensional feature sets.
+    """Find unique nearest-neighbours between two n-dimensional feature sets.
+
     Useful for matching two sets of cycles on one or more features (ie
     amplitude and average frequency).
 
@@ -651,7 +636,6 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
         indices of matched observations in y
 
     """
-
     if x.ndim == 1:
         x = x[:, None]
     if y.ndim == 1:
@@ -664,7 +648,6 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
     logger.debug('K: {0}, distance_upper_bound: {1}'.format(K, distance_upper_bound))
 
     # Initialise Tree and find nearest neighbours
-    from scipy import spatial
     kdt = spatial.cKDTree(y)
     D, inds = kdt.query(x, k=K, distance_upper_bound=distance_upper_bound)
 
@@ -707,7 +690,7 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
             final[ii] = -1  # No good match
 
     # Remove failed matches
-    uni, cnt = np.unique(final, return_counts=True)
+    uni, _ = np.unique(final, return_counts=True)
     x_inds = np.where(final > -1)[0]
     y_inds = final[x_inds]
 
@@ -718,10 +701,10 @@ def kdt_match(x, y, K=15, distance_upper_bound=np.inf):
 
 
 def _unique_inds(ar):
-    """
-    Find the unique elements of an array, ignoring shape.
-    Adapted from numpy.lib.arraysetops._unique1d
-        Original function only returns index of first occurrence of unique value
+    """Find the unique elements of an array, ignoring shape.
+
+    Adapted from numpy.lib.arraysetops._unique1d - Original function only
+    returns index of first occurrence of unique value
 
     """
     ar = np.asanyarray(ar).flatten()

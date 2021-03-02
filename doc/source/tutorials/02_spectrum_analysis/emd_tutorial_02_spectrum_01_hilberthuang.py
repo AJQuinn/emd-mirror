@@ -424,3 +424,24 @@ plt.gca().add_patch(rect)
 
 #%%
 # This smoothing step often makes the HHT image easier to read and interpret.
+#
+
+#%%
+# Making Hilbert-Huang Transform Plots
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#%%
+# Finally, we include a helper function for plotting Hilbert-Huang transforms -
+# ``emd.plotting.plot_hilberthuang``. This takes a HHT matrix, and
+# corresponding time and frequency vector as inputs and procudes a configurable
+# plot. For example:
+
+emd.plotting.plot_hilberthuang(hht, time_centres, freq_centres)
+
+#%%
+# This function is highly configurable - a full list of options can be found in
+# the function docstring. Here we change the colourmap, set the y-axis to a
+# log scale and zoom into a specified time-range.
+
+emd.plotting.plot_hilberthuang(hht, time_centres, freq_centres,
+                               cmap='viridis', time_lims=(750, 1500),  log_y=True)

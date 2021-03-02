@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+# vim: set expandtab ts=4 sw=4:
+
+"""Configure EMD package and installation."""
+
 import pathlib
 from setuptools import setup
 

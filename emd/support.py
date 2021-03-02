@@ -2,39 +2,59 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Helper functions for interacting with an EMD install and ensuring array sizes.
+
+Main Routines:
+  get_install_dir
+  get_installed_version
+  run_tests
+
+Ensurance Routines:
+  ensure_equal_dims
+  ensure_vector
+  ensure_1d_with_singleton
+  ensure_2d
+
+Errors:
+  EMDSiftCovergeError
+
+"""
+
 import os
 import pytest
+import logging
 import numpy as np
 import pkg_resources  # part of setuptoos
 
 from . import sift
 
 # Housekeeping for logging
-import logging
 logger = logging.getLogger(__name__)
 
 
 def get_install_dir():
-    """Get directory path of currently installed & imported emd"""
+    """Get directory path of currently installed & imported emd."""
     return os.path.dirname(sift.__file__)
 
 
 def get_installed_version():
-    """Read version of currently installed & imported emd according to
-    setup.py. If a user has made local changes this version may not be exactly
-    the same as the online package."""
+    """Read version of currently installed & imported emd.
+
+    Version is determined according to local setup.py. If a user has made local
+    changes this version may not be exactly the same as the online package.
+
+    """
     return pkg_resources.require("emd")[0].version
 
 
 def run_tests():
-    """
-    Helper to run tests in python - useful for people without a dev-install to
-    run tests perhaps.
+    """Run tests in directly from python.
 
+    Useful for people without a dev-install to run tests perhaps.
     https://docs.pytest.org/en/latest/usage.html#calling-pytest-from-python-code
 
     """
-
     inst_dir = get_install_dir()
 
     if os.path.exists(os.path.join(inst_dir, 'tests')) is False:
@@ -54,9 +74,9 @@ def run_tests():
 
 
 def ensure_equal_dims(to_check, names, func_name, dim=None):
-    """
-    Check that a set of arrays all have the same dimension. Raise an error with
-    details if not.
+    """Check that a set of arrays all have the same dimension.
+
+    Raises an error with details if not.
 
     Parameters
     ----------
@@ -75,7 +95,6 @@ def ensure_equal_dims(to_check, names, func_name, dim=None):
         If any of the inputs in to_check have differing shapes
 
     """
-
     if dim is None:
         dim = np.arange(to_check[0].ndim)
     else:
@@ -95,10 +114,10 @@ def ensure_equal_dims(to_check, names, func_name, dim=None):
 
 
 def ensure_vector(to_check, names, func_name):
-    """
-    Check that a set of arrays are all vectors with only 1-dimension. Arrays
-    with singleton second dimensions will be trimmed and an error will be
-    raised for non-singleton 2d or greater than 2d inputs.
+    """Check that a set of arrays are all vectors with only 1-dimension.
+
+    Arrays with singleton second dimensions will be trimmed and an error will
+    be raised for non-singleton 2d or greater than 2d inputs.
 
     Parameters
     ----------
@@ -120,7 +139,6 @@ def ensure_vector(to_check, names, func_name):
         If any input is a 2d or greater array
 
     """
-
     out_args = list(to_check)
     for idx, xx in enumerate(to_check):
 
@@ -147,10 +165,10 @@ def ensure_vector(to_check, names, func_name):
 
 
 def ensure_1d_with_singleton(to_check, names, func_name):
-    """
-    Check that a set of arrays are all vectors with a singleton second
-    dimneions. 1d arrays will have a singleton second dimension added and an
-    error will be raised for non-singleton 2d or greater than 2d inputs.
+    """Check that a set of arrays are all vectors with singleton second dimensions.
+
+    1d arrays will have a singleton second dimension added and an error will be
+    raised for non-singleton 2d or greater than 2d inputs.
 
     Parameters
     ----------
@@ -172,7 +190,6 @@ def ensure_1d_with_singleton(to_check, names, func_name):
         If any input is a 2d or greater array
 
     """
-
     out_args = list(to_check)
     for idx, xx in enumerate(to_check):
 
@@ -199,9 +216,9 @@ def ensure_1d_with_singleton(to_check, names, func_name):
 
 
 def ensure_2d(to_check, names, func_name):
-    """
-    Check that a set of arrays are all arrays with 2 dimensions. 1d arrays will
-    have a singleton second dimension added.
+    """Check that a set of arrays are all arrays with 2 dimensions.
+
+    1d arrays will have a singleton second dimension added.
 
     Parameters
     ----------
@@ -218,7 +235,6 @@ def ensure_2d(to_check, names, func_name):
         Copy of arrays in to_check with 2d shape.
 
     """
-
     out_args = list(to_check)
     for idx in range(len(to_check)):
 
@@ -238,9 +254,11 @@ def ensure_2d(to_check, names, func_name):
 class EMDSiftCovergeError(Exception):
     """Exception raised for errors in the input.
 
-    Attributes:
+    Attributes
+    ----------
         expression -- input expression in which the error occurred
         message -- explanation of the error
+
     """
 
     def __init__(self, message):

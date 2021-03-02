@@ -3,8 +3,7 @@
 # vim: set expandtab ts=4 sw=4:
 
 """
-Compute instantanous spectral metrics (Phase,Amplitude and Frequency) and
-compute frequency or time frequency spectra.
+Routines relating to frequency transforms and power-spectra.
 
 Frequency Transform Routines:
   frequency_transform
@@ -23,7 +22,6 @@ Power Spectra Helpers:
   define_hist_bins
   define_hist_bins_from_data
 
-
 """
 
 import logging
@@ -41,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 def frequency_stats(*args, **kwargs):
+    """Legacy function for backwards compatibility."""
     msg = "WARNING: 'emd.spectra.frequency_stats' is deprecated and " + \
           "will be removed in a future version of EMD. Please change to use " + \
           "'emd.spectra.frequency_transform' to remove this warning and " + \
@@ -53,19 +52,19 @@ def frequency_stats(*args, **kwargs):
 
 def frequency_transform(imf, sample_rate, method,
                         smooth_phase=5):
-    """
-    Compute instantaneous phase, frequency and amplitude from a set of IMFs.
+    """Compute instantaneous phase, frequency and amplitude from a set of IMFs.
+
     Several approaches are implemented from [1]_ and [2]_.
 
     Parameters
     ----------
     imf : ndarray
         Input array of IMFs.
-    sample_rate : scalar
+    sample_rate : float
         Sampling frequency of the signal in Hz
     method : {'hilbert','quad','direct_quad','nht'}
         The method for computing the frequency stats
-    smooth_phase : integer
+    smooth_phase : int
          Length of window when smoothing the unwrapped phase (Default value = 31)
 
     Returns
@@ -175,10 +174,11 @@ def frequency_transform(imf, sample_rate, method,
 
 
 def quadrature_transform(X):
-    """
-    Compute the quadrature transform on a set of time-series as defined in
-    equation 34 of [1]_. The return is a complex array with the input data as
-    the real part and the quadrature transform as the imaginary part.
+    """Compute the quadrature transform on a set of time-series.
+
+    This algorithm is defined in equation 34 of [1]_. The return is a complex
+    array with the input data as the real part and the quadrature transform as
+    the imaginary part.
 
     Parameters
     ----------
@@ -197,7 +197,6 @@ def quadrature_transform(X):
        1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
     """
-
     nX = utils.amplitude_normalise(X.copy(), clip=True)
 
     imagX = np.lib.scimath.sqrt(1 - np.power(nX, 2)).real
@@ -213,9 +212,10 @@ def quadrature_transform(X):
 
 def phase_from_complex_signal(complex_signal, smoothing=None,
                               ret_phase='wrapped', phase_jump='ascending'):
-    """
-    Compute the instantaneous phase from a complex signal obtained from either
-    the Hilbert Transform or by Direct Quadrature.
+    """Compute the instantaneous phase from a complex signal.
+
+    The complex input may be obtained from either the Hilbert Transform or by
+    Direct Quadrature.
 
     Parameters
     ----------
@@ -234,7 +234,6 @@ def phase_from_complex_signal(complex_signal, smoothing=None,
         Array of instantaneous phase values
 
     """
-
     # Compute unwrapped phase
     iphase = np.unwrap(np.angle(complex_signal), axis=0)
 
@@ -270,15 +269,13 @@ def phase_from_complex_signal(complex_signal, smoothing=None,
 
 
 def freq_from_phase(iphase, sample_rate):
-    """
-    Compute the instantaneous frequency from the differential of the
-    instantaneous phase.
+    """Compute the instantaneous frequency from the instantaneous phase.
 
     Parameters
     ----------
     iphase : ndarray
         Input array containing the unwrapped instantaneous phase time-course
-    sample_rate : scalar
+    sample_rate : float
         The sampling frequency of the data
 
     Returns
@@ -287,7 +284,6 @@ def freq_from_phase(iphase, sample_rate):
         Array containing the instantaneous frequencies
 
     """
-
     # Differential of instantaneous phase
     iphase = np.gradient(iphase, axis=0)
 
@@ -298,16 +294,15 @@ def freq_from_phase(iphase, sample_rate):
 
 
 def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
-    """
-    Compute the instantaneous phase of a signal from its instantaneous phase.
+    """Compute the instantaneous phase of a signal from its instantaneous frequency.
 
     Parameters
     ----------
     ifrequency : ndarray
         Input array containing the instantaneous frequencies of a signal
-    sample_rate : scalar
+    sample_rate : float
         The sampling frequency of the data
-    phase_start : scalar
+    phase_start : float
          Start value of the phase output (Default value = -np.pi)
 
     Returns
@@ -316,7 +311,6 @@ def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
         The instantaneous phase of the signal
 
     """
-
     iphase_diff = (ifrequency / sample_rate) * (2 * np.pi)
 
     iphase = phase_start + np.cumsum(iphase_diff, axis=0)
@@ -325,19 +319,18 @@ def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
 
 
 def direct_quadrature(fm):
-    """Section 3.2 of 'on instantaneous frequency'
-    Compute the quadrature transform on a set of time-series as defined in
-    equation 35 of [1].
+    """Compute the quadrature transform on a set of time-series.
+
+    This algorithm is  defined in equation 35 of [1].
+
+    Section 3.2 of 'on instantaneous frequency'
 
     THIS IS IN DEVELOPMENT
 
     Parameters
     ----------
-    fm :
-
-
-    Returns
-    -------
+    fm : ndarray
+        Input signal containing a frequency-modulated signal
 
     References
     ----------
@@ -358,9 +351,9 @@ def direct_quadrature(fm):
 
 
 def phase_angle(fm):
-    """
-    Compute the quadrature transform on a set of time-series as defined in
-    equation 35 of [1]_.
+    """Compute the phase angle of a set of time-series.
+
+    This algorithm is defined in equation 35 of [1]_.
 
     THIS IS IN DEVELOPMENT
 
@@ -380,9 +373,7 @@ def phase_angle(fm):
        K. (2009). On Instantaneous Frequency. Advances in Adaptive Data Analysis,
        1(2), 177–229. https://doi.org/10.1142/s1793536909000096
 
-
     """
-
     return np.arctan(fm / np.lib.scimath.sqrt(1 - np.power(fm, 2)))
 
 # Time-frequency spectra
@@ -390,8 +381,9 @@ def phase_angle(fm):
 
 def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
                  squash_time='sum'):
-    """
-    Compute the Holospectrum from the first and second layer frequecy
+    """Compute a Holospectrum.
+
+    Holospectra are computed from the first and second layer frequecy
     statistics of a dataset. The Holospectrum represents the energy of a signal
     across time, carrier frequency and amplitude-modulation frequency [1]_.
 
@@ -500,10 +492,11 @@ def holospectrum(infr, infr2, inam2, freq_edges, freq_edges2, mode='energy',
 
 
 def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
-    """
-    Compute the Hilbert-Huang transform from the instataneous frequency
-    statistics of a dataset. The Hilbert-Huang Transform represents the energy
-    of a signal across time and frequency [1]_.
+    """Compute a Hilbert-Huang transform.
+
+    The Hilbert-Huang transform instataneous frequency and instantaneous
+    amplitude time-series and represents the energy of a signal across time and
+    frequency [1]_.
 
     Parameters
     ----------
@@ -540,7 +533,6 @@ def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
        https://doi.org/10.1098/rspa.1998.0193
 
     """
-
     infr, inam = ensure_2d([infr, inam], ['infr', 'inam'], 'hilberthuang')
     ensure_equal_dims((infr, inam), ('infr', 'inam'), 'hilberthuang')
 
@@ -576,10 +568,11 @@ def hilberthuang(infr, inam, freq_edges, mode='energy', return_sparse=False):
 
 
 def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
-    """
-    Compute the Hilbert-Huang transform from the instataneous frequency
-    statistics of a dataset. The 1D Hilbert-Huang Transform represents the
-    energy in a signal across frequencies and IMFs [1]_.
+    """Compute the Hilbert-Huang transform with no time-dimension.
+
+    The Hilbert-Huang transform instataneous frequency and instantaneous
+    amplitude time-series and represents the energy of a signal across
+    frequency [1]_.
 
     Parameters
     ----------
@@ -607,7 +600,6 @@ def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
        https://doi.org/10.1098/rspa.1998.0193
 
     """
-
     specs = np.zeros((len(freq_edges) - 1, infr.shape[1]))
 
     # Remove values outside the bin range
@@ -629,16 +621,15 @@ def hilberthuang_1d(infr, inam, freq_edges, mode='energy'):
 
 
 def define_hist_bins(data_min, data_max, nbins, scale='linear'):
-    """
-    Define the bin edges and centre values for use in a histogram
+    """Define the bin edges and centre values for use in a histogram.
 
     Parameters
     ----------
-    data_min : scalar
+    data_min : float
         Value for minimum edge
-    data_max : scalar
+    data_max : float
         Value for maximum edge
-    nbins : integer
+    nbins : int
         Number of bins to create
     scale : {'linear','log'}
          Flag indicating whether to use a linear or log spacing between bins (Default value = 'linear')
@@ -651,6 +642,7 @@ def define_hist_bins(data_min, data_max, nbins, scale='linear'):
         1D array of bin centres
 
     Notes
+    -----
     >> edges,centres = emd.spectra.define_hist_bins( 1, 5, 3 )
     >> print(edges)
     [1. 2. 3. 4. 5.]
@@ -658,7 +650,6 @@ def define_hist_bins(data_min, data_max, nbins, scale='linear'):
     [1.5 2.5 3.5 4.5]
 
     """
-
     if scale == 'log':
         p = np.log([data_min, data_max])
         edges = np.linspace(p[0], p[1], nbins + 1)
@@ -675,9 +666,9 @@ def define_hist_bins(data_min, data_max, nbins, scale='linear'):
 
 
 def define_hist_bins_from_data(X, nbins=None, mode='sqrt', scale='linear'):
-    """Find the bin edges and centre frequencies for use in a histogram
+    """Find the bin edges and centre frequencies for use in a histogram.
 
-    if nbins is defined, mode is ignored
+    If nbins is defined, mode is ignored
 
     Parameters
     ----------
@@ -698,7 +689,6 @@ def define_hist_bins_from_data(X, nbins=None, mode='sqrt', scale='linear'):
         1D array of bin centres
 
     """
-
     data_min = X.min()
     data_max = X.max()
 
