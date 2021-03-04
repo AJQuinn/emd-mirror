@@ -39,10 +39,10 @@ supported by online documentation containing a range of practical tutorials.
 
 # Statement of Need
 
-Many natural signals contain non-linear or non-sinusoidal features that change
-dynamically over time. These complex and dynamic features are often of analytic
-interest but can be challenging to isolate and quantify. The Empirical Mode
-Decomposition offers a potential solution defined by the sift-algorithm; a
+Many oscillatory signals contain non-linear or non-sinusoidal features that
+change dynamically over time. These complex and dynamic features are often of
+analytic interest but can be challenging to isolate and quantify. The Empirical
+Mode Decomposition offers a potential solution defined by the sift-algorithm; a
 data-adaptive decomposition that separates a signal into a set of Intrinsic
 Mode Functions (IMFs) that permit physically interpretable Hilbert transforms
 [@Huang1998] and subsequent analysis of instantaneous frequency. Crucially, the
@@ -51,6 +51,16 @@ signal features as it works on adaptive, local data segments without
 prescribing that features remain consistent across the entire signal.
 
 # Package Features
+
+Empirical Mode Decomposition is defined by the 'sift' algorithm (@Huang1998).
+This is a time-domain process which looks to isolate the fastest dynamics in a
+time-series whilst iteratively removing - or sifting out - any slower dynamics.
+Slow dynamics are removed by subtracting the average of the signals upper and
+lower amplitude envelope until that average is sufficiently close to zero. This
+isolated signal component is known as an Intrinsic Mode Function (IMF), it is
+subtracted from the original signal and the sifting process repeated to
+identify the next IMF which will contain slower dynamics. This process is
+repeated until only a trend remains in the signal.
 
 The sift algorithm is implemented in the `emd.sift` module, including the
 classic sift (`emd.sift.sift`; @Huang1998), the Ensemble EMD
@@ -149,7 +159,7 @@ guidelines](https://emd.readthedocs.io/en/latest/contribute.html).
 
 ![A simulated signal with an oscillatory component (black line - top panel) with a set of intrinsic mode functions estimated using a mask sift EMD (coloured lines - lower panels).](figures/emd_joss_example1_sift.png)
 
-![A segment of a simulated signal with its instantaneous amplitude and cycle-maxiumum amplitude time-series.](figures/emd_joss_example2_amp.png)
+![A segment of a simulated signal with its instantaneous amplitude and a time-series containing the maxiumum amplitude of each successive cycle..](figures/emd_joss_example2_amp.png)
 
 ![Top panel: An Instrinsic Mode function from a simulated signal (black line) and an amplitude threshold (dotted line). Bottom Panel: 2D Hilbert-Huang Transform. Darker colours indicate greater power and the black lines indicate cycle average instantaneous frequency of large amplitude cycles.](figures/emd_joss_example3_hht.png)
 
