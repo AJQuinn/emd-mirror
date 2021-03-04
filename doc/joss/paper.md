@@ -86,7 +86,7 @@ amplitude modulation frequency and time [@Huang2016]. The frequency transforms a
 implemented in the `emd.spectra` submodule. `emd.spectra.frequency_stats`
 implements a set of methods for computing instantaneous frequency, phase and
 amplitude from a set of IMFs. These can be used as inputs to the
-`emd.spectra.hilberthuang` or `emd.spectra.holospectrum` to obtain(?) energy
+`emd.spectra.hilberthuang` or `emd.spectra.holospectrum` to obtain energy
 distributions across time and frequency (see examples in Figures 3 and 4). The
 Hilbert-Huang and Holospectrum computations can be very large so these
 functions use an efficient sparse array implementation.
