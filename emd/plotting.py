@@ -22,7 +22,7 @@ from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=None):
+def plot_imfs(imfs, time_vect=None, sample_rate=1, scale_y=False, freqs=None, cmap=None, fig=None):
     """Create a quick summary plot for a set of IMFs.
 
     Parameters
@@ -31,6 +31,9 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
         2D array of IMFs to plot
     time_vect : ndarray
          Optional 1D array specifying time values (Default value = None)
+    sample_rate : float
+        Optional sample rate to determine time axis values if time_vect is not
+        specified if time_vect is given.
     scale_y : Boolean
          Flag indicating whether the y-axis should be adative to each mode
          (False) or consistent across modes (True) (Default value = False)
@@ -44,7 +47,7 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
     """
     nplots = imfs.shape[1] + 1
     if time_vect is None:
-        time_vect = np.arange(imfs.shape[0])
+        time_vect = np.linspace(0, imfs.shape[0]/sample_rate, imfs.shape[0])
 
     mx = np.abs(imfs).max()
 
@@ -82,12 +85,14 @@ def plot_imfs(imfs, time_vect=None, scale_y=False, freqs=None, cmap=None, fig=No
             ax.set_ylim(-mx * 1.1, mx * 1.1)
         ax.set_ylabel('IMF {0}'.format(ii), rotation=0, labelpad=10)
 
-        if ii < nplots:
+        if ii < nplots - 1:
             ax.tick_params(axis='x', labelbottom=False)
+        else:
+            ax.set_xlabel('Time')
         if freqs is not None:
             ax.set_title(freqs[ii - 1], fontsize=8)
 
-    fig.subplots_adjust(top=.95, bottom=.05, left=.2, right=.99)
+    fig.subplots_adjust(top=.95, bottom=.1, left=.2, right=.99)
 
 
 def plot_hilberthuang(hht, time_vect, freq_vect,

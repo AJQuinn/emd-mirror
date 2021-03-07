@@ -362,6 +362,15 @@ def fixed_stop(niters, max_iters):
     return stop
 
 
+def _nsamples_warn(N, max_imfs):
+    if max_imfs is None:
+        return
+    if N < 2**(max_imfs+1):
+        msg = 'Inputs samples ({0}) is small for specified max_imfs ({1})'
+        msg += ' very likely that {2} or fewer imfs are returned'
+        logger.warning(msg.format(N, max_imfs, np.floor(np.log2(N)).astype(int)-1))
+
+
 # SIFT implementation
 
 @wrap_verbose
@@ -416,6 +425,8 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
                     'sd_thresh': .1}
 
     X = ensure_1d_with_singleton([X], ['X'], 'sift')
+
+    _nsamples_warn(X.shape[0], max_imfs)
 
     continue_sift = True
     layer = 0
@@ -593,6 +604,8 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
 
     X = ensure_1d_with_singleton([X], ['X'], 'sift')
 
+    _nsamples_warn(X.shape[0], max_imfs)
+
     # Noise is defined with respect to variance in the data
     noise_scaling = X.std() * ensemble_noise
 
@@ -682,6 +695,8 @@ def complete_ensemble_sift(X, nensembles=4, ensemble_noise=.2,
     p = mp.Pool(processes=nprocesses)
 
     X = ensure_1d_with_singleton([X], ['X'], 'sift')
+
+    _nsamples_warn(X.shape[0], max_imfs)
 
     # Noise is defined with respect to variance in the data
     noise_scaling = X.std() * ensemble_noise
@@ -991,10 +1006,11 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
         if len(mask_freqs) < max_imfs:
             max_imfs = len(mask_freqs)
             logger.info("Reducing max_imfs to {0} as len(mask_freqs) < max_imfs".format(max_imfs))
-
     elif mask_freqs in ['zc', 'if'] or isinstance(mask_freqs, float):
         z = get_mask_freqs(X, mask_freqs, imf_opts=imf_opts)
         mask_freqs = np.array([z/mask_step_factor**ii for ii in range(max_imfs)])
+
+    _nsamples_warn(X.shape[0], max_imfs)
 
     # Initialise mask amplitudes
     if mask_amp_mode == 'ratio_imf':
