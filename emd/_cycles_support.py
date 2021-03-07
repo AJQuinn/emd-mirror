@@ -52,6 +52,7 @@ import numpy as np
 
 
 def get_cycle_stat_from_samples(vals, cycle_vect, func=np.mean):
+    """Compute a metric across all samples from each cycle."""
     ncycles = np.max(cycle_vect) + 1
     out = np.zeros((ncycles,))
     for ii in range(ncycles):
@@ -60,6 +61,7 @@ def get_cycle_stat_from_samples(vals, cycle_vect, func=np.mean):
 
 
 def get_augmented_cycle_stat_from_samples(vals, cycle_vect, phase, func=np.mean):
+    """Compute a metric across all augmented samples from each cycle."""
     ncycles = np.max(cycle_vect) + 1
     out = np.zeros((ncycles,))
     for ii in range(ncycles):
@@ -68,6 +70,7 @@ def get_augmented_cycle_stat_from_samples(vals, cycle_vect, phase, func=np.mean)
 
 
 def get_subset_stat_from_samples(vals, subset_vect, cycle_vect, func=np.mean):
+    """Compute a metric across all samples from each cycle in a subset."""
     ncycles = np.max(subset_vect) + 1
     out = np.zeros((ncycles,))
     for ii in range(ncycles):
@@ -76,6 +79,7 @@ def get_subset_stat_from_samples(vals, subset_vect, cycle_vect, func=np.mean):
 
 
 def get_chain_stat_from_samples(vals, chain_vect, subset_vect, cycle_vect, func=np.mean):
+    """Compute a metric across all samples from each chain."""
     nchains = np.max(chain_vect) + 1
     out = np.zeros((nchains,))
     for ii in range(nchains):
@@ -86,6 +90,7 @@ def get_chain_stat_from_samples(vals, chain_vect, subset_vect, cycle_vect, func=
 
 
 def project_cycles_to_samples(vals, cycle_vect):
+    """Transform per-cycle data to full sample vector."""
     out = np.zeros_like(cycle_vect).astype(float) * np.nan
     for ii in range(len(vals)):
         inds = map_cycle_to_samples(cycle_vect, ii)
@@ -94,6 +99,7 @@ def project_cycles_to_samples(vals, cycle_vect):
 
 
 def project_subset_to_cycles(vals, subset_vect):
+    """Transform per-cycle data from a subset of cycles to a vector of all cycles."""
     out = np.zeros_like(subset_vect).astype(float) * np.nan
     for ii in range(len(vals)):
         inds = map_subset_to_cycle(subset_vect, ii)
@@ -102,6 +108,7 @@ def project_subset_to_cycles(vals, subset_vect):
 
 
 def project_subset_to_samples(vals, subset_vect, cycle_vect):
+    """Transform per-cycle data from a subset of cycles to full sample vector."""
     cycle_vals = project_subset_to_cycles(vals, subset_vect)
     out = np.zeros_like(cycle_vect).astype(float) * np.nan
     for ii in range(len(cycle_vals)):
@@ -111,6 +118,7 @@ def project_subset_to_samples(vals, subset_vect, cycle_vect):
 
 
 def project_chain_to_subset(vals, chain_vect):
+    """Transform per-chain data to a subset vector."""
     out = np.zeros_like(chain_vect).astype(float) * np.nan
     for ii in range(len(vals)):
         inds = map_chain_to_subset(chain_vect, ii)
@@ -119,11 +127,13 @@ def project_chain_to_subset(vals, chain_vect):
 
 
 def project_chain_to_cycles(vals, chain_vect, subset_vect):
+    """Transform per-chain data to an all cycles vector."""
     subset_vals = project_chain_to_subset(vals, chain_vect)
     return project_subset_to_cycles(subset_vals, subset_vect)
 
 
 def project_chain_to_samples(vals, chain_vect, subset_vect, cycle_vect):
+    """Transform per-chain data to an all samples vector."""
     cycle_vals = project_chain_to_cycles(vals, chain_vect, subset_vect)
     return project_cycles_to_samples(cycle_vals, cycle_vect)
 

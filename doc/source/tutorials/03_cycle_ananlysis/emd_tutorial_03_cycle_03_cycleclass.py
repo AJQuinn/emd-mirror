@@ -57,14 +57,14 @@ C = emd.cycles.Cycles(IP[:, 2])
 #%%
 # This calls `emd.cycles.get_cycle_inds` on the phase time course to identify
 # individual cycles. The cycle vector is stored in the class instance as
-# `_all_cycles`. Here we plot the cycle vector for the first four seconds of
+# `cycle_vect`. Here we plot the cycle vector for the first four seconds of
 # our signal.
 
 plt.figure(figsize=(10, 6))
-plt.plot(t[:sample_rate*8], C._all_cycles[:sample_rate*8], 'k')
+plt.plot(t[:sample_rate*8], C.cycle_vect[:sample_rate*8], 'k')
 
 #%%
-# Note that `_all_cycles` does not exclude any cycles from the analysis. During
+# Note that `cycle_vect` does not exclude any cycles from the analysis. During
 # the `emd.cycles.Cycles` class initialisation, `emd.cycles.get_cycle_inds`
 # does not perform the good_cycle detection. Instead, the Cycles class contains
 # a dictionary which can store different stats and metrics associated with our
@@ -74,24 +74,26 @@ plt.plot(t[:sample_rate*8], C._all_cycles[:sample_rate*8], 'k')
 # the key `is_good`. This is a vector containing a ones for cycles which pass
 # the good cycle detection and zeros for the rest.
 
-print(C._metrics)
+print(C.metrics)
 
 #%%
 # We can extract a cycle vector for only the good cycles using the
-# `get_cycle_vector` method attached to the `Cycles` class. If called with no
-# options, this method will return the cycle vector for all cycles, but we can
-# specify some optional conditions if we only want to look at a subset of
-# cycles. These conditions specify the name of a cycle metric, a standard
-# comparator (such as ==, > or <) and a comparison value - `get_cycle_vector`
-# will only return cycles for which the comparison is true.
+# `get_matching_cycles` method attached to the `Cycles` class. This function
+# takes a list of one or more conditions and returns a booleaen vector
+# indiciating which cycles match the conditions.  These conditions specify the
+# name of a cycle metric, a standard comparator (such as ==, > or <) and a
+# comparison value.
 #
-# Here, we will get a cycle vector and specify that we only want to return the
-# cycles which have ones in the `is_good` metric.
+# Here, we will identify which cycles are passing our good cycle checks.
 
-good_cycles = C.get_cycle_vector('is_good==1')
+good_cycles = C.get_matching_cycles(['is_good==1'])
+print(good_cycles)
 
-plt.figure(figsize=(10, 6))
-plt.plot(t[:sample_rate*8], good_cycles[:sample_rate*8], 'k')
+#%%
+# and which cycles are failing...
+
+bad_cycles = C.get_matching_cycles(['is_good==0'])
+print(bad_cycles)
 
 #%%
 # Now we see that several cycles have been excluded in the `good_cycles`
@@ -99,7 +101,15 @@ plt.plot(t[:sample_rate*8], good_cycles[:sample_rate*8], 'k')
 # cycles. For instance, here we compute the cycle control points on the good
 # cycles,
 
-ctrl = emd.cycles.get_control_points(imf[:, 2], good_cycles)
+ctrl = emd.cycles.get_control_points(imf[:, 2], C)
+print(ctrl.shape)
+print(ctrl)
+
+#%%
+
+ctrl = emd.cycles.get_control_points(imf[:, 2], C.iterate(conditions='is_good==1'))
+print(ctrl.shape)
+print(ctrl)
 
 #%%
 # This is convenient, but not so different from the standard analyses in the
@@ -125,19 +135,19 @@ ctrl = emd.cycles.get_control_points(imf[:, 2], good_cycles)
 # cycle in samples.
 
 # Compute the maximum instantaneous amplitude per cycle
-C.add_cycle_stat('max_amp', IA[:, 2], np.max)
+C.compute_cycle_metric('max_amp', IA[:, 2], np.max)
 
 # Compute the length of each cycle
-C.add_cycle_stat('duration', IA[:, 2], len)
+C.compute_cycle_metric('duration', IA[:, 2], len)
 
 #%%
-# These values are now stored in the `_metrics` dictionary along with the good cycle values.
+# These values are now stored in the `metrics` dictionary along with the good cycle values.
 
-print(C._metrics.keys())
+print(C.metrics.keys())
 
-print(C._metrics['is_good'])
-print(C._metrics['max_amp'])
-print(C._metrics['duration'])
+print(C.metrics['is_good'])
+print(C.metrics['max_amp'])
+print(C.metrics['duration'])
 
 #%%
 # We can also store arbitrary cycle stats in the dictionary - as long as there
@@ -202,11 +212,11 @@ plt.plot(t[:sample_rate*8], big_long_good_cycles[:sample_rate*8], 'k')
 #%%
 # The cycle subset extraction can also be applied to the pandas dataframes
 
-big_long_good_cycle_metrics = C.get_metric_dataframe(['max_amp>1.25', 'duration>40', 'is_good==1'])
-print(big_long_good_cycle_metrics)
+big_long_good_cyclemetrics = C.get_metric_dataframe(['max_amp>1.25', 'duration>40', 'is_good==1'])
+print(big_long_good_cyclemetrics)
 
 #%%
-# Or both and cycle vector and summary data frame can be extracted together
+# Or both and cycle vector and summary data frame can be extracted togther
 # using `Cycles.get_subset`.
 
 cycle_vect, cycle_df = C.get_subset(['max_amp>1.25', 'duration>40', 'is_good==1'])
@@ -229,7 +239,7 @@ cycle_vect, cycle_df = C.get_subset(['max_amp>1', 'duration>30', 'is_good==1'])
 cycle_chains = emd.cycles.get_cycle_chain(cycle_vect)
 
 #%%
-# Next we compute the maximum amplitude and duration of each chain.
+# Next we compute the maxumum amplitude and duration of each chain.
 
 chain_amp = emd.cycles.get_chain_stat(cycle_chains, cycle_df['max_amp'], np.max)
 chain_len = emd.cycles.get_chain_stat(cycle_chains, cycle_df['max_amp'], len)
@@ -265,5 +275,5 @@ C.add_cycle_stat('chain_len', chain_len_vect, np.mean)
 # The pandas dataframe can now summarise these new metrics
 
 full_df = C.get_metric_dataframe()
-print(d)
-print(d.describe())
+print(full_df)
+print(full_df.describe())

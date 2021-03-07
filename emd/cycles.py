@@ -50,9 +50,10 @@ def get_cycle_inds(*args, **kwargs):
 def get_cycle_vector(phase, return_good=True, mask=None,
                      imf=None, phase_step=1.5 * np.pi,
                      phase_edge=np.pi / 12):
-    """
-    Identify cycles within a instantaneous phase time-course and, optionally,
-    remove 'bad' cycles by a number of criteria.
+    """Identify cycles within a instantaneous phase time-course.
+
+    Cycles are identified by large phase jumps and can optionally be tested to
+    remove 'bad' cycles by criteria in Notes.
 
     Parameters
     ----------
@@ -168,6 +169,20 @@ def get_cycle_vector(phase, return_good=True, mask=None,
 
 
 def get_subset_vector(valids):
+    """Get subset vector from a set of per-cycle booleans.
+
+    Parameters
+    ----------
+    valids : boolean ndarray
+        Array of boolean values indicating which cycles should be retained
+
+    Returns
+    -------
+    ndarray
+        Vector across cycles where each element contains the cycle subset ind
+        or -1 for excluded cycles.
+
+    """
     subset_vect = np.zeros_like(valids).astype(int) - 1
     count = 0
     for ii in range(len(valids)):
@@ -180,7 +195,20 @@ def get_subset_vector(valids):
 
 
 def get_chain_vector(subset_vect):
+    """Get chain vector from a defined subset vector.
 
+    Parameters
+    ----------
+    subset_vect : ndarray
+        subset vector obtained from emd.cycles.get_subset_vector
+
+    Returns
+    -------
+    ndarray
+        Vector across subset where each element contains the corresponding
+        chain index.
+
+    """
     chain_inds = np.where(subset_vect > -1)[0]
     dchain_inds = np.r_[1, np.diff(chain_inds)]
     chainv = np.zeros_like(chain_inds)-1
@@ -241,7 +269,28 @@ def get_cycle_vector_from_waveform(imf, cycle_start='peaks'):
 
 
 def is_good(phase, waveform=None, ret_all_checks=False, phase_edge=np.pi/12, mode='cycle'):
+    """Run a set of phase checks to check if a cycle is 'good' or 'bad'.
 
+    Parameters
+    ----------
+    phase : ndarray
+        Phase of the cycle to be checked
+    waveform : ndarray
+        Optional time-domain waveform to enable control point checks
+    ret_all_checks
+        Boolean flag indicating whether check results are returned separately
+    phase_edge : scalar
+        Maximum distance from 0 or 2pi for the first and last phase value in a
+        good cycle. Only used when return_good is True
+        (Default value = np.pi/12)
+
+    Returns
+    -------
+    Boolean
+        Flag idicating whether cycle is good (or array of booleans
+        corresponding to each check.
+
+    """
     cycle_checks = np.zeros((4,), dtype=bool)
 
     if mode == 'augmented':
@@ -286,16 +335,16 @@ def is_good(phase, waveform=None, ret_all_checks=False, phase_edge=np.pi/12, mod
 
 
 ###################################################
-# CYCLE FEATURES
+# CYCLE COMPUTATION
 
-def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
+def get_cycle_stat(cycles, values, mode='cycle', out=None, func=np.mean):
     """
     Compute the average of a set of observations for each cycle.
 
     Parameters
     ----------
     cycles : ndarray
-        array whose content index cycle locations
+            array whose content index cycle locations
     values : ndarray
         array of observations to average within each cycle
     mode : {'compressed','full'}
@@ -315,34 +364,29 @@ def get_cycle_stat(cycles, values, mode='compressed', func=np.mean):
 
     """
     # Preamble
-    logger.info('STARTED: get cycle stats')
-    cycles = _ensure_cycle_inputs(cycles)
+    logger.info('STARTED: get_cycle_stat')
+
     values = ensure_vector([values], ['values'], 'get_cycle_stat')
+
+    cycles = _ensure_cycle_inputs(cycles)
+    cycles.mode = mode
 
     if cycles.nsamples != values.shape[0]:
         raise ValueError("Mismatched inputs between 'cycles' and 'values'")
 
-    logger.debug('computing stats for {0} cycles over {1} samples'.format(cycles.ncycles, values.shape[0]))
-    logger.debug('computing metric {0} and returning {1}-array'.format(func, mode))
-
     # Main Body
 
-    if mode == 'compressed':
-        out = np.zeros((cycles.ncycles, )) * np.nan
-    elif mode == 'full':
-        out = np.zeros_like(values) * np.nan
+    if mode == 'cycle':
+        vals = _cycles_support.get_cycle_stat_from_samples(values, cycles.cycle_vect, func=func)
+    elif mode == 'augmented':
+        vals = _cycles_support.get_augmented_cycle_stat_from_samples(values, cycles.cycle_vect, cycles.phase, func=func)
+    else:
+        raise ValueError
 
-    for cind, cycle_inds in cycles:
-        if cycle_inds is None:
-            continue
-        stat = func(values[cycle_inds])
-        if mode == 'compressed':
-            out[cind] = stat
-        elif mode == 'full':
-            out[cycle_inds] = stat
+    if out is 'samples':
+        vals = _cycles_support.project_cycles_to_samples(vals, cycles.cycle_vect)
 
-    logger.info('COMPLETED: get cycle stats')
-    return out
+    return vals
 
 
 def get_chain_stat(chains, var, func=np.mean):
@@ -607,13 +651,6 @@ def basis_project(X, ncomps=1, ret_basis=False):
         return basis.dot(X)
 
 
-def get_chain_position(chains, mode='compressed', cycles=None):
-    cp = np.concatenate([np.arange(len(c)) for c in chains])
-    if mode == 'compressed':
-        return cp
-    elif mode == 'full':
-        return _cycles_support.map_cycles_to_samples(cp, cycles)
-
 
 ###################################################
 # CONTROL POINT FEATURES
@@ -685,7 +722,8 @@ def get_control_points(x, cycles, interp=False, mode='cycle'):
 
     # Return as array
     ctrl = np.array(ctrl)
-    ctrl[ctrl == None] = np.nan  # noqa: E711
+    if np.any(ctrl==None):
+        ctrl[ctrl == None] = np.nan  # noqa: E711
 
     return ctrl
 
@@ -946,7 +984,10 @@ class IterateCycles:
         self.valids = valids
 
         self.mode = mode
-        self.iter_through = iter_through
+        if valids is None:
+            self.iter_through = iter_through
+        else:
+            self.iter_through = 'valids'
 
         if self.cycle_vect is not None:
             self.ncycles = cycle_vect.max() + 1
@@ -992,7 +1033,7 @@ class IterateCycles:
 
     def iterate_valids(self):
         for idx, ii in enumerate(np.where(self.valids)[0]):
-            if self.mode == 'cycles':
+            if self.mode == 'cycle':
                 inds = _cycles_support.map_cycle_to_samples(self.cycle_vect, ii)
                 yield idx, inds
             elif self.mode == 'augmented':
@@ -1064,7 +1105,7 @@ class Cycles:
 
     def iterate(self, through='cycles', conditions=None, mode='cycle'):
         if conditions is not None:
-            valids = self.get_valid_cycles(conditions)
+            valids = self.get_matching_cycles(conditions)
         else:
             valids = None
 
@@ -1090,6 +1131,20 @@ class Cycles:
         else:
             raise ValueError
 
+    def compute_position_in_chain(self):
+        if self.chain_vect is None:
+            # No chains to analyse... do 
+            raise ValueError
+
+        chain_pos = np.zeros_like(self.chain_vect)
+        for ii in range(self.chain_vect.max()+1):
+            inds = np.where(self.chain_vect==ii)[0]
+            chain_pos[inds] = np.arange(len(inds))
+        chain_pos = _cycles_support.project_subset_to_cycles(chain_pos, self.subset_vect)
+        chain_pos[np.isnan(chain_pos)] = -1
+
+        self.metrics['chain_position'] = chain_pos.astype(int)
+
     def compute_cycle_metric(self, name, vals, func, dtype=None, mode='cycle'):
         """Compute a statistic for all cycles and store the result in the Cycle
         object for later use.
@@ -1112,9 +1167,16 @@ class Cycles:
             return ValueError(msg.format(cycle_vals.shape, self.ncyclee))
 
         if dtype is not None:
+            if dtype is int:
+                cycle_vals[np.isnan(cycle_vals)] = -1
             cycle_vals = cycle_vals.astype(dtype)
 
-        self.metrics[name] = cycle_vals
+        self._safe_add_metric(name, cycle_vals)
+
+    def _safe_add_metric(self, name, vals):
+        if len(vals) != self.ncycles:
+            raise ValueError
+        self.metrics[name] = vals
 
     def compute_chain_metric(self, name, vals, func, dtype=None):
         """Compute a metric for each chain and store the result in the cycle object"""
@@ -1127,11 +1189,14 @@ class Cycles:
         vals = _cycles_support.project_chain_to_cycles(vals, self.chain_vect, self.subset_vect)
 
         if dtype is not None:
+            # Can't have nans in an int array - so convert to -1
+            vals[np.isnan(vals)] = -1
             vals = vals.astype(dtype)
 
         self.add_cycle_metric(name, vals)
 
     def compute_cycle_timings(self):
+        """Compute some standard cycle timing metrics."""
         self.compute_cycle_metric('start_sample',
                                   np.arange(len(self.cycle_vect)),
                                   cf_start_value,
@@ -1146,6 +1211,7 @@ class Cycles:
                                   dtype=int)
 
     def compute_chain_timings(self):
+        """Compute some standard chain timing metrics."""
         self.compute_chain_metric('chain_start', np.arange(0, len(self.cycle_vect)), cf_start_value, dtype=int)
         self.compute_chain_metric('chain_end', np.arange(0, len(self.cycle_vect)), cf_end_value, dtype=int)
         self.compute_chain_metric('chain_len_samples', self.cycle_vect, len, dtype=int)
@@ -1153,8 +1219,10 @@ class Cycles:
         def _get_chain_len(x):
             return len(np.unique(x))
         self.compute_chain_metric('chain_len_cycles', self.cycle_vect, _get_chain_len, dtype=int)
+        self.compute_position_in_chain()
 
     def get_metric_dataframe(self, subset=False, conditions=None):
+        """Return pandas dataframe containing cycle metrics."""
         import pandas as pd
         d = pd.DataFrame.from_dict(self.metrics)
 
@@ -1164,15 +1232,14 @@ class Cycles:
             conditions = self.mask_conditions
 
         if conditions is not None:
-            inds = self.get_valid_cycles(conditions) == False  # noqa: E712
+            inds = self.get_matching_cycles(conditions) == False  # noqa: E712
             d = d.drop(np.where(inds)[0])
             d = d.reset_index()
 
         return d
 
-    def get_valid_cycles(self, conditions, ret_separate=False):
-        """Find subset of cycles matching specified conditions
-        """
+    def get_matching_cycles(self, conditions, ret_separate=False):
+        """Find subset of cycles matching specified conditions."""
 
         if isinstance(conditions, str):
             conditions = [conditions]
@@ -1191,7 +1258,7 @@ class Cycles:
         """Set conditions to define subsets + chains"""
         self.mask_conditions = conditions
 
-        valids = self.get_valid_cycles(conditions)
+        valids = self.get_matching_cycles(conditions)
         self.subset_vect = get_subset_vector(valids)
         self.chain_vect = get_chain_vector(self.subset_vect)
 
