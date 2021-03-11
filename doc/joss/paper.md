@@ -175,4 +175,14 @@ recent years. We would also like to thank Jasper Hajonides van der Meulen and
 Irene Echeverria-Altuna for their time, patience and feedback on early versions
 of this toolbox.
 
+This project was supported by the Medical Research Council (RG94383/RG89702)
+and by the NIHR Oxford Health Biomedical Research Centre. The Wellcome Centre
+for Integrative Neuroimaging is supported by core funding from the Wellcome
+Trust (203139/Z/16/Z). V.L.d.S. and D.D. are supported by the Medical Research
+Council UK (Programmes MC_UU_12024/3 and MC_UU_00003/4 to D.D.) ACN is
+supported by the Wellcome Trust (104571/Z/14/Z) and James S. McDonnell
+foundation (220020448). MWW is supported by the Wellcome Trust (106183/Z/14/Z;
+215573/Z/19/Z). ACN and MWW are further supported by an EU European Training
+Network grant (euSSN; 860563).
+
 # References
