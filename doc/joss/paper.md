@@ -54,19 +54,19 @@ prescribing that features remain consistent across the entire signal.
 
 Empirical Mode Decomposition is defined by the 'sift' algorithm (@Huang1998).
 This is a time-domain process which looks to isolate the fastest dynamics in a
-time-series whilst iteratively removing - or sifting out - any slower dynamics.
-Slow dynamics are removed by subtracting the average of the signals upper and
-lower amplitude envelope until that average is sufficiently close to zero. This
-isolated signal component is known as an Intrinsic Mode Function (IMF), it is
-subtracted from the original signal and the sifting process repeated to
-identify the next IMF which will contain slower dynamics. This process is
-repeated until only a trend remains in the signal.
+time-series by iteratively sifting out slower dynamics.  Any slow dynamics are
+removed by subtracting the average of the signals upper and lower amplitude
+envelope until that average is sufficiently close to zero. This isolated signal
+component is known as an Intrinsic Mode Function (IMF), it is subtracted from
+the original signal and the sifting process repeated to identify the next IMF
+which will contain slower dynamics. This process is repeated until only a trend
+remains in the signal.
 
 The sift algorithm is implemented in the `emd.sift` module, including the
 classic sift (`emd.sift.sift`; @Huang1998), the Ensemble EMD
 (`emd.sift.ensemble_sift`; @Wu2009), Masked EMD (`emd.sift.mask_sift`;
 @Deering2005) and the second-level sift (`emd.sift.sift_second_layer`;
-@Huang2016). The emsemble and masked sift variants can be optionally
+@Huang2016). The ensemble and masked sift variants can be optionally
 accelerated by parallel processing (though this is not possible in all variants
 of the sift algorithm). An example set of Intrinsic Mode Functions isolated by
 a Masked-Sift is shown in Figure 1. The sift functions rest upon a range of
