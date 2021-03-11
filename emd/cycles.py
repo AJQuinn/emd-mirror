@@ -139,8 +139,6 @@ def get_cycle_vector(phase, return_good=True, mask=None,
         if inds[-1] <= phase.shape[0] - 1:
             inds = np.r_[inds, phase.shape[0] - 1]
 
-        unwrapped = np.unwrap(phase[:, ii], axis=0)
-
         count = 0
         for jj in range(len(inds) - 1):
 
@@ -149,10 +147,10 @@ def get_cycle_vector(phase, return_good=True, mask=None,
                 if any(~mask[inds[jj]:inds[jj + 1]]):
                     continue
 
-            phase = unwrapped[inds[jj]:inds[jj + 1]]
+            cycle_phase = phase[inds[jj]:inds[jj + 1], ii]
 
             if return_good:
-                cycle_checks = is_good(phase, ret_all_checks=True, phase_edge=phase_edge)
+                cycle_checks = is_good(cycle_phase, ret_all_checks=True, phase_edge=phase_edge)
             else:
                 # Pretend eveything is ok
                 cycle_checks = np.ones((4,), dtype=bool)
@@ -383,7 +381,7 @@ def get_cycle_stat(cycles, values, mode='cycle', out=None, func=np.mean):
     else:
         raise ValueError
 
-    if out is 'samples':
+    if out == 'samples':
         vals = _cycles_support.project_cycles_to_samples(vals, cycles.cycle_vect)
 
     return vals
@@ -651,7 +649,6 @@ def basis_project(X, ncomps=1, ret_basis=False):
         return basis.dot(X)
 
 
-
 ###################################################
 # CONTROL POINT FEATURES
 
@@ -722,7 +719,7 @@ def get_control_points(x, cycles, interp=False, mode='cycle'):
 
     # Return as array
     ctrl = np.array(ctrl)
-    if np.any(ctrl==None):
+    if np.any(ctrl == None):  # noqa: E711
         ctrl[ctrl == None] = np.nan  # noqa: E711
 
     return ctrl
@@ -1066,6 +1063,8 @@ class IterateCycles:
 
 class Cycles:
 
+    # ----------------------
+
     def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12,
                  compute_timings=False, mode='cycle'):
         self.phase = IP
@@ -1100,6 +1099,8 @@ class Cycles:
                               self.chain_vect.max(),
                               len(self.metrics.keys()))
 
+    # ----------------------
+
     def __iter__(self):
         return self.iterate().__iter__()
 
@@ -1113,6 +1114,8 @@ class Cycles:
                                cycle_vect=self.cycle_vect, subset_vect=self.subset_vect,
                                chain_vect=self.chain_vect, phase=self.phase)
         return looper
+
+    # ----------------------
 
     def get_inds_of_cycle(self, ii, mode='cycle'):
         if mode == 'cycle':
@@ -1131,14 +1134,67 @@ class Cycles:
         else:
             raise ValueError
 
+    def get_metric_dataframe(self, subset=False, conditions=None):
+        """Return pandas dataframe containing cycle metrics."""
+        import pandas as pd
+        d = pd.DataFrame.from_dict(self.metrics)
+
+        if subset and (conditions is not None):
+            raise ValueError("Please specify either 'subset=True' or a set of conditions")
+        elif subset:
+            conditions = self.mask_conditions
+
+        if conditions is not None:
+            inds = self.get_matching_cycles(conditions) == False  # noqa: E712
+            d = d.drop(np.where(inds)[0])
+            d = d.reset_index()
+
+        return d
+
+    def get_matching_cycles(self, conditions, ret_separate=False):
+        """Find subset of cycles matching specified conditions."""
+
+        if isinstance(conditions, str):
+            conditions = [conditions]
+
+        out = np.zeros((len(self.metrics['is_good']), len(conditions)))
+        for idx, c in enumerate(conditions):
+            name, func, val = self._parse_condition(c)
+            out[:, idx] = func(self.metrics[name], val)
+
+        if ret_separate:
+            return out
+        else:
+            return np.all(out, axis=1)
+
+    def add_cycle_metric(self, name, cycle_vals, dtype=None):
+        """Add an externally computed per-cycle metric"""
+        if len(cycle_vals) != self.ncycles:
+            msg = "Input metrics ({0}) mismatched to existing metrics ({1})"
+            return ValueError(msg.format(cycle_vals.shape, self.ncyclee))
+
+        if dtype is not None:
+            if dtype is int:
+                cycle_vals[np.isnan(cycle_vals)] = -1
+            cycle_vals = cycle_vals.astype(dtype)
+
+        self._safe_add_metric(name, cycle_vals)
+
+    def _safe_add_metric(self, name, vals):
+        if len(vals) != self.ncycles:
+            raise ValueError
+        self.metrics[name] = vals
+
+    # ----------------------
+
     def compute_position_in_chain(self):
         if self.chain_vect is None:
-            # No chains to analyse... do 
+            # No chains to analyse... do
             raise ValueError
 
         chain_pos = np.zeros_like(self.chain_vect)
-        for ii in range(self.chain_vect.max()+1):
-            inds = np.where(self.chain_vect==ii)[0]
+        for ii in range(self.chain_vect.max() + 1):
+            inds = np.where(self.chain_vect == ii)[0]
             chain_pos[inds] = np.arange(len(inds))
         chain_pos = _cycles_support.project_subset_to_cycles(chain_pos, self.subset_vect)
         chain_pos[np.isnan(chain_pos)] = -1
@@ -1159,24 +1215,6 @@ class Cycles:
         if dtype is not None:
             vals = vals.astype(dtype)
         self.add_cycle_metric(name, vals)
-
-    def add_cycle_metric(self, name, cycle_vals, dtype=None):
-        """Add an externally computed per-cycle metric"""
-        if len(cycle_vals) != self.ncycles:
-            msg = "Input metrics ({0}) mismatched to existing metrics ({1})"
-            return ValueError(msg.format(cycle_vals.shape, self.ncyclee))
-
-        if dtype is not None:
-            if dtype is int:
-                cycle_vals[np.isnan(cycle_vals)] = -1
-            cycle_vals = cycle_vals.astype(dtype)
-
-        self._safe_add_metric(name, cycle_vals)
-
-    def _safe_add_metric(self, name, vals):
-        if len(vals) != self.ncycles:
-            raise ValueError
-        self.metrics[name] = vals
 
     def compute_chain_metric(self, name, vals, func, dtype=None):
         """Compute a metric for each chain and store the result in the cycle object"""
@@ -1221,39 +1259,6 @@ class Cycles:
         self.compute_chain_metric('chain_len_cycles', self.cycle_vect, _get_chain_len, dtype=int)
         self.compute_position_in_chain()
 
-    def get_metric_dataframe(self, subset=False, conditions=None):
-        """Return pandas dataframe containing cycle metrics."""
-        import pandas as pd
-        d = pd.DataFrame.from_dict(self.metrics)
-
-        if subset and (conditions is not None):
-            raise ValueError("Please specify either 'subset=True' or a set of conditions")
-        elif subset:
-            conditions = self.mask_conditions
-
-        if conditions is not None:
-            inds = self.get_matching_cycles(conditions) == False  # noqa: E712
-            d = d.drop(np.where(inds)[0])
-            d = d.reset_index()
-
-        return d
-
-    def get_matching_cycles(self, conditions, ret_separate=False):
-        """Find subset of cycles matching specified conditions."""
-
-        if isinstance(conditions, str):
-            conditions = [conditions]
-
-        out = np.zeros((len(self.metrics['is_good']), len(conditions)))
-        for idx, c in enumerate(conditions):
-            name, func, val = self._parse_condition(c)
-            out[:, idx] = func(self.metrics[name], val)
-
-        if ret_separate:
-            return out
-        else:
-            return np.all(out, axis=1)
-
     def apply_cycle_mask(self, conditions):
         """Set conditions to define subsets + chains"""
         self.mask_conditions = conditions
@@ -1265,6 +1270,8 @@ class Cycles:
         vals = _cycles_support.project_chain_to_cycles(np.arange(self.chain_vect.max()+1),
                                                        self.chain_vect, self.subset_vect)
         self.add_cycle_metric('chain_ind', vals, dtype=int)
+
+    # ----------------------
 
     def _parse_condition(self, cond):
         """Parse strings defining conditional statements.

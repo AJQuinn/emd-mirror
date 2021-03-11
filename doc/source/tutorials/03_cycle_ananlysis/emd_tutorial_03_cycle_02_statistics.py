@@ -102,7 +102,7 @@ mask_cycles = emd.cycles.get_cycle_inds(IP, return_good=True, mask=mask)
 # amplitude for all detected cycles in IMF-3 and returns the result in the
 # full-vector format.
 
-cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], mode='full', func=np.max)
+cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], out='samples', func=np.max)
 
 # Make a summary figure
 plt.figure(figsize=(10, 4))
@@ -120,7 +120,7 @@ plt.legend(['IMF-3', 'Instantaneous Amplitude', 'Cycle-max Amplitude'])
 # The next section computes the average instantaneous frequency within each
 # cycle, again returning the result in full format.
 
-cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='full', func=np.mean)
+cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], out='samples', func=np.mean)
 
 # Make a summary figure
 plt.figure(figsize=(10, 4))
@@ -136,7 +136,7 @@ plt.legend(['Instantaneous Frequency', 'Cycle-mean frequency'])
 # cycle-average frequency for cycles above our amplitude thresholdover the HHT
 
 # Compute cycle freq using amplitude masked-cycle indices
-cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='full', func=np.mean)
+cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], out='samples', func=np.mean)
 
 # Carrier frequency histogram definition
 edges, bins = emd.spectra.define_hist_bins(3, 25, 64, 'linear')
@@ -178,12 +178,12 @@ plt.ylabel('Frequency (Hz)')
 # amplitude and frequency.
 
 # Compute cycle average frequency for all cycles and masked cycles
-all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
-mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
+all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], func=np.mean)
+mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], func=np.mean)
 
 # Compute cycle frequency range for all cycles and for masked cycles
-all_cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)
-mask_cycle_amp = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)
+all_cycle_amp = emd.cycles.get_cycle_stat(all_cycles[:, 2], IA[:, 2], func=np.mean)
+mask_cycle_amp = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IA[:, 2], func=np.mean)
 
 # Make a summary figures
 plt.figure()
@@ -227,8 +227,8 @@ plt.legend(['All-cycles', 'Masked-cycles', 'Amp thresh'])
 # separately and plot the results as a function of cycle average frequency
 
 # Compute cycle average frequency for all cycles and masked cycles
-all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
-mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
+all_cycle_freq = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2], func=np.mean)
+mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], func=np.mean)
 
 
 # Define a simple function to compute the range of a set of values
@@ -238,10 +238,8 @@ def degree_nonlinearity(x):
 
 # Compute cycle freuquency range for all cycles and for masked cycles
 all_cycle_freq_don = emd.cycles.get_cycle_stat(all_cycles[:, 2], IF[:, 2],
-                                               mode='compressed',
                                                func=degree_nonlinearity)
 cycle_freq_don = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2],
-                                           mode='compressed',
                                            func=degree_nonlinearity)
 
 # Make a summary figures
@@ -258,77 +256,3 @@ plt.legend(['All-cycles', 'Masked-cycles'])
 # quality checks. The surviving cycles (in orange) are tightly clustered around
 # 12Hz peak frequency with a relatively low degree of non-linearity. We have
 # not defined any non-linearity in this simulation.
-
-#%%
-# Cycle chains
-#^^^^^^^^^^^^^
-
-#%%
-# In this section, we will detect chains of oscillatory cycles in the data.
-# Sometimes we may want to restrict data analysis to oscillatory cycles which
-# occur only within continuous periods of osillation rather than single cycles
-# occurring in noise.
-#
-# ``emd.cycles.get_cycle_chain`` takes a set of cycle indices (from the output
-# of ``emd.cycles.get_cycle_inds`` and returns a list of continuous chains of
-# cycles. Each item in the list is a list of the cycle indices for a single
-# chain
-
-chains = emd.cycles.get_cycle_chain(mask_cycles[:, 2])
-
-for ii, chn in enumerate(chains):
-    print('Chain {0:2d}: {1}'.format(ii, chn))
-
-#%%
-# We can extract the indices of individual cycles within each chain. Here, we
-# plot each chain in colour over the top of the original signal
-
-plt.figure(figsize=(10, 4))
-plt.plot(t, x, 'k', linewidth=.5)
-
-for ii, chn in enumerate(chains):
-    # Find indices matching on the cycle inds for the current chain
-    inds = np.in1d(mask_cycles[:, 2], chn)
-    plt.plot(t[inds], imf[inds, 2], linewidth=2)
-plt.xlabel('Time (seconds)')
-
-plt.xlim(0, 3.5)
-plt.legend(['Signal', 'Chain1', 'Chain2', 'Chain3', 'Chain4'])
-
-#%%
-# We can specify a minimum length of chain with the ``min_chain`` argument.
-# Here, we restrict the detection to chains with at least three cycles.
-
-chains = emd.cycles.get_cycle_chain(mask_cycles[:, 2], min_chain=3)
-
-for ii, chn in enumerate(chains):
-    print('Chain {0:2d}: {1}'.format(ii, chn))
-
-#%%
-# Finally, we can summarise our cycle-level statistics to create chain-level
-# statistics using ``emd.cycle.get_chain_stat``. This takes a set of chains as
-# defined in the previous section and a vector containing a single stat for
-# each cycle (created using the 'compressed' output in
-# ``emd.cycles.get_cycle_stat``). We can also pass in a custom function to
-# create our chain stats using the ``func`` argument.
-#
-# Here we compute the maximum amplitude and average frequency of each chain
-# from the previous section before making a summary figure.
-
-mask_cycle_freq = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)
-mask_cycle_amp = emd.cycles.get_cycle_stat(mask_cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)
-
-chain_amp = emd.cycles.get_chain_stat(chains, mask_cycle_amp, func=np.max)
-chain_freq = emd.cycles.get_chain_stat(chains, mask_cycle_freq, func=np.mean)
-
-chain_len = [len(x) for x in chains]
-
-plt.figure(figsize=(10, 5))
-plt.subplot(121)
-plt.plot(chain_len, chain_amp, 'o')
-plt.xlabel('Chain Length')
-plt.ylabel('Chain Maximum Amplitude')
-plt.subplot(122)
-plt.plot(chain_len, chain_freq, 'o')
-plt.xlabel('Chain Length')
-plt.ylabel('Chain Average IF')
