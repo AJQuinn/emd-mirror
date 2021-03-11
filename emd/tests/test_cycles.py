@@ -65,32 +65,32 @@ class test_cycles(unittest.TestCase):
         assert(np.all(uni_cycles == np.arange(-1, 7)))
         assert(cycles[1100] == -1)
 
-    def test_cycle_chain(self):
-        from ..cycles import get_cycle_chain
+    #def test_cycle_chain(self):
+    #    from ..cycles import get_cycle_chain
 
-        cycles = self.cycle_generator(4, phase=0)
-        chain = get_cycle_chain(cycles)
-        assert(np.all(chain[0] == np.arange(0, 8)))
+    #    cycles = self.cycle_generator(4, phase=0)
+    #    chain = get_cycle_chain(cycles)
+    #    assert(np.all(chain[0] == np.arange(0, 8)))
 
-        cycles = self.cycle_generator(4, phase=0, distort=1200)
-        chain = get_cycle_chain(cycles)
-        assert(np.all(chain == [[0, 1, 2, 3], [4, 5, 6]]))
+    #    cycles = self.cycle_generator(4, phase=0, distort=1200)
+    #    chain = get_cycle_chain(cycles)
+    #    assert(np.all(chain == [[0, 1, 2, 3], [4, 5, 6]]))
 
-        chain = get_cycle_chain(cycles, drop_first=True)
-        assert(np.all(chain == np.array([[1, 2, 3], [5, 6]])))
+    #    chain = get_cycle_chain(cycles, drop_first=True)
+    #    assert(np.all(chain == np.array([[1, 2, 3], [5, 6]])))
 
-        chain = get_cycle_chain(cycles, drop_last=True)
-        assert(np.all(chain == np.array([[0, 1, 2], [4, 5]])))
+    #    chain = get_cycle_chain(cycles, drop_last=True)
+    #    assert(np.all(chain == np.array([[0, 1, 2], [4, 5]])))
 
-        chain = get_cycle_chain(cycles, drop_first=True, drop_last=True)
-        assert(np.all(chain == np.array([[1, 2], [5]])))
+    #    chain = get_cycle_chain(cycles, drop_first=True, drop_last=True)
+    #    assert(np.all(chain == np.array([[1, 2], [5]])))
 
-        cycles = self.cycle_generator(4, phase=0, distort=800)
-        chain = get_cycle_chain(cycles)
-        assert(np.all(chain == np.array([[0, 1], [2, 3, 4, 5, 6]])))
+    #    cycles = self.cycle_generator(4, phase=0, distort=800)
+    #    chain = get_cycle_chain(cycles)
+    #    assert(np.all(chain == np.array([[0, 1], [2, 3, 4, 5, 6]])))
 
-        chain = get_cycle_chain(cycles, min_chain=3)
-        assert(np.all(chain == np.array([2, 3, 4, 5, 6])))
+    #    chain = get_cycle_chain(cycles, min_chain=3)
+    #    assert(np.all(chain == np.array([2, 3, 4, 5, 6])))
 
     def test_cycle_control_points(self):
         from ..cycles import get_control_points
@@ -131,7 +131,7 @@ def test_get_cycle_vals():
     assert(np.all(bin_avg == [1., 1., 1.]))
 
     # Compute sum of y within bins of x and return full vector
-    bin_avg = get_cycle_stat(x, y, mode='full', func=np.sum)
+    bin_avg = get_cycle_stat(x, y, out='samples', func=np.sum)
     assert(np.allclose(bin_avg, np.array([np.nan, 4., 4., 4., 4., 2., 2., 3., 3., 3., np.nan]), equal_nan=True))
 
     # Compute the sum of y within bins of x
