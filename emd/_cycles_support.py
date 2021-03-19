@@ -1,3 +1,7 @@
+#!/usr/bin/python
+
+# vim: set expandtab ts=4 sw=4:
+
 import numpy as np
 
 # --------------------------------------
@@ -50,13 +54,18 @@ import numpy as np
 
 # --------------------------------------
 
-
 def get_cycle_stat_from_samples(vals, cycle_vect, func=np.mean):
     """Compute a metric across all samples from each cycle."""
     ncycles = np.max(cycle_vect) + 1
     out = np.zeros((ncycles,))
+
     for ii in range(ncycles):
-        out[ii] = func(vals[map_cycle_to_samples(cycle_vect, ii)])
+        inds = map_cycle_to_samples(cycle_vect, ii)
+        if isinstance(vals, tuple):
+            args = [v[inds] for v in vals]
+            out[ii] = func(*args)
+        else:
+            out[ii] = func(vals[inds])
     return out
 
 
@@ -64,8 +73,14 @@ def get_augmented_cycle_stat_from_samples(vals, cycle_vect, phase, func=np.mean)
     """Compute a metric across all augmented samples from each cycle."""
     ncycles = np.max(cycle_vect) + 1
     out = np.zeros((ncycles,))
+
     for ii in range(ncycles):
-        out[ii] = func(vals[map_cycle_to_samples_augmented(cycle_vect, ii, phase)])
+        inds = map_cycle_to_samples_augmented(cycle_vect, ii, phase)
+        if isinstance(vals, tuple):
+            args = [v[inds] for v in vals]
+            out[ii] = func(*args)
+        else:
+            out[ii] = func(vals[inds])
     return out
 
 

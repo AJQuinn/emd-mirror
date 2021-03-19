@@ -1208,7 +1208,8 @@ class Cycles:
         if mode == 'cycle':
             vals = _cycles_support.get_cycle_stat_from_samples(vals, self.cycle_vect, func=func)
         elif mode == 'augmented':
-            vals = _cycles_support.get_augmented_cycle_stat_from_samples(vals, self.cycle_vect, self.phase, func=func)
+            vals = _cycles_support.get_augmented_cycle_stat_from_samples(vals, self.cycle_vect,
+                                                                         self.phase, func=func)
         else:
             raise ValueError
 
@@ -1259,8 +1260,8 @@ class Cycles:
         self.compute_chain_metric('chain_len_cycles', self.cycle_vect, _get_chain_len, dtype=int)
         self.compute_position_in_chain()
 
-    def apply_cycle_mask(self, conditions):
-        """Set conditions to define subsets + chains"""
+    def pick_cycle_subset(self, conditions):
+        """Set conditions to define subsets + chains. This is not reversible for the moment."""
         self.mask_conditions = conditions
 
         valids = self.get_matching_cycles(conditions)
