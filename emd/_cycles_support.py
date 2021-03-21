@@ -17,7 +17,7 @@ import numpy as np
 # 1 - samples    A time-series containing oscillations                           [ time x 1 ]
 # 2 - cycles     Every conceivable cycle within a time series                    [ cycles x 1 ]
 # 3 - subset     A user-defined masked subset of all cycles                      [ subset x 1 ]
-# 4 - chains     A sequency of continuously occuring cycles within the subset    [ chains x 1 ]
+# 4 - chains     A sequency of continuously occurring cycles within the subset   [ chains x 1 ]
 #
 # The 'subset' level is worth clarifying - whilst all cycles contains every
 # single possible cycle even if distorted or incomplete, the subset is any
@@ -29,9 +29,9 @@ import numpy as np
 # We can move this information between levels if we have a set of mapping
 # vectors.
 #
-# 1 - samples <-> cycles  Which cycle does each sample belong to                        [ time x 1 ]
-# 2 - cycles  <-> subset  Which subset-cycle does each cycle corresond to (-1 for None) [ cycles x 1 ]
-# 3 - subset  <-> chains  Which chain does each subset cycle belong to                  [ subset x 1 ]
+# 1 - samples <-> cycles  Which cycle does each sample belong to                         [ time x 1 ]
+# 2 - cycles  <-> subset  Which subset-cycle does each cycle correspond to (-1 for None) [ cycles x 1 ]
+# 3 - subset  <-> chains  Which chain does each subset cycle belong to                   [ subset x 1 ]
 #
 # There are two possible definitions of a 'cycle' - a standard form and an
 # augmented form. These are illustrated below.#
@@ -52,7 +52,46 @@ import numpy as np
 # cycles/subset/chain vector in the same way.
 
 
+def make_slice_cache(cycle_vect):
+    """Create a list of slice objects from a cycle_vect."""
+    starts = np.where(np.diff(cycle_vect, axis=0) == 1)[0] + 1
+    stops = starts
+
+    starts = np.r_[0, starts]
+    stops = np.r_[stops, len(cycle_vect)]
+
+    slice_cache = [slice(starts[ii], stops[ii]) for ii in range(len(starts))]
+
+    return slice_cache
+
+
+def _slice_len(slice):
+    """Find the length of array returned by a slice."""
+    return slice.stop - slice.start + 1
+
+
+def augment_slice(s, phase):
+    """Augment a slice to include the closest trough to the left."""
+    xx = np.where(np.flipud(phase[:s.start]) < 1.5*np.pi)[0]
+    if len(xx) == 0:
+        return None
+    start_diff = xx[0]
+    s2 = slice(s.start - start_diff, s.stop)
+    return s2
+
+
+def make_aug_slice_cache(slice_cache, phase, func=augment_slice):
+    """Build a slice cache of augmented slices defined by some function."""
+    return [func(s, phase) for s in slice_cache]
+
+
 # --------------------------------------
+
+
+def get_slice_stat_from_samples(vals, slices, func=np.mean):
+    """Compute a stat from each slice in a list."""
+    return np.array([func(vals[s]) if s is not None else np.nan for s in slices])
+
 
 def get_cycle_stat_from_samples(vals, cycle_vect, func=np.mean):
     """Compute a metric across all samples from each cycle."""

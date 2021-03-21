@@ -285,7 +285,7 @@ def is_good(phase, waveform=None, ret_all_checks=False, phase_edge=np.pi/12, mod
     Returns
     -------
     Boolean
-        Flag idicating whether cycle is good (or array of booleans
+        Flag indicating whether cycle is good (or array of booleans
         corresponding to each check.
 
     """
@@ -679,7 +679,6 @@ def get_control_points(x, cycles, interp=False, mode='cycle'):
     # Preamble
     x = ensure_vector([x], ['x'], 'get_control_points')
     cycles = _ensure_cycle_inputs(cycles)
-    print(type(cycles))  # This should be an IterateCycles instance - ALWAYS!!
     if mode == 'augmented':
         cycles.mode = 'augmented'
 
@@ -1057,29 +1056,37 @@ class IterateCycles:
             inds = _cycles_support.map_chain_to_samples(self.chain_vect, self.subset_vect, self.cycle_vect, ii)
             yield ii, inds
 
-
 ###################################################
 # THE CYCLES CLASS
 
+
 class Cycles:
 
-    # ----------------------
-
     def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12,
-                 compute_timings=False, mode='cycle'):
+                 compute_timings=False, mode='cycle', use_cache=True):
+        logger.info('Initialising Cycles')
         self.phase = IP
         self.phase_step = phase_step
         self.phase_edge = phase_edge
 
-        self.phase = ensure_1d_with_singleton([IP], ['IP'], 'Cycles')
+        self.phase = ensure_vector([IP], ['IP'], 'Cycles')
         self.cycle_vect = get_cycle_vector(self.phase, return_good=False,
                                            phase_step=phase_step, phase_edge=phase_edge)
+        self.ncycles = self.cycle_vect.max() + 1
+        self.nsamples = self.phase.shape[0]
+        logger.debug('{0} cycles identified (avg len {1} samples)'.format(self.ncycles, self.nsamples/self.ncycles))
+
+        if use_cache:
+            logger.debug('Populating slice cache')
+            self._slice_cache = _cycles_support.make_slice_cache(self.cycle_vect)
+            self._slice_cache_aug = _cycles_support.make_aug_slice_cache(self._slice_cache, self.phase)
+        else:
+            self._slice_cache = None
+            self._slice_cache_aug = None
+
         self.subset_vect = None
         self.chain_vect = None
         self.mask_conditions = None
-
-        self.ncycles = self.cycle_vect.max() + 1
-        self.nsamples = self.phase.shape[0]
 
         self.metrics = dict()
         self.compute_cycle_metric('is_good', self.phase, is_good, dtype=int)
@@ -1171,7 +1178,7 @@ class Cycles:
         """Add an externally computed per-cycle metric"""
         if len(cycle_vals) != self.ncycles:
             msg = "Input metrics ({0}) mismatched to existing metrics ({1})"
-            return ValueError(msg.format(cycle_vals.shape, self.ncyclee))
+            return ValueError(msg.format(cycle_vals.shape, self.ncycles))
 
         if dtype is not None:
             if dtype is int:
@@ -1205,11 +1212,18 @@ class Cycles:
         """Compute a statistic for all cycles and store the result in the Cycle
         object for later use.
         """
+        logger.info("Computing metric '{0}' using {1} with mode '{2}'".format(name, func, mode))
         if mode == 'cycle':
-            vals = _cycles_support.get_cycle_stat_from_samples(vals, self.cycle_vect, func=func)
+            if self._slice_cache is None:
+                vals = _cycles_support.get_cycle_stat_from_samples(vals, self.cycle_vect, func=func)
+            else:
+                vals = _cycles_support.get_slice_stat_from_samples(vals, self._slice_cache, func=func)
         elif mode == 'augmented':
-            vals = _cycles_support.get_augmented_cycle_stat_from_samples(vals, self.cycle_vect,
-                                                                         self.phase, func=func)
+            if self._slice_cache_aug is None:
+                vals = _cycles_support.get_augmented_cycle_stat_from_samples(vals, self.cycle_vect,
+                                                                             self.phase, func=func)
+            else:
+                vals = _cycles_support.get_slice_stat_from_samples(vals, self._slice_cache_aug, func=func)
         else:
             raise ValueError
 
