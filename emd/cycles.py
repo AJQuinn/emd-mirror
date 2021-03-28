@@ -485,10 +485,6 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear', ii=None, m
 
         if mode == 'augmented':
             phase_data = np.unwrap(phase_data) - 2 * np.pi
-            #if phase_data[0] < -1.6  or phase_data[0] > -1.5:
-            #    print(phase_data[0])
-            #else:
-            #    print('ok')
 
         x_data = x[cycle_inds]
 
@@ -496,11 +492,39 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear', ii=None, m
                             bounds_error=False, fill_value='extrapolate')
 
         avg[:, cind] = f(phase_bins)
-        if np.any(avg[:, cind] > 50):
-            print(cind)
 
     logger.info('COMPLETED: phase-align cycles')
     return avg, phase_bins
+
+
+def normalised_waveform(infreq):
+    """Compute the time-domain waveform of an phase-aligned IF profile.
+
+    Parameters
+    ----------
+    infreq : ndarray
+        instantaneous frequency profiles [samples x cycles]  such as the output
+        from emd.cycles.phase_align.
+
+    Returns
+    -------
+    ndarray
+        The normalised waveforms of the cycles in infreq
+    ndarray
+        A reference sinusoid of the same length as the input.
+
+    """
+    infreq = ensure_2d([infreq], ['infreq'], 'normalised_waveform')
+    nw = np.zeros((infreq.shape[0]+1, infreq.shape[1]))
+    for ii in range(infreq.shape[1]):
+        sr = infreq[:, ii].mean() * len(infreq[:, ii])
+        phase_diff = (infreq[:, ii] / sr) * (2 * np.pi)
+        phase = np.cumsum(phase_diff, axis=0)
+        phase = np.r_[0, phase]
+        nw[:, ii] = np.sin(phase)
+    sine = np.sin(np.linspace(0, 2*np.pi, len(phase)))
+
+    return nw, sine
 
 
 def bin_by_phase(ip, x, nbins=24, weights=None, variance_metric='variance',

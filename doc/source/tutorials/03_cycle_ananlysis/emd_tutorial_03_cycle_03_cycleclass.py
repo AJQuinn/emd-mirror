@@ -253,7 +253,7 @@ def my_corr(x, y):
     return np.corrcoef(x, y)[0, 1]
 
 
-C.compute_cycle_metric('raw_corr', (imf[:,2], x[:, 0]), my_corr)
+C.compute_cycle_metric('raw_corr', (imf[:, 2], x[:, 0]), my_corr)
 
 
 #%%
@@ -337,7 +337,7 @@ C.compute_chain_metric('chain_max_amp', IA[:, 2], np.max)
 df = C.get_metric_dataframe(subset=True)
 
 plt.figure()
-plt.plot(df['chain_len_samples'],df['chain_max_amp'],'.')
+plt.plot(df['chain_len_samples'], df['chain_max_amp'], '.')
 plt.xlabel('Chain Length (samples)')
 plt.ylabel('Chain Max-Amplitude')
 
