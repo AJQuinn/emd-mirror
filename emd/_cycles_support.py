@@ -90,7 +90,14 @@ def make_aug_slice_cache(slice_cache, phase, func=augment_slice):
 
 def get_slice_stat_from_samples(vals, slices, func=np.mean):
     """Compute a stat from each slice in a list."""
-    return np.array([func(vals[s]) if s is not None else np.nan for s in slices])
+    if isinstance(vals, tuple):
+        out =  np.zeros((len(slices),))
+        for idx, s in enumerate(slices):
+            args = [v[s] for v in vals]
+            out[idx] = func(*args)
+        return out
+    else:
+        return np.array([func(vals[s]) if s is not None else np.nan for s in slices])
 
 
 def get_cycle_stat_from_samples(vals, cycle_vect, func=np.mean):

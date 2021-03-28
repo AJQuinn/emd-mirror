@@ -2,10 +2,10 @@
 The 'Cycles' class
 ================================
 EMD provides a Cycles class to help with more complex cycle comparisons. This
-class is based on the `emd.cycles.get_cycle_inds` and
-`eemd.cycles.get_cycle_stat` functions we used in the previous tutorial, but it
-does some additional hard work for you. For example, the Cycles class is a good
-way to compute and store many different stats from the same cycles and for
+class is based on the `emd.cycles.get_cycle_vector` and
+`emd.cycles.get_cycle_stat` functions we used in the previous tutorial, but it
+does some additional work for you. For example, the Cycles class is a good way
+to compute and store many different stats from the same cycles and for
 dynamically working with different subsets of cycles based on user specified
 conditions. Lets take a closer look...
 
@@ -32,7 +32,7 @@ t = np.linspace(0, seconds, seconds*sample_rate)
 plt.figure(figsize=(10, 2))
 plt.plot(t[:sample_rate*4], x[:sample_rate*4], 'k')
 
-# sphinx_gallery_thumbnail_number = 5
+# sphinx_gallery_thumbnail_number = 4
 
 #%%
 # We next run a mask sift with the default parameters to isolate the 12Hz
@@ -240,6 +240,22 @@ def degree_nonlinearity(x):
 
 C.compute_cycle_metric('DoN', IF[:, 2], degree_nonlinearity)
 
+
+#%%
+# Custom metrics which take multiple time-series arguments can also be defined.
+# In these cases a tuple of vectors is passed into `compute_cycle_metric` and
+# the samples for each cycle are indexed out of each vector and passed to the
+# function. For example, here we compute the correlation between the IMF-3 and
+# the raw time-course for each cycle.
+
+
+def my_corr(x, y):
+    return np.corrcoef(x, y)[0, 1]
+
+
+C.compute_cycle_metric('raw_corr', (imf[:,2], x[:, 0]), my_corr)
+
+
 #%%
 # We can also store arbitrary cycle stats in the dictionary - as long as there
 # is one value for every cycle. This might include external values or more
@@ -262,14 +278,14 @@ C.add_cycle_metric('trough_time_ms', trough_time_ms)
 # python-pandas installed, you can export the metrics into a DataFrame which is
 # easier to summarise and visualise.
 
-d = C.get_metric_dataframe()
-print(d)
+df = C.get_metric_dataframe()
+print(df)
 
 #%%
 # The summary table for the DataFrame gives a convenient summary description of
 # the cycle metrics.
 
-print(d.describe())
+print(df.describe())
 
 
 #%%
@@ -285,7 +301,7 @@ print(d.describe())
 # Lets extract the big-long-good cycles and compute the continuous
 # chains of cycles within this subset.
 
-C.apply_cycle_mask(['max_amp>1', 'duration>30', 'is_good==1'])
+C.pick_cycle_subset(['max_amp>1', 'duration>30', 'is_good==1'])
 
 #%%
 # This computes two additional variables. Firstly, a ``subset_vect`` which maps
@@ -295,16 +311,39 @@ C.apply_cycle_mask(['max_amp>1', 'duration>30', 'is_good==1'])
 print(C.subset_vect)
 
 #%%
-# Secondly, a ``chain_vect`` defines which cycles in the subset form continuous
-# chains.
+# Secondly, a ``chain_vect`` defines which groups of cycles in the subset form
+# continuous chains.
 
 print(C.chain_vect)
 
 #%%
+# There is a helper function in the Cycles object which computes a set of
+# simple chain timing metrics. These are 'chain_ind', `chain_start`,
+# `chain_end`, `chain_len_samples`, `chain_len_cycles` and `chain_position`.
+# Each metric is computed and a value saved out for each cycle.
 
 C.compute_chain_timings()
 
-#%%
+df = C.get_metric_dataframe(subset=True)
+print(df)
 
-d = C.get_metric_dataframe()
-print(d)
+#%%
+# We can also compute chain specific metrics similar to how we compute cycle
+# metrics. Each chain metric is saved out for each cycle within the chain. Here
+# we compute the maximum amplitude for each chain and plot its relationship
+# with chain length.
+
+C.compute_chain_metric('chain_max_amp', IA[:, 2], np.max)
+df = C.get_metric_dataframe(subset=True)
+
+plt.figure()
+plt.plot(df['chain_len_samples'],df['chain_max_amp'],'.')
+plt.xlabel('Chain Length (samples)')
+plt.ylabel('Chain Max-Amplitude')
+
+#%%
+# We can then select the cycle metrics from the cycles in a single chain by
+# specifying the chain index as a condition.
+
+df = C.get_metric_dataframe(conditions='chain_ind==42')
+print(df)
