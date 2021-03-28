@@ -91,7 +91,7 @@ def make_aug_slice_cache(slice_cache, phase, func=augment_slice):
 def get_slice_stat_from_samples(vals, slices, func=np.mean):
     """Compute a stat from each slice in a list."""
     if isinstance(vals, tuple):
-        out =  np.zeros((len(slices),))
+        out = np.zeros((len(slices), ))
         for idx, s in enumerate(slices):
             args = [v[s] for v in vals]
             out[idx] = func(*args)
