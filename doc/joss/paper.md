@@ -21,7 +21,7 @@ affiliations:
     index: 1
   - name: Medical Research Council Brain Network Dynamics Unit, Nuffield Department of Clinical Neurosciences, University of Oxford, Oxford, OX1 3TH, United Kingdom
     index: 2
-  - name: Department of Experimental Psychology, University of Oxford, Oxford. OX2 6GG. UK
+  - name: Department of Experimental Psychology, University of Oxford, Oxford, OX2 6GG, UK
     index: 3
 
 date: 30 November 2020
@@ -42,7 +42,7 @@ supported by online documentation containing a range of practical tutorials.
 Many oscillatory signals contain non-linear or non-sinusoidal features that
 change dynamically over time. These complex and dynamic features are often of
 analytic interest but can be challenging to isolate and quantify. The Empirical
-Mode Decomposition offers a potential solution defined by the sift-algorithm; a
+Mode Decomposition offers a potential solution defined by the *sift algorithm*, a
 data-adaptive decomposition that separates a signal into a set of Intrinsic
 Mode Functions (IMFs) that permit physically interpretable Hilbert transforms
 [@Huang1998] and subsequent analysis of instantaneous frequency. Crucially, the
@@ -55,10 +55,10 @@ prescribing that features remain consistent across the entire signal.
 Empirical Mode Decomposition is defined by the 'sift' algorithm (@Huang1998).
 This is a time-domain process which looks to isolate the fastest dynamics in a
 time-series by iteratively sifting out slower dynamics.  Any slow dynamics are
-removed by subtracting the average of the signals upper and lower amplitude
+removed by subtracting the average of the signal's upper and lower amplitude
 envelope until that average is sufficiently close to zero. This isolated signal
-component is known as an Intrinsic Mode Function (IMF), it is subtracted from
-the original signal and the sifting process repeated to identify the next IMF
+component is known as an Intrinsic Mode Function (IMF); it is subtracted from
+the original signal and the sifting process repeated to identify the next IMF,
 which will contain slower dynamics. This process is repeated until only a trend
 remains in the signal.
 
@@ -70,7 +70,7 @@ classic sift (`emd.sift.sift`; @Huang1998), the Ensemble EMD
 accelerated by parallel processing (though this is not possible in all variants
 of the sift algorithm). An example set of Intrinsic Mode Functions isolated by
 a Masked-Sift is shown in Figure 1. The sift functions rest upon a range of
-lower-level utility functions which can be customised and used directly if
+lower-level utility functions, which can be customised and used directly if
 needed. All levels of the sift computation are customisable from the top-level
 sift functions. Users can configure these sift options using a dictionary-like
 `emd.sift.SiftConfig` object. This config can then be passed directly to the
@@ -78,22 +78,22 @@ sift functions or saved in `YAML` format for later use or sharing.
 
 Each IMF can be analysed in terms of its instantaneous frequency
 characteristics at the full temporal resolution of the dataset [@Huang2009].
-The Hilbert-transform is used to construct an energy-frequency or
+The Hilbert transform is used to construct an energy-frequency or
 energy-frequency-time spectrum known as the Hilbert-Huang Transform (HHT). A
 second level decomposition of the amplitude modulations of each IMF extends the
-HHT to the Holospectrum describing signal energy across carrier frequency,
+HHT to the Holospectrum, describing signal energy across carrier frequency,
 amplitude modulation frequency and time [@Huang2016]. The frequency transforms are
 implemented in the `emd.spectra` submodule. `emd.spectra.frequency_stats`
 implements a set of methods for computing instantaneous frequency, phase and
 amplitude from a set of IMFs. These can be used as inputs to the
 `emd.spectra.hilberthuang` or `emd.spectra.holospectrum` to obtain energy
 distributions across time and frequency (see examples in Figures 3 and 4). The
-Hilbert-Huang and Holospectrum computations can be very large so these
+Hilbert-Huang and Holospectrum computations can be very large, so these
 functions use an efficient sparse array implementation.
 
 The `EMD` toolbox provides a range of functions for the detection of oscillatory
 cycles from the IMFs of a signal. Once identified, each cycle can be
-characterised by a range of features including its amplitude, frequency and
+characterised by a range of features, including its amplitude, frequency and
 waveform shape. Tools are provided for detecting continuous chains of
 oscillatory cycles and for matching similar cycles across datasets. The cycle
 analysis functions are implemented in `emd.cycle`.
@@ -103,7 +103,7 @@ Firstly, a customisable logger (implemented in `emd.logger`) is threaded
 throughout the toolbox to provide progress output about ongoing computations,
 warnings and errors. The logger output may be augmented by the user and any
 output can be directed to a specified log file in addition to the console.
-Secondly, `EMD` is supported by a range of tests implemented in the `py.test`
+Secondly, `EMD` is supported by a range of tests, implemented in the `py.test`
 framework. These include both routine usage tests and tests ensuring that the
 behaviour of the sift routines meet a set of pre-specified requirements.
 Finally, `emd.support` contains a set of functions for running tests and
@@ -121,16 +121,16 @@ spectral resolution.
 
 # State of the field
 
-The popularity of the EMD algorithm has lead to several
-implementations which offer overlapping functionality. Here, we include an
+The popularity of the EMD algorithm has led to several
+implementations which offer overlapping functionality. Here we include an
 incomplete list of these toolboxes providing sift, ensemble sift and HHT
-implementations. In Python, there are two substantial EMD implementations
-available on the PyPI server. [PyEMD](https://pyemd.readthedocs.io/en/latest/)
+implementations. In Python there are two substantial EMD implementations
+available on the PyPI server: [PyEMD](https://pyemd.readthedocs.io/en/latest/)
 and [PyHHT](https://pyhht.readthedocs.io/en/latest/). Each of these packages
 implements a family of sifting routines and frequency transforms. Another
-implementation of EMD in Matlab and C is available from [Patrick
+implementation of EMD, in Matlab and C, is available from [Patrick
 Flandarin](http://perso.ens-lyon.fr/patrick.flandrin/emd.html). This provides a
-wide range of sift functions but limited frequency transform or spectrum
+wide range of sift functions, but limited frequency transform or spectrum
 computations. Finally, the basic EMD algorithm and HHT is implemented in the
 [MatLab signal processing
 toolbox](https://uk.mathworks.com/help/signal/ref/emd.html) (versions >
@@ -138,7 +138,7 @@ R2018a).
 
 The `EMD` toolbox covers much of the functionality in these packages within a
 single computational framework. Beyond these methods, we add fully-featured
-implementations of masked sift and second-level sift routines as well as the
+implementations of masked sift and second-level sift routines, as well as the
 first Python implementation of higher-level Holospectrum analyses. Finally, we
 offer a suite of tools designed for analysis of single-cycles of an Intrinsic
 Mode Function.
@@ -169,9 +169,9 @@ guidelines](https://emd.readthedocs.io/en/latest/contribute.html).
 
 # Acknowledgements
 
-We would like to thank Norden Huang, Chi-Hung Juan, Jia-Rong Yeh and Wei-Kuang
+We thank Norden Huang, Chi-Hung Juan, Jia-Rong Yeh and Wei-Kuang
 Liang for enjoyable and fruitful discussions on EMD theory and applications in
-recent years. We would also like to thank Jasper Hajonides van der Meulen and
+recent years. We also thank Jasper Hajonides van der Meulen and
 Irene Echeverria-Altuna for their time, patience and feedback on early versions
 of this toolbox.
 
