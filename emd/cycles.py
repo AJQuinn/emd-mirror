@@ -6,15 +6,34 @@
 Identification and analysis of cycles in an oscillatory signal.
 
 Routines:
-  bin_by_phase
-  phase_align
   get_cycle_vector
+  get_subset_vector
+  get_chain_vector
+  is_good
   get_cycle_stat
   get_chain_stat
-  get_control_points
-  get_cycle_chain
+  phase_align
+  normalised_waveform
+  bin_by_phase
   mean_vector
   basis_project
+  get_control_points
+  get_control_point_metrics
+  get_control_point_metrics_aug
+  kdt_match
+
+Cycle Features
+  cf_start_value
+  cf_end_value
+  cf_peak_sample
+  cf_peak_value
+  cf_trough_sample
+  cf_trough_value
+  cf_descending_zero_sample
+  cf_ascending_zero_sample
+
+Classes
+  Cycles
 
 
 """
@@ -471,9 +490,7 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear', ii=None, m
         phase_edges, phase_bins = spectra.define_hist_bins(-np.pi / 2, 2 * np.pi, npoints)
 
     msg = 'aligning {0} cycles over {1} phase points with {2} interpolation'
-    logger.debug(msg.format(cycles.niters,
-                 npoints,
-                 interp_kind))
+    logger.debug(msg.format(cycles.niters, npoints, interp_kind))
 
     avg = np.zeros((npoints, cycles.niters))
     for cind, cycle_inds in cycles:
@@ -995,6 +1012,8 @@ def _ensure_cycle_inputs(invar):
 
 
 class IterateCycles:
+    """Iterator class to loop through cycles in a Cycles object."""
+
     def __init__(self, iter_through='cycles', mode='cycle', valids=None,
                  cycle_vect=None, subset_vect=None, chain_vect=None, phase=None):
         self.cycle_vect = cycle_vect
@@ -1019,6 +1038,7 @@ class IterateCycles:
 
     @property
     def niters(self):
+        """Number of cycles to be iterated through."""
         if self.iter_through == 'cycles':
             return self.cycle_vect.max() + 1
         elif self.iter_through == 'valids':
@@ -1041,6 +1061,7 @@ class IterateCycles:
             raise ValueError
 
     def iterate_cycles(self):
+        """Iterate through all cycles."""
         for ii in range(self.ncycles):
             if self.mode == 'cycle':
                 inds = _cycles_support.map_cycle_to_samples(self.cycle_vect, ii)
@@ -1052,6 +1073,7 @@ class IterateCycles:
                 raise ValueError
 
     def iterate_valids(self):
+        """Iterate through a custom set of matching cycles."""
         for idx, ii in enumerate(np.where(self.valids)[0]):
             if self.mode == 'cycle':
                 inds = _cycles_support.map_cycle_to_samples(self.cycle_vect, ii)
@@ -1065,6 +1087,7 @@ class IterateCycles:
                 raise ValueError
 
     def iterate_subset(self):
+        """Iterate through the fixed subset of cycles."""
         for ii in range(self.nsubset):
             if self.mode == 'cycle':
                 inds = _cycles_support.map_subset_to_sample(self.subset_vect, self.cycle_vect, ii)
@@ -1076,6 +1099,7 @@ class IterateCycles:
                 raise ValueError
 
     def iterate_chains(self):
+        """Iterate through all chains."""
         for ii in range(self.nchain):
             inds = _cycles_support.map_chain_to_samples(self.chain_vect, self.subset_vect, self.cycle_vect, ii)
             yield ii, inds
@@ -1085,6 +1109,7 @@ class IterateCycles:
 
 
 class Cycles:
+    """Find, store and analyse singl cycles."""
 
     def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12,
                  compute_timings=False, mode='cycle', use_cache=True):
@@ -1118,6 +1143,7 @@ class Cycles:
             self.compute_cycle_timings()
 
     def __repr__(self):
+        """Print a short summary."""
         if self.subset_vect is None:
             return "{0} ({1} cycles {2} metrics) ".format(type(self),
                                                           self.ncycles,
@@ -1133,9 +1159,11 @@ class Cycles:
     # ----------------------
 
     def __iter__(self):
+        """Iterate through all cycles."""
         return self.iterate().__iter__()
 
     def iterate(self, through='cycles', conditions=None, mode='cycle'):
+        """Iterate through some or all cycles."""
         if conditions is not None:
             valids = self.get_matching_cycles(conditions)
         else:
@@ -1149,6 +1177,7 @@ class Cycles:
     # ----------------------
 
     def get_inds_of_cycle(self, ii, mode='cycle'):
+        """Find indices of specified cycle."""
         if mode == 'cycle':
             inds = _cycles_support.map_cycle_to_samples(self.cycle_vect, ii)
             return inds
@@ -1157,7 +1186,7 @@ class Cycles:
             return inds
 
     def get_cycle_vector(self, ii, mode='cycle'):
-        """Get sample indices of a single cycle"""
+        """Create cycle-vector representation of cycle timings."""
         if mode == 'cycle':
             return _cycles_support.map_cycle_to_samples(self.cycle_vect, ii)
         elif mode == 'augmented':
@@ -1219,6 +1248,7 @@ class Cycles:
     # ----------------------
 
     def compute_position_in_chain(self):
+        """Compute where in a sequence a cycle occurs."""
         if self.chain_vect is None:
             # No chains to analyse... do
             raise ValueError

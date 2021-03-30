@@ -65,33 +65,6 @@ class test_cycles(unittest.TestCase):
         assert(np.all(uni_cycles == np.arange(-1, 7)))
         assert(cycles[1100] == -1)
 
-    #def test_cycle_chain(self):
-    #    from ..cycles import get_cycle_chain
-
-    #    cycles = self.cycle_generator(4, phase=0)
-    #    chain = get_cycle_chain(cycles)
-    #    assert(np.all(chain[0] == np.arange(0, 8)))
-
-    #    cycles = self.cycle_generator(4, phase=0, distort=1200)
-    #    chain = get_cycle_chain(cycles)
-    #    assert(np.all(chain == [[0, 1, 2, 3], [4, 5, 6]]))
-
-    #    chain = get_cycle_chain(cycles, drop_first=True)
-    #    assert(np.all(chain == np.array([[1, 2, 3], [5, 6]])))
-
-    #    chain = get_cycle_chain(cycles, drop_last=True)
-    #    assert(np.all(chain == np.array([[0, 1, 2], [4, 5]])))
-
-    #    chain = get_cycle_chain(cycles, drop_first=True, drop_last=True)
-    #    assert(np.all(chain == np.array([[1, 2], [5]])))
-
-    #    cycles = self.cycle_generator(4, phase=0, distort=800)
-    #    chain = get_cycle_chain(cycles)
-    #    assert(np.all(chain == np.array([[0, 1], [2, 3, 4, 5, 6]])))
-
-    #    chain = get_cycle_chain(cycles, min_chain=3)
-    #    assert(np.all(chain == np.array([2, 3, 4, 5, 6])))
-
     def test_cycle_control_points(self):
         from ..cycles import get_control_points
 
@@ -102,6 +75,88 @@ class test_cycles(unittest.TestCase):
         # We accept a 1 sample error in ctrl point location...
         ref = 1280*np.linspace(0, 1, 5)
         assert(np.abs(ctrl-ref).max())
+
+
+class test_cycles_support(unittest.TestCase):
+
+    def setUp(self):
+        from ..cycles import get_cycle_vector, get_subset_vector, get_chain_vector
+        from ..spectra import frequency_transform
+        from .._cycles_support import get_cycle_stat_from_samples
+
+        X = np.sin(2*np.pi*10*np.linspace(0, 2, 512))
+        X = X * (2-np.cos(2*np.pi*1*np.linspace(0, 2, 512)))
+        IP, IF, IA = frequency_transform(X, 512, 'hilbert')
+
+        self.cycle_vect = get_cycle_vector(IP[:, 0], return_good=False)
+        self.max_amps = get_cycle_stat_from_samples(IA[:, 0], self.cycle_vect, np.max)
+
+        valids = self.max_amps > 1.5
+        self.subset_vect = get_subset_vector(valids)
+        self.chain_vect = get_chain_vector(self.subset_vect)
+
+    def test_cycle_maps(self):
+
+        from .._cycles_support import map_sample_to_cycle, map_cycle_to_samples
+        # Test 1 - q2 should contain 350
+        q1 = map_sample_to_cycle(self.cycle_vect, 350)
+        q2 = map_cycle_to_samples(self.cycle_vect, q1[0])
+        assert(350 in q2)
+
+        from .._cycles_support import map_cycle_to_subset, map_subset_to_cycle
+        # Test 2 - should recover 9
+        q3 = map_subset_to_cycle(self.subset_vect, 9)
+        q4 = map_cycle_to_subset(self.subset_vect, q3)
+        assert(q4[0] == 9)
+
+        from .._cycles_support import map_sample_to_subset, map_subset_to_sample
+        # Test 3 - should recover 350
+        q5 = map_sample_to_subset(self.subset_vect, self.cycle_vect, 350)
+        q6 = map_subset_to_sample(self.subset_vect, self.cycle_vect, q5[0])
+        assert(350 in q6)
+
+        from .._cycles_support import map_chain_to_subset, map_subset_to_chain
+        # Test 4 - Should recover 7
+        q7 = map_subset_to_chain(self.chain_vect, 7)
+        q8 = map_chain_to_subset(self.chain_vect, q7)
+        assert(7 in q8)
+
+        from .._cycles_support import map_cycle_to_chain
+        # Test 5 - check that third cycle with -1 in subset doesn't have a chain
+        q9 = map_cycle_to_chain(self.chain_vect, self.subset_vect, np.where(self.subset_vect == -1)[0][3])
+        assert(q9 is None)
+
+
+class test_cycles_object(unittest.TestCase):
+
+    def setUp(self):
+        from ..spectra import frequency_transform
+        from ..cycles import Cycles
+
+        X = np.sin(2*np.pi*10*np.linspace(0, 2, 512))
+        self.X = X * (2-np.cos(2*np.pi*1*np.linspace(0, 2, 512)))
+        self.IP, self.IF, self.IA = frequency_transform(X, 512, 'hilbert')
+
+        self.C = Cycles(self.IP[:, 0])
+
+    def test_cycle_object_metrics(self):
+        self.C.compute_cycle_metric('max_amp', self.IA[:, 0], np.max)
+        self.C.compute_cycle_timings()
+
+        xx = np.arange(self.C.ncycles)
+        self.C.add_cycle_metric('range', xx)
+
+        conditions = ['max_amp>0.75']
+        self.C.pick_cycle_subset(conditions)
+        self.C.compute_chain_timings()
+
+        df = self.C.get_metric_dataframe()
+        assert(len(df['max_amp']) == self.C.ncycles)
+        df = self.C.get_metric_dataframe(subset=True)
+        assert(len(df['max_amp']) == 20)
+        conditions = ['max_amp>0.75', 'range>5']
+        df = self.C.get_metric_dataframe(conditions=conditions)
+        assert(len(df['max_amp']) == 14)
 
 
 class test_kdt_match(unittest.TestCase):

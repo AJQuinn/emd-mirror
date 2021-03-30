@@ -2,6 +2,12 @@
 
 # vim: set expandtab ts=4 sw=4:
 
+"""
+Low-level functions for handling single cycle analyses.
+
+
+"""
+
 import numpy as np
 
 # --------------------------------------
@@ -65,9 +71,9 @@ def make_slice_cache(cycle_vect):
     return slice_cache
 
 
-def _slice_len(slice):
+def _slice_len(sli):
     """Find the length of array returned by a slice."""
-    return slice.stop - slice.start + 1
+    return sli.stop - sli.start + 1
 
 
 def augment_slice(s, phase):
