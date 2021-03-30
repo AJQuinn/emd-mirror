@@ -22,6 +22,16 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+
+---
+
+# Stable Versions
+
+## 0.4.0
+
+    pip install emd==0.4.0
+Released 2021-03-30
+
 ### Notes
 Many changes in this revision come from the review process at [JOSS](https://github.com/openjournals/joss-reviews/issues/2977)
 
@@ -47,10 +57,9 @@ Many changes in this revision come from the review process at [JOSS](https://git
 - Make docstrings pydocstyle compliant and add pydocstyle conventions [!53](https://gitlab.com/emd-dev/emd/-/merge_requests/53)
 - Large number of pylint recommended fixes [271d7937](https://gitlab.com/emd-dev/emd/-/commit/271d793731fad64902f16323493ee06893002286)
 - Indexing typo fixed in bin_by_phase [c5679432](https://gitlab.com/emd-dev/emd/-/commit/c5679432cfcd011965547144aaa936eee1405f62)
+- Improve label alignments in plot_imfs [!54](https://gitlab.com/emd-dev/emd/-/merge_requests/56)
 
 ---
-
-# Stable Versions
 
 ## 0.3.3
 

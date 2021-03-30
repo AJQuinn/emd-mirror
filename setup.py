@@ -11,8 +11,8 @@ from setuptools import setup
 scripts = []
 
 name = 'emd'
-version = '0.3'
-release = '0.3.3'
+version = '0.4'
+release = '0.4.0'
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -52,6 +52,9 @@ setup(
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
 
     keywords='EMD Spectrum Frequency Non-Linear Holospectrum Hilbert-Huang',
