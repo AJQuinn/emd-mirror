@@ -23,3 +23,5 @@ from . import cycles  # noqa: F401, F403
 from . import _cycles_support  # noqa: F401, F403
 from . import sift  # noqa: F401, F403
 from . import support  # noqa: F401, F403
+
+__version__ = support.get_installed_version()
