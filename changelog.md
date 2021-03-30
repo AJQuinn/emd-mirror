@@ -35,6 +35,9 @@ Many changes in this revision come from the review process at [JOSS](https://git
 - Add new plotting functionality for HHT and Holospectra [!53](https://gitlab.com/emd-dev/emd/-/merge_requests/53)
 
 ### Changed
+- Major refactor in handling of cycles analysis [!56](https://gitlab.com/emd-dev/emd/-/merge_requests/56)
+  - Introduce Cycles class
+  - Introduce \_cycles\_support module
 - Renamed 'References' webpage to 'API' [d8fe93b5](https://gitlab.com/emd-dev/emd/-/commit/d8fe93b520c19ce45f3f5a73294074a4b1d75ce5)
 
 ### Fixed
