@@ -17,7 +17,7 @@ class test_cycles(unittest.TestCase):
         self.signal = np.sin(2 * np.pi * 10 * self.time_vect)[:, None]
 
     def cycle_generator(self, f, phase=0, distort=None):
-        from ..cycles import get_cycle_inds
+        from ..cycles import get_cycle_vector
         from ..spectra import frequency_transform
 
         x = np.sin(2 * np.pi * f * self.time_vect + phase)[:, None]
@@ -29,7 +29,7 @@ class test_cycles(unittest.TestCase):
         # This is a perfect sin so we can use normal hilbert
         IP, IF, IA = frequency_transform(x, self.sample_rate, 'hilbert')
         # Find good cycles
-        cycles = get_cycle_inds(IP, return_good=True)[:, 0]
+        cycles = get_cycle_vector(IP, return_good=True)[:, 0]
 
         return cycles
 
@@ -140,8 +140,12 @@ class test_cycles_object(unittest.TestCase):
         self.C = Cycles(self.IP[:, 0])
 
     def test_cycle_object_metrics(self):
+        from ..cycles import cf_ascending_zero_sample
+
         self.C.compute_cycle_metric('max_amp', self.IA[:, 0], np.max)
         self.C.compute_cycle_timings()
+
+        self.C.compute_cycle_metric('asc_samp', self.X, cf_ascending_zero_sample, mode='augmented')
 
         xx = np.arange(self.C.ncycles)
         self.C.add_cycle_metric('range', xx)
@@ -157,6 +161,10 @@ class test_cycles_object(unittest.TestCase):
         conditions = ['max_amp>0.75', 'range>5']
         df = self.C.get_metric_dataframe(conditions=conditions)
         assert(len(df['max_amp']) == 14)
+
+    def test_cycle_object_iteration(self):
+        from ..cycles import phase_align
+        pa, phasex = phase_align(self.IP, self.IF, self.C)
 
 
 class test_kdt_match(unittest.TestCase):

@@ -66,8 +66,8 @@ plt.plot(t[:sample_rate*8], C.cycle_vect[:sample_rate*8], 'k')
 
 #%%
 # The Cycles class has an attached function to help identify when specific
-# cycles occured in a dataset. The ``C.get_inds_of_cycle`` function finds and
-# returns the samples in which the Nth cycle occured. Here, we run this find
+# cycles occurred in a dataset. The ``C.get_inds_of_cycle`` function finds and
+# returns the samples in which the Nth cycle occurred. Here, we run this find
 # and plot three cycles from our simulation. The cycle in the original
 # time-series is plotted in grey and the cycle from the second IMF is in
 # colour.
@@ -86,7 +86,7 @@ for ii in range(len(cycles_to_plot)):
 # shortcomings with this standard cycle. For example, we may want to separately
 # analyse the ascending and descending edges of the oscillation, whilst the
 # descending edge is continuous - the cycles above contain two halves of two
-# separate ascending edges at the start andd end of the cycle.
+# separate ascending edges at the start and end of the cycle.
 #
 # We could adjust the phase to make our cycle identification start at the peak
 # to ensure the ascending edge is continuous, but this will just split another
@@ -108,7 +108,7 @@ for ii in range(len(cycles_to_plot)):
     plt.plot(xinds, imf[inds, 2])
 
 #%%
-# The cycles class can be used as an input to several othere ``emd.cycles``
+# The cycles class can be used as an input to several other ``emd.cycles``
 # functions to specify which cycles a particular computation should run across.
 #
 # For example, here we compute the control points across from IMF-3 for each of
@@ -186,7 +186,7 @@ print(df)
 # We can extract a cycle vector for only the good cycles using the
 # `get_matching_cycles` method attached to the `Cycles` class. This function
 # takes a list of one or more conditions and returns a booleaen vector
-# indiciating which cycles match the conditions.  These conditions specify the
+# indicating which cycles match the conditions.  These conditions specify the
 # name of a cycle metric, a standard comparator (such as ==, > or <) and a
 # comparison value.
 #
