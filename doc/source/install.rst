@@ -26,7 +26,7 @@ The `stable version of the code <https://pypi.org/project/emd/>`_ is hosted on `
 
         pip will install the latest version of EMD from PyPI alongside any missing dependencies into the current python environment. You can install a specific version by specifying the version number::
 
-            pip install emd==0.3.3
+            pip install emd==0.4.0
 
 
 .. container:: toggle body

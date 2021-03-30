@@ -22,6 +22,16 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+
+---
+
+# Stable Versions
+
+## 0.4.0
+
+    pip install emd==0.4.0
+Released 2021-03-30
+
 ### Notes
 Many changes in this revision come from the review process at [JOSS](https://github.com/openjournals/joss-reviews/issues/2977)
 
@@ -50,8 +60,6 @@ Many changes in this revision come from the review process at [JOSS](https://git
 - Improve label alignments in plot_imfs [!54](https://gitlab.com/emd-dev/emd/-/merge_requests/56)
 
 ---
-
-# Stable Versions
 
 ## 0.3.3
 

@@ -33,9 +33,9 @@ copyright = '2019, Andrew Quinn'
 author = 'Andrew Quinn'
 
 # The short X.Y version
-version = ''
+version = '0.4'
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.4.0'
 
 
 # -- General configuration ---------------------------------------------------
