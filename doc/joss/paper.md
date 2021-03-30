@@ -125,16 +125,15 @@ The popularity of the EMD algorithm has led to several
 implementations which offer overlapping functionality. Here we include an
 incomplete list of these toolboxes providing sift, ensemble sift and HHT
 implementations. In Python there are two substantial EMD implementations
-available on the PyPI server: [PyEMD](https://pyemd.readthedocs.io/en/latest/)
-and [PyHHT](https://pyhht.readthedocs.io/en/latest/). Each of these packages
+available on the PyPI server: [PyEMD](https://github.com/laszukdawid/PyEMD) [@pyemd]
+and [PyHHT](https://pyhht.readthedocs.io/en/latest/) [@pyHHT]. Each of these packages
 implements a family of sifting routines and frequency transforms. Another
 implementation of EMD, in Matlab and C, is available from [Patrick
-Flandarin](http://perso.ens-lyon.fr/patrick.flandrin/emd.html). This provides a
+Flandrin](http://perso.ens-lyon.fr/patrick.flandrin/emd.html) [@flandrin]. This provides a
 wide range of sift functions, but limited frequency transform or spectrum
 computations. Finally, the basic EMD algorithm and HHT is implemented in the
 [MatLab signal processing
-toolbox](https://uk.mathworks.com/help/signal/ref/emd.html) (versions >
-R2018a).
+toolbox](https://uk.mathworks.com/help/signal/ref/emd.html) [@matlabsignal].
 
 The `EMD` toolbox covers much of the functionality in these packages within a
 single computational framework. Beyond these methods, we add fully-featured
