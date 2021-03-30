@@ -48,7 +48,7 @@ emd.logger.set_up()
 # Generate a simulation
 peak_freq = 12
 sample_rate = 512
-seconds = 60
+seconds = 10
 noise_std = .5
 x = emd.utils.ar_simulate(peak_freq, sample_rate, seconds, noise_std=noise_std, random_seed=42, r=.99)
 
@@ -161,13 +161,11 @@ def my_analysis(x):
     cycles = emd.cycles.get_cycle_inds(IP, return_good=True, mask=mask)
 
     # Compute cycle stats
-    cycle_freq = emd.cycles.get_cycle_stat(cycles[:, 2], IF[:, 2], mode='compressed', func=np.mean)[1:]
-    cycle_freq_std = emd.cycles.get_cycle_stat(cycles[:, 2], IF[:, 2], mode='compressed', func=np.std)[1:]
-    cycle_amp = emd.cycles.get_cycle_stat(cycles[:, 2], IA[:, 2], mode='compressed', func=np.mean)[1:]
+    cycle_freq = emd.cycles.get_cycle_stat(cycles[:, 2], IF[:, 2], func=np.mean)[1:]
+    cycle_amp = emd.cycles.get_cycle_stat(cycles[:, 2], IA[:, 2], func=np.mean)[1:]
 
     # Print some cycle correlations
     logger.info('Freq-Amp correlation: r={0:2f}'.format(np.corrcoef(cycle_freq, cycle_amp)[0, 1]))
-    logger.info('Amp-FreqStd correlation: r={0:2f}'.format(np.corrcoef(cycle_freq, cycle_freq_std)[0, 1]))
 
     # Print the elapsed time of the analysis
     toc = time.perf_counter()

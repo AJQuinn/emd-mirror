@@ -45,9 +45,8 @@ Spectrum Utilities
 Cycle Analysis
 *********************
 
-.. autofunction:: emd.cycles.get_cycle_inds
+.. autofunction:: emd.cycles.get_cycle_vector
 .. autofunction:: emd.cycles.get_cycle_stat
-.. autofunction:: emd.cycles.get_cycle_chain
 .. autofunction:: emd.cycles.get_control_points
 .. autofunction:: emd.cycles.phase_align
 .. autofunction:: emd.cycles.bin_by_phase

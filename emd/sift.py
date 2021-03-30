@@ -967,18 +967,18 @@ def mask_sift(X, mask_amp=1, mask_amp_mode='ratio_imf', mask_freqs='zc',
     zero-crossings and mask amplitudes by a ratio with the amplitude of the
     previous IMF (note - this is also the default):
 
-    >> imf = emd.sift.mask_sift(X, mask_amp_mode='ratio_imf', mask_freqs='zc')
+    >>> imf = emd.sift.mask_sift(X, mask_amp_mode='ratio_imf', mask_freqs='zc')
 
     A mask sift in which the first mask is set at .4 of the sampling rate and
     subsequent masks found by successive division of this mask_freq by 3:
 
-    >> imf = emd.sift.mask_sift(X, mask_freqs=.4, mask_step_factor=3)
+    >>> imf = emd.sift.mask_sift(X, mask_freqs=.4, mask_step_factor=3)
 
     A mask sift using user specified frequencies and amplitudes:
 
-    >> mask_freqs = np.array([.4,.2,.1,.05,.025,0])
-    >> mask_amps = np.array([2,2,1,1,.5,.5])
-    >> imf = emd.sift.mask_sift(X, mask_freqs=mask_freqs, mask_amp=mask_amps, mask_amp_mode='abs')
+    >>> mask_freqs = np.array([.4,.2,.1,.05,.025,0])
+    >>> mask_amps = np.array([2,2,1,1,.5,.5])
+    >>> imf = emd.sift.mask_sift(X, mask_freqs=mask_freqs, mask_amp=mask_amps, mask_amp_mode='abs')
 
     See Also
     --------

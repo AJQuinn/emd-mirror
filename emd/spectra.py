@@ -29,8 +29,8 @@ import warnings
 import numpy as np
 from scipy import signal, sparse
 
-from . import utils
-from .support import ensure_2d, ensure_equal_dims
+from . import utils, cycles
+from .support import ensure_2d, ensure_equal_dims, ensure_vector
 
 # Housekeeping for logging
 logger = logging.getLogger(__name__)
@@ -125,6 +125,33 @@ def frequency_transform(imf, sample_rate, method,
         if orig_dim == 2:
             iamp = iamp[:, :, 0]
 
+    elif method == 'ctrl':
+        logger.info('Using Control Points - CURRENTLY BROKEN')
+
+        orig_dim = imf.ndim
+        if imf.ndim == 2:
+            imf = imf[:, :, None]
+
+        # Get phase from control points
+        iphase = np.zeros_like(imf)
+        for ii in range(imf.shape[1]):
+            for jj in range(imf.shape[2]):
+                good_cycles = cycles.get_cycle_inds_from_waveform(imf[:, ii, jj], cycle_start='asc')
+                ctrl = cycles.get_control_points(imf[:, ii, jj], good_cycles)
+                iphase[:, ii, jj] = phase_from_control_points(ctrl, good_cycles)
+                iphase[:, ii, jj] = np.unwrap(iphase[:, ii, jj])
+
+        # Estimate inst amplitudes with spline interpolation
+        iamp = np.zeros_like(imf)
+        for ii in range(imf.shape[1]):
+            for jj in range(imf.shape[2]):
+                iamp[:, ii, jj] = utils.interp_envelope(imf[:, ii, jj],
+                                                        mode='upper')
+
+        if orig_dim == 2:
+            iamp = iamp[:, :, 0]
+            iphase = iphase[:, :, 0]
+
     elif method == 'quad':
         logger.info('Using Quadrature transform')
 
@@ -159,9 +186,10 @@ def frequency_transform(imf, sample_rate, method,
         logger.error("Method '{0}' not recognised".format(method))
         raise ValueError("Method '{0}' not recognised\nPlease use one of 'hilbert','nht' or 'quad'".format(method))
 
-    # Compute unwrapped phase for frequency estimation
-    iphase = phase_from_complex_signal(
-        analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped')
+    if method != 'ctrl':
+        # Compute unwrapped phase for frequency estimation
+        iphase = phase_from_complex_signal(
+            analytic_signal, smoothing=smooth_phase, ret_phase='unwrapped')
     ifreq = freq_from_phase(iphase, sample_rate)
 
     # Return wrapped phase
@@ -316,6 +344,29 @@ def phase_from_freq(ifrequency, sample_rate, phase_start=-np.pi):
     iphase = phase_start + np.cumsum(iphase_diff, axis=0)
 
     return iphase
+
+
+def phase_from_control_points(ctrl, cycles):
+    from scipy import interpolate as interp
+
+    cycles = ensure_vector([cycles],
+                           ['cycles'],
+                           'phase_from_control_points')
+
+    ip = np.zeros_like(cycles, dtype=float)
+    phase_y = np.array([0, np.pi / 2, np.pi, 3 * np.pi / 2, 2 * np.pi])
+
+    for jj in range(1, cycles.max() + 1):
+
+        if np.any(np.isnan(ctrl[jj-1, :])):
+            continue
+
+        f = interp.interp1d(ctrl[jj-1, :], phase_y, kind='linear')
+        ph = f(np.arange(0, ctrl[jj-1, -1] + 1))
+
+        ip[cycles == jj] = ph
+
+    return ip
 
 
 def direct_quadrature(fm):

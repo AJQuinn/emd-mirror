@@ -66,6 +66,7 @@ setup(
                       'numpydoc',
                       'pyyaml',
                       'pytest',
+                      'pandas',
                       'sphinx_rtd_theme'],
 
     extras_require={
