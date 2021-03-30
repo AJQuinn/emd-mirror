@@ -64,7 +64,7 @@ def plot_imfs(imfs, time_vect=None, sample_rate=1, scale_y=False, freqs=None, cm
     ax.plot(time_vect, imfs.sum(axis=1), 'k')
     ax.tick_params(axis='x', labelbottom=False)
     ax.set_xlim(time_vect[0], time_vect[-1])
-    ax.set_ylim(-mx_sig* 1.1, mx_sig * 1.1)
+    ax.set_ylim(-mx_sig * 1.1, mx_sig * 1.1)
     ax.set_ylabel('Signal', rotation=0, labelpad=10)
 
     if cmap is True:
