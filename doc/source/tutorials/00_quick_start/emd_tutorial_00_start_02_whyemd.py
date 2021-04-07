@@ -64,7 +64,7 @@ plt.figure()
 plt.plot(f, np.abs(pxx))
 plt.plot(f, np.abs(pyy), '--')
 plt.xlim(0, 20)
-plt.legend(['Sinsuoidal', 'Non-linear'])
+plt.legend(['Sinusoidal', 'Non-linear'])
 plt.xlabel('Frequency (Hz)')
 plt.ylabel('Power')
 
