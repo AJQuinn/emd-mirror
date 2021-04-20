@@ -1,6 +1,23 @@
 {% extends "!page.html" %}
 
 {% block footer %}
+<footer class="navbar fixed-bottom text-center myfoot">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      {% if theme_source_link_position == "footer" %}
+        <br/>
+        {% include "sourcelink.html" %}
+      {% endif %}
+    </p>
+    <p>
+    {% trans copyright=copyright|e %}&#169; Copyright {{ copyright }}.{% endtrans %}
+    {%- if show_sphinx %}
+      {% trans sphinx_version=sphinx_version|e %}Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}<br/>
+    {%- endif %}
+    </p>
+  </div>
+
  <script type="text/javascript">
     $(document).ready(function() {
         $(".toggle > *").hide();
@@ -11,4 +28,5 @@
         })
     });
 </script>
+</footer>
 {% endblock %}

@@ -22,6 +22,9 @@ Work in progress...
 
     git clone https://gitlab.com/emd-dev/emd.git
 
+### Added
+- New citations page on website (and assorted website/reference fixups) [!60](https://gitlab.com/emd-dev/emd/-/merge_requests/60)
+
 
 ---
 

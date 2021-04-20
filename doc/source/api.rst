@@ -8,6 +8,8 @@ Sift Functions
 .. autofunction:: emd.sift.ensemble_sift
 .. autofunction:: emd.sift.complete_ensemble_sift
 .. autofunction:: emd.sift.mask_sift
+.. autofunction:: emd.sift.sift_second_layer
+.. autofunction:: emd.sift.mask_sift_second_layer
 
 Sift Utilities
 *********************
@@ -22,12 +24,9 @@ Frequency Functions
 *********************
 
 .. autofunction:: emd.spectra.frequency_transform
-.. autofunction:: emd.spectra.quadrature_transform
 .. autofunction:: emd.spectra.phase_from_complex_signal
 .. autofunction:: emd.spectra.freq_from_phase
 .. autofunction:: emd.spectra.phase_from_freq
-.. autofunction:: emd.spectra.direct_quadrature
-.. autofunction:: emd.spectra.phase_angle
 
 Spectrum Functions
 *********************
@@ -49,6 +48,7 @@ Cycle Analysis
 .. autofunction:: emd.cycles.get_cycle_stat
 .. autofunction:: emd.cycles.get_control_points
 .. autofunction:: emd.cycles.phase_align
+.. autofunction:: emd.cycles.normalised_waveform
 .. autofunction:: emd.cycles.bin_by_phase
 .. autofunction:: emd.cycles.mean_vector
 .. autofunction:: emd.cycles.kdt_match
