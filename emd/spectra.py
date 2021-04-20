@@ -694,10 +694,13 @@ def define_hist_bins(data_min, data_max, nbins, scale='linear'):
 
     Notes
     -----
-    >> edges,centres = emd.spectra.define_hist_bins( 1, 5, 3 )
-    >> print(edges)
+    An example creating histogram bins between 1 Hz and 5 Hz with four linearly
+    spaced bins.
+
+    >>> edges,centres = emd.spectra.define_hist_bins(1, 5, 4)
+    >>> print(edges)
     [1. 2. 3. 4. 5.]
-    >> print(centres)
+    >>> print(centres)
     [1.5 2.5 3.5 4.5]
 
     """

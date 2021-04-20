@@ -1,3 +1,12 @@
+* {
+  margin: 0;
+}
+
+html,body {
+  min-height: 100%;
+}
+
+
 .reference.download{ background: #f2ebed; border: #FFFFFF}
 
 .reference.download:hover {
@@ -38,4 +47,13 @@
     content: " -     ";
     margin: 12px;
     font-size: 20px;
+}
+
+
+.myfoot {
+    margin-top: 100px;
+    margin-bottom: 0px;
+    position: relative;
+    bottom: 0;
+    min-height: 35px;
 }

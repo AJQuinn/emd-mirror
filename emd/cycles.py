@@ -101,23 +101,27 @@ def get_cycle_vector(phase, return_good=True, mask=None,
     Notes
     -----
     Good cycles are those with
-    1 : A strictly positively increasing phase
-    2 : A phase starting within phase_step of zero (ie 0 < x < phase_edge)
-    3 : A phase ending within phase_step of 2pi (is 2pi-phase_edge < x < 2pi)
-    4 : A set of 4 unique control points (asc-zero, peak, desc-zero & trough)
+
+    * A strictly positively increasing phase
+    * A phase starting within phase_step of zero (ie 0 < x < phase_edge)
+    * A phase ending within phase_step of 2pi (is 2pi-phase_edge < x < 2pi)
+    * A set of 4 unique control points (asc-zero, peak, desc-zero & trough)
 
     Good cycles can be idenfied with:
-    >> good_cycles = emd.utils.get_cycle_vector( phase )
+
+    >>> good_cycles = emd.utils.get_cycle_vector(phase)
 
     The total number of cycles is then
-    >> good_cycles.max()
+
+    >>> good_cycles.max()
 
     Indices where good cycles is zero do not contain a valid cycle
-    bad_segments = good_cycles>0
+
+    >>> bad_segments = good_cycles > -1
 
     A single cycle can be isolated by matching its index, eg for the 5th cycle
-    cycle_5_inds = good_cycles==5
 
+    >>> cycle_5_inds = good_cycles == 5
 
     """
 
@@ -307,6 +311,14 @@ def is_good(phase, waveform=None, ret_all_checks=False, phase_edge=np.pi/12, mod
         Flag indicating whether cycle is good (or array of booleans
         corresponding to each check.
 
+    References
+    ----------
+    .. [1] Andrew J. Quinn, Vitor Lopes-dos-Santos, Norden Huang, Wei-Kuang
+           Liang, Chi-Hung Juan, Jia-Rong Yeh, Anna C. Nobre, David Dupret, & Mark W.
+           Woolrich (2021). Within-cycle instantaneous frequency profiles report
+           oscillatory waveform dynamics. bioRxiv, 2021.04.12.439547.
+           https://doi.org/10.1101/2021.04.12.439547
+
     """
     cycle_checks = np.zeros((4,), dtype=bool)
 
@@ -443,7 +455,7 @@ def get_chain_stat(chains, var, func=np.mean):
 
 def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear', ii=None, mode='cycle'):
     """
-    Compute phase alignment of a vector of observed values across a set of cycles.
+    Compute phase alignment of a vector of observed values across a set of cycles [1]_.
 
     Parameters
     ----------
@@ -464,8 +476,15 @@ def phase_align(ip, x, cycles=None, npoints=48, interp_kind='linear', ii=None, m
     ndarray :
         array containing the phase aligned observations
 
-    """
+    References
+    ----------
+    .. [1] Andrew J. Quinn, Vitor Lopes-dos-Santos, Norden Huang, Wei-Kuang
+           Liang, Chi-Hung Juan, Jia-Rong Yeh, Anna C. Nobre, David Dupret, & Mark W.
+           Woolrich (2021). Within-cycle instantaneous frequency profiles report
+           oscillatory waveform dynamics. bioRxiv, 2021.04.12.439547.
+           https://doi.org/10.1101/2021.04.12.439547
 
+    """
     # Preamble
     logger.info('STARTED: phase-align cycles')
 
@@ -529,6 +548,14 @@ def normalised_waveform(infreq):
         The normalised waveforms of the cycles in infreq
     ndarray
         A reference sinusoid of the same length as the input.
+
+    References
+    ----------
+    .. [1] Andrew J. Quinn, Vitor Lopes-dos-Santos, Norden Huang, Wei-Kuang
+           Liang, Chi-Hung Juan, Jia-Rong Yeh, Anna C. Nobre, David Dupret, & Mark W.
+           Woolrich (2021). Within-cycle instantaneous frequency profiles report
+           oscillatory waveform dynamics. bioRxiv, 2021.04.12.439547.
+           https://doi.org/10.1101/2021.04.12.439547
 
     """
     infreq = ensure_2d([infreq], ['infreq'], 'normalised_waveform')
@@ -1109,7 +1136,16 @@ class IterateCycles:
 
 
 class Cycles:
-    """Find, store and analyse singl cycles."""
+    """Find, store and analyse single cycles [1]_.
+
+    References
+    ----------
+    .. [1] Andrew J. Quinn, Vitor Lopes-dos-Santos, Norden Huang, Wei-Kuang
+           Liang, Chi-Hung Juan, Jia-Rong Yeh, Anna C. Nobre, David Dupret, & Mark W.
+           Woolrich (2021). Within-cycle instantaneous frequency profiles report
+           oscillatory waveform dynamics. bioRxiv, 2021.04.12.439547.
+           https://doi.org/10.1101/2021.04.12.439547
+    """
 
     def __init__(self, IP, phase_step=1.5 * np.pi, phase_edge=np.pi / 12,
                  compute_timings=False, mode='cycle', use_cache=True):

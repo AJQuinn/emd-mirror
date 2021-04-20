@@ -25,6 +25,12 @@ matplotlib.use('agg')
 import shutil
 shutil.copy('../../changelog.md', 'changelog.md')
 
+import os
+import sys
+sys.path.append(os.path.join(sys.path[0], 'doc', 'source'))
+from parse_lib import build_citations
+build_citations()
+
 
 # -- Project information -----------------------------------------------------
 
@@ -242,6 +248,7 @@ html_theme_options = {
         ("API", "api"),
         ("Contribute", "contribute"),
         ("Changes", "changelog"),
+        ("Cite", "cite"),
         ("GitLab", "https://gitlab.com/emd-dev/emd", True)
     ],
 
@@ -277,7 +284,7 @@ html_theme_options = {
 
     # Location of link to source.
     # Options are "nav" (default), "footer" or anything else to exclude.
-    'source_link_position': "nav",
+    'source_link_position': "footer",
 
     # Bootswatch (http://bootswatch.com/) theme.
     #
