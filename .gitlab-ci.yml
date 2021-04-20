@@ -56,3 +56,15 @@ build38:
     paths:
       - dist/
     expire_in: 1 week
+
+build39:
+  stage: build
+  image: python:3.9
+  script:
+    - flake8
+    - make all-clean
+    - make test
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
