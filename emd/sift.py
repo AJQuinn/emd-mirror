@@ -409,6 +409,34 @@ def sift(X, sift_thresh=1e-8, max_imfs=None, verbose=None,
     See Also
     --------
     emd.sift.get_next_imf
+    emd.sift.get_config
+
+    Notes
+    -----
+    The classic sift is computed by passing an input vector with all options
+    left to default
+
+    >>> imf = emd.sift.sift(x)
+
+    The sift can be customised by passing additional options, here we only
+    compute the first four IMFs.
+
+    >>> imf = emd.sift.sift(x, max_imfs=4)
+
+    More detailed options are passed as dictionaries which are passed to the
+    relevant lower-level functions. For instance `imf_opts` are passed to
+    `get_next_imf`.
+
+    >>> imf_opts = {'env_step_size': 1/3, 'stop_method': 'rilling'}
+    >>> imf = emd.sift.sift(x, max_imfs=4, imf_opts=imf_opts)
+
+    A modified dictionary of all options can be created using `get_config`.
+    This can be modified and used by unpacking the options into a `sift` call.
+
+    >>> conf = emd.sift.get_config('sift')
+    >>> conf['max_imfs'] = 4
+    >>> conf['imf_opts'] = imf_opts
+    >>> imfs = emd.sift.sift(x, **conf)
 
     References
     ----------
@@ -1673,30 +1701,27 @@ def get_config(siftname='sift'):
     specify parameters for different parts of the sift. This is initialised
     using this function
 
-    config = emd.sift.get_config()
+    >>> config = emd.sift.get_config()
 
-    The first level of the dictionary contains six sub-dicts configuring
+    The first level of the dictionary contains three sub-dicts configuring
     different parts of the algorithm:
 
-    config['sift'] - top level sift options, mostly specific to the particular sift algorithm
-    config['imf'] - options for detecting IMFs
-    config['envelope'] - options for upper and lower envelope interpolation
-    config['extrema'] - options for extrema detection
-    config['mag_pad'] - options for y-values of padded extrema at edges
-    config['loc_pad'] - options for x-values of padded extrema at edges
+    >>> config['imf_opts'] # options passed to `get_next_imf`
+    >>> config['envelope_opts'] # options passed to interp_envelope
+    >>> config['extrema_opts'] # options passed to get_padded_extrema
 
     Specific values can be modified in the dictionary
 
-    config['extrema']['parabolic_extrema'] = True
+    >>> config['extrema_opts']['parabolic_extrema'] = True
 
     or using this shorthand
 
-    config['imf/env_step_factor'] = 1/3
+    >>> config['imf_opts/env_step_factor'] = 1/3
 
     Finally, the SiftConfig dictionary should be nested before being passed as
     keyword arguments to a sift function.
 
-    imfs = emd.sift.sift(X, **config)
+    >>> imfs = emd.sift.sift(X, **config)
 
     """
     # Extrema padding opts are hard-coded for the moment, these run through
