@@ -650,9 +650,17 @@ def ensemble_sift(X, nensembles=4, ensemble_noise=.2, noise_mode='single',
     if max_imfs is None:
         max_imfs = res[0].shape[1]
 
+    # Keep largest group of ensembles with matching number of imfs.
+    nimfs = [r.shape[1] for r in res]
+    uni, unic = np.unique(nimfs, return_counts=True)
+    target_imfs = uni[np.argmax(unic)]
+    logger.info('Retaining {0} ensembles ({1}%) each with {2} IMFs'.format(np.max(unic),
+                                                                           100*(np.max(unic)/nensembles),
+                                                                           target_imfs))
+
     imfs = np.zeros((X.shape[0], max_imfs))
     for ii in range(max_imfs):
-        imfs[:, ii] = np.array([r[:, ii] for r in res]).mean(axis=0)
+        imfs[:, ii] = np.array([r[:, ii] for r in res if r.shape[1] == target_imfs]).mean(axis=0)
 
     return imfs
 
