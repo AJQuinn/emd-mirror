@@ -20,6 +20,12 @@ HERE = pathlib.Path(__file__).parent
 # The text of the README file
 README = (HERE / "README.md").read_text()
 
+# Requirement categories
+reqs = ['numpy', 'scipy', 'matplotlib', 'pyyaml', 'pandas'],
+dev_reqs = ['setuptools>=41.0.1', 'pytest', 'pytest-cov', 'coverage', 'flake8']
+doc_reqs = ['numpydoc', 'sphinx_gallery', 'sphinx_rtd_theme', 'sphinx_bootstrap_theme', 'reconmark']
+
+
 setup(
     name=name,
 
@@ -63,17 +69,12 @@ setup(
 
     python_requires='>3.4',
 
-    install_requires=['numpy',
-                      'scipy',
-                      'matplotlib',
-                      'numpydoc',
-                      'pyyaml',
-                      'pytest',
-                      'pandas',
-                      'sphinx_rtd_theme'],
+    install_requires=reqs,
 
     extras_require={
-        'test': ['coverage'],
+        'dev': dev_reqs,
+        'doc': doc_reqs,
+        'full': dev_reqs + doc_reqs,
     },
 
     command_options={
