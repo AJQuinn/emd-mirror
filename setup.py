@@ -21,7 +21,7 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
 # Requirement categories
-reqs = ['numpy', 'scipy', 'matplotlib', 'pyyaml', 'pandas'],
+reqs = ['numpy', 'scipy', 'matplotlib', 'pandas', 'pyyaml>=5.1'],
 dev_reqs = ['setuptools>=41.0.1', 'pytest', 'pytest-cov', 'coverage', 'flake8']
 doc_reqs = ['numpydoc', 'sphinx_gallery', 'sphinx_rtd_theme', 'sphinx_bootstrap_theme', 'recommonmark']
 
