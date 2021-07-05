@@ -23,7 +23,7 @@ README = (HERE / "README.md").read_text()
 # Requirement categories
 reqs = ['numpy', 'scipy', 'matplotlib', 'pyyaml', 'pandas'],
 dev_reqs = ['setuptools>=41.0.1', 'pytest', 'pytest-cov', 'coverage', 'flake8']
-doc_reqs = ['numpydoc', 'sphinx_gallery', 'sphinx_rtd_theme', 'sphinx_bootstrap_theme', 'reconmark']
+doc_reqs = ['numpydoc', 'sphinx_gallery', 'sphinx_rtd_theme', 'sphinx_bootstrap_theme', 'recommonmark']
 
 
 setup(
